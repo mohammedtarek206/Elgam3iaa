@@ -4,11 +4,15 @@ import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, A
 const API_URL = '/api';
 
 const Dashboard = () => {
+  const [students, setStudents] = useState([]);
+  const [sheikhs, setSheikhs] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [stats, setStats] = useState({
-    totalStudents: 0,
-    totalSheikhs: 0,
+    studentCount: 0,
+    sheikhCount: 0,
     totalClasses: 0,
-    totalRevenue: 0,
+    revenue: 0,
+    attendanceRate: 0,
     loading: true
   });
 
@@ -20,29 +24,41 @@ const Dashboard = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const [studRes, sheikhRes, classRes, transRes] = await Promise.all([
+      const [studRes, sheikhRes, classRes, transRes, attRes] = await Promise.all([
         fetch(`${API_URL}/students`, { headers }),
         fetch(`${API_URL}/sheikhs`, { headers }),
         fetch(`${API_URL}/classes`, { headers }),
-        fetch(`${API_URL}/transactions`, { headers })
+        fetch(`${API_URL}/transactions`, { headers }),
+        fetch(`${API_URL}/attendance`, { headers })
       ]);
 
-      const [students, sheikhs, classes, transactions] = await Promise.all([
+      const [students, sheikhs, classes, transactions, attendance] = await Promise.all([
         studRes.json(),
         sheikhRes.json(),
         classRes.json(),
-        transRes.json()
+        transRes.json(),
+        attRes.json()
       ]);
 
       const revenue = transactions
         .filter(t => t.type === 'دخل')
         .reduce((sum, t) => sum + (t.amount || 0), 0);
 
+      setStudents(students);
+      setSheikhs(sheikhs);
+      setAttendance(attendance);
+
+      const today = new Date().toISOString().split('T')[0];
+      const todayAtt = attendance.find(h => h.date === today && h.attendanceType === 'student');
+      const presentToday = todayAtt ? todayAtt.records.filter(r => r.status === 'present' || r.status === 'late').length : 0;
+      const totalPossible = todayAtt ? todayAtt.records.length : 0;
+
       setStats({
+        totalRevenue: revenue,
         totalStudents: students.length,
         totalSheikhs: sheikhs.length,
         totalClasses: classes.length,
-        totalRevenue: revenue,
+        attendanceRate: totalPossible > 0 ? Math.round((presentToday / totalPossible) * 100) : 0,
         loading: false
       });
     } catch (err) {
@@ -58,7 +74,8 @@ const Dashboard = () => {
   const statCards = [
     { title: 'إجمالي الطلاب', value: stats.totalStudents, icon: Users, color: '#3498db', trend: '+12%', isUp: true },
     { title: 'إجمالي المحفظين', value: stats.totalSheikhs, icon: UserRound, color: '#9b59b6', trend: '+2', isUp: true },
-    { title: 'حلقات التحفيظ', value: stats.totalClasses, icon: School, color: '#e67e22', trend: '0%', isUp: true },
+    { title: 'نسبة الحضور اليوم', value: `${stats.attendanceRate}%`, icon: Calendar, color: '#27ae60', trend: 'مباشر', isUp: true },
+    { title: 'حلقات التحفيظ', value: stats.totalClasses, icon: School, color: '#e67e22', trend: 'فعال', isUp: true },
     { title: 'إجمالي الدخل', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
   ];
 

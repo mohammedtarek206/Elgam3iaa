@@ -9,10 +9,20 @@ const StudentManager = () => {
   const [sheikhs, setSheikhs] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [attendanceHistory, setAttendanceHistory] = useState([]);
 
   useEffect(() => {
     fetchData();
+    fetchAttendance();
   }, []);
+
+  const fetchAttendance = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_URL}/attendance`, { headers: { 'Authorization': `Bearer ${token}` } });
+      setAttendanceHistory(await res.json());
+    } catch (err) {}
+  };
 
   const fetchData = async () => {
     const token = localStorage.getItem('token');
@@ -177,7 +187,12 @@ const StudentManager = () => {
             <Check size={32} color="#2ecc71" />
             <div className="stat-info">
               <span>نسبة الحضور</span>
-              <strong>95%</strong>
+              <strong>{(() => {
+                const totalDays = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => r.personId === student._id)).length;
+                if (totalDays === 0) return '0%';
+                const presentDays = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => r.personId === student._id && (r.status === 'present' || r.status === 'late'))).length;
+                return Math.round((presentDays / totalDays) * 100) + '%';
+              })()}</strong>
             </div>
           </div>
           <div className="profile-stat-card">

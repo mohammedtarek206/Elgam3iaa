@@ -14,6 +14,7 @@ const AttendanceManager = () => {
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [attendance, setAttendance] = useState({});
+  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     fetchPeople();
@@ -29,20 +30,49 @@ const AttendanceManager = () => {
         fetch(`${API_URL}/classes`, { headers }),
         fetch(`${API_URL}/attendance`, { headers })
       ]);
-      setStudents(await studRes.json());
-      setSheikhs(await sheikhRes.json());
-      setClasses(await classRes.json());
-      setAttendanceHistory(await attRes.json());
+      const [sData, shData, cData, aData] = await Promise.all([
+        studRes.json(),
+        sheikhRes.json(),
+        classRes.json(),
+        attRes.json()
+      ]);
+      setStudents(sData);
+      setSheikhs(shData);
+      setClasses(cData);
+      setAttendanceHistory(aData);
+
+      // Check if today's attendance is already recorded for both types
+      const today = new Date().toISOString().split('T')[0];
+      const todayAtt = aData.filter(h => h.date === today);
+      
+      const newAttState = {};
+      aData.forEach(h => {
+        const type = h.attendanceType === 'student' ? 'students' : 'sheikhs';
+        h.records.forEach(r => {
+          newAttState[`${type}_${r.personId}_${h.date}`] = r.status;
+        });
+      });
+      setAttendance(newAttState);
+
     } catch (err) {
       console.error('Error fetching data:', err);
     }
   };
 
   const handleStatusChange = (type, id, status) => {
+    if (checkIsLocked(type)) {
+      alert('لا يمكن التعديل بعد حفظ الحضور لهذا اليوم');
+      return;
+    }
     setAttendance({
       ...attendance,
       [`${type}_${id}_${selectedDate}`]: status
     });
+  };
+
+  const checkIsLocked = (type) => {
+    const attType = type === 'students' ? 'student' : 'sheikh';
+    return attendanceHistory.some(h => h.date === selectedDate && h.attendanceType === attType);
   };
 
   const getStatus = (type, id) => attendance[`${type}_${id}_${selectedDate}`] || null;
@@ -167,11 +197,7 @@ const AttendanceManager = () => {
       <div className="attendance-controls">
         <div className="control-group">
           <label><Calendar size={18} /> التاريخ:</label>
-          <input 
-            type="date" 
-            value={selectedDate} 
-            onChange={(e) => setSelectedDate(e.target.value)} 
-          />
+          <div className="date-display">{selectedDate} (اليوم)</div>
         </div>
         
         {activeTab === 'students' && (
@@ -269,7 +295,13 @@ const AttendanceManager = () => {
               </table>
             </div>
             <div className="save-section">
-              <button className="save-btn" onClick={handleSaveAttendance}>حفظ الغياب اليومي</button>
+              {checkIsLocked(activeTab) ? (
+                <div className="locked-badge">
+                  <Check size={20} /> تم الحفظ - السجل مغلق
+                </div>
+              ) : (
+                <button className="save-btn" onClick={handleSaveAttendance}>حفظ الغياب اليومي</button>
+              )}
             </div>
           </>
         )}
@@ -427,6 +459,28 @@ const AttendanceManager = () => {
           border-radius: 8px;
           font-weight: 700;
           font-size: 1.1rem;
+        }
+
+        .date-display {
+          font-size: 1.1rem;
+          font-weight: 800;
+          color: var(--accent);
+          background: #e8f5e9;
+          padding: 6px 16px;
+          border-radius: 8px;
+        }
+
+        .locked-badge {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #27ae60;
+          font-weight: 800;
+          font-size: 1.2rem;
+          background: #e8f5e9;
+          padding: 12px 24px;
+          border-radius: 12px;
+          border: 2px solid #27ae60;
         }
 
         @media (max-width: 600px) {

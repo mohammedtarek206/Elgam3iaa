@@ -5,8 +5,9 @@ import * as XLSX from 'xlsx';
 const API_URL = '/api';
 
 const ClassManager = () => {
-  const [classes, setClasses] = useState([]);
   const [sheikhs, setSheikhs] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,17 +15,25 @@ const ClassManager = () => {
   }, []);
 
   const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const [classRes, sheikhRes] = await Promise.all([
+      const [classRes, sheikhRes, studRes, attRes] = await Promise.all([
         fetch(`${API_URL}/classes`, { headers }),
-        fetch(`${API_URL}/sheikhs`, { headers })
+        fetch(`${API_URL}/sheikhs`, { headers }),
+        fetch(`${API_URL}/students`, { headers }),
+        fetch(`${API_URL}/attendance`, { headers })
       ]);
-      const [classData, sheikhData] = await Promise.all([
+      const [classData, sheikhData, studData, attData] = await Promise.all([
         classRes.json(),
-        sheikhRes.json()
+        sheikhRes.json(),
+        studRes.json(),
+        attRes.json()
       ]);
       setClasses(classData);
       setSheikhs(sheikhData);
+      setStudents(studData);
+      setAttendanceHistory(attData);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -184,7 +193,28 @@ const ClassManager = () => {
               </div>
               <div className="info-row">
                 <Users size={18} />
-                <span>عدد الطلاب: <strong>{cls.studentsCount}</strong></span>
+                <span>عدد الطلاب: <strong>{students.filter(s => s.className === cls.name).length}</strong></span>
+              </div>
+              <div className="info-row">
+                <Check size={18} color="#2ecc71" />
+                <span>نسبة الانضباط: <strong>{(() => {
+                  const classStudents = students.filter(s => s.className === cls.name);
+                  const classStudentIds = classStudents.map(s => s._id);
+                  const relevantHistory = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => classStudentIds.includes(r.personId)));
+                  
+                  if (relevantHistory.length === 0) return '0%';
+                  
+                  let totalPresent = 0;
+                  let totalPossible = 0;
+                  
+                  relevantHistory.forEach(h => {
+                    const classRecords = h.records.filter(r => classStudentIds.includes(r.personId));
+                    totalPresent += classRecords.filter(r => r.status === 'present' || r.status === 'late').length;
+                    totalPossible += classRecords.length;
+                  });
+                  
+                  return Math.round((totalPresent / totalPossible) * 100) + '%';
+                })()}</strong></span>
               </div>
               <div className="info-row">
                 <MapPin size={18} />
