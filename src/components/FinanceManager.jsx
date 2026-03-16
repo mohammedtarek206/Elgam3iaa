@@ -188,6 +188,10 @@ const FinanceManager = () => {
           <span className="count-badge">سجل المعاملات</span>
         </div>
         <div className="header-actions">
+          <button className="add-btn" onClick={() => setShowForm(true)}>
+            <Plus size={20} />
+            إضافة معاملة
+          </button>
           <button className="export-btn" onClick={exportToExcel} title="تصدير إلى إكسيل">
             <FileDown size={20} />
             تصدير
@@ -195,10 +199,6 @@ const FinanceManager = () => {
           <button className="print-btn" onClick={() => window.print()} title="طباعة">
             <Printer size={20} />
             طباعة
-          </button>
-          <button className="add-btn" onClick={() => setShowForm(true)}>
-            <Plus size={20} />
-            إضافة معاملة
           </button>
         </div>
       </div>
@@ -253,6 +253,7 @@ const FinanceManager = () => {
                 <table>
                   <thead>
                     <tr>
+                      <th>#</th>
                       <th>التاريخ</th>
                       <th>البيان</th>
                       <th>القيمة</th>
@@ -260,8 +261,9 @@ const FinanceManager = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransactions.map(t => (
+                    {filteredTransactions.map((t, index) => (
                       <tr key={t._id}>
+                        <td>{index + 1}</td>
                         <td>{t.date}</td>
                         <td>{t.notes || t.category}</td>
                         <td className={t.type === 'دخل' ? 'text-green' : 'text-red'}>

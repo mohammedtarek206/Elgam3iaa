@@ -219,6 +219,10 @@ const SheikhManager = () => {
           <span className="count-badge">{sheikhs.length} محفظ</span>
         </div>
         <div className="header-actions">
+          <button className="add-btn" onClick={() => handleOpenForm()}>
+            <Plus size={20} />
+            إضافة شيخ جديد
+          </button>
           <button className="export-btn" onClick={exportToExcel} title="تصدير إلى إكسيل">
             <FileDown size={20} />
             تصدير
@@ -226,10 +230,6 @@ const SheikhManager = () => {
           <button className="print-btn" onClick={() => window.print()} title="طباعة">
             <Printer size={20} />
             طباعة
-          </button>
-          <button className="add-btn" onClick={() => handleOpenForm()}>
-            <Plus size={20} />
-            إضافة شيخ جديد
           </button>
         </div>
       </div>
@@ -248,21 +248,25 @@ const SheikhManager = () => {
         <table>
           <thead>
             <tr>
+               <th>#</th>
                <th>اسم الشيخ</th>
+               <th>الرقم القومي</th>
               <th>رقم الهاتف</th>
               <th>الفصول المسؤولة عنها</th>
               <th>تاريخ التعيين</th>
               <th>عدد الطلاب</th>
-              <th className="no-print">العمليات</th>
+              <th className="no-print">الالتحكم</th>
             </tr>
           </thead>
           <tbody>
-            {filteredSheikhs.map(sheikh => (
+            {filteredSheikhs.map((sheikh, index) => (
               <tr key={sheikh._id}>
+                <td>{index + 1}</td>
                 <td className="font-bold flex-cell" onClick={() => setViewingSheikh(sheikh)}>
                   <User size={18} className="user-icon" />
                    {sheikh.name}
                 </td>
+                <td>{sheikh.nationalId || '---'}</td>
                 <td>{sheikh.phone}</td>
                 <td>
                   <div className="tag-list">
@@ -295,6 +299,10 @@ const SheikhManager = () => {
                 <div className="form-group">
                   <label>اسم الشيخ</label>
                   <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>الرقم القومي</label>
+                  <input value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label>رقم الهاتف</label>

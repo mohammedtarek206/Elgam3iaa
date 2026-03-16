@@ -57,7 +57,10 @@ function App() {
     return (
       <div className="app-container" dir="rtl">
         <header className="main-header">
-          <h1>منصة الجمعية الشرعية</h1>
+          <div className="header-info">
+            <h1>الجمعية الشرعية كفر طلا</h1>
+            <span className="subtitle">مكتب تحفيظ القران الكريم</span>
+          </div>
         </header>
         <main className="content">
           <Login onLogin={setUser} />
@@ -87,7 +90,8 @@ function App() {
     <div className="app-container" dir="rtl">
       <header className="main-header">
         <div className="header-info">
-          <h1>منصة الجمعية الشرعية</h1>
+          <h1>الجمعية الشرعية كفر طلا</h1>
+          <span className="subtitle">مكتب تحفيظ القران الكريم</span>
           <span className="user-welcome">مرحباً، {user.username}</span>
         </div>
         <div className="header-actions">
@@ -157,7 +161,14 @@ function App() {
           color: var(--primary);
           font-weight: 800;
           letter-spacing: -1px;
-          line-height: 1;
+          line-height: 1.2;
+        }
+
+        .subtitle {
+          font-size: 1.1rem;
+          color: var(--secondary);
+          font-weight: 600;
+          margin-bottom: 8px;
         }
 
         .logout-btn {

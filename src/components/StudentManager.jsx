@@ -235,6 +235,10 @@ const StudentManager = () => {
           <span className="count-badge">{students.length} طالب</span>
         </div>
         <div className="header-actions">
+          <button className="add-btn" onClick={() => handleOpenForm()}>
+            <Plus size={20} />
+            إضافة طالب جديد
+          </button>
           <button className="export-btn" onClick={exportToExcel} title="تصدير إلى إكسيل">
             <FileDown size={20} />
             تصدير
@@ -242,10 +246,6 @@ const StudentManager = () => {
           <button className="print-btn" onClick={handlePrint} title="طباعة">
             <Printer size={20} />
             طباعة
-          </button>
-          <button className="add-btn" onClick={() => handleOpenForm()}>
-            <Plus size={20} />
-            إضافة طالب جديد
           </button>
         </div>
       </div>
@@ -264,6 +264,7 @@ const StudentManager = () => {
         <table>
           <thead>
             <tr>
+              <th>#</th>
               <th>اسم الطالب</th>
               <th>رقم الهاتف</th>
               <th>الشيخ</th>
@@ -274,8 +275,9 @@ const StudentManager = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredStudents.length > 0 ? filteredStudents.map(student => (
+            {filteredStudents.length > 0 ? filteredStudents.map((student, index) => (
               <tr key={student._id}>
+                <td>{index + 1}</td>
                 <td className="font-bold stud-link" onClick={() => setViewingStudent(student)}>{student.name}</td>
                 <td>{student.phone}</td>
                 <td>{student.sheikh}</td>

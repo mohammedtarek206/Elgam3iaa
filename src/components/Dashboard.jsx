@@ -35,7 +35,7 @@ const Dashboard = () => {
       ]);
 
       const revenue = transactions
-        .filter(t => t.type === 'income')
+        .filter(t => t.type === 'دخل')
         .reduce((sum, t) => sum + (t.amount || 0), 0);
 
       setStats({
@@ -113,27 +113,21 @@ const Dashboard = () => {
             <Calendar size={20} color="#666" />
           </div>
           <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-bullet green"></div>
-              <div className="activity-info">
-                <strong>إضافة طالب جديد</strong>
-                <span>تم تسجيل الطالب أحمد محمد في حلقة الفجر</span>
-              </div>
-            </div>
-            <div className="activity-item">
-              <div className="activity-bullet orange"></div>
-              <div className="activity-info">
-                <strong>تحصيل رسوم</strong>
-                <span>تم تحصيل رسوم شهر مارس من 15 طالب</span>
-              </div>
-            </div>
-            <div className="activity-item">
-              <div className="activity-bullet blue"></div>
-              <div className="activity-info">
-                <strong>تعديل جدول</strong>
-                <span>تم تغيير موعد حلقة المغرب للشيخ عبد الله</span>
-              </div>
-            </div>
+            {stats.loading ? (
+              <p>جاري التحميل...</p>
+            ) : (
+              // Show last 5 students as "Recent Activity"
+              [...students].reverse().slice(0, 5).map(s => (
+                <div key={s._id} className="activity-item">
+                  <div className="activity-bullet green"></div>
+                  <div className="activity-info">
+                    <strong>إضافة طالب جديد</strong>
+                    <span>تم تسجيل الطالب {s.name} في فصل {s.className}</span>
+                  </div>
+                </div>
+              ))
+            )}
+            {students.length === 0 && <p style={{textAlign:'center', color:'#888'}}>لا يوجد نشاط مؤخراً</p>}
           </div>
         </div>
       </div>
