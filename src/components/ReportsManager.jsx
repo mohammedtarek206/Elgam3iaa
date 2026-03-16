@@ -19,13 +19,15 @@ const ReportsManager = () => {
   }, []);
 
   const fetchStats = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
     try {
       const [studRes, classRes, sheikhRes, transRes, attRes] = await Promise.all([
-        fetch(`${API_URL}/students`),
-        fetch(`${API_URL}/classes`),
-        fetch(`${API_URL}/sheikhs`),
-        fetch(`${API_URL}/transactions`),
-        fetch(`${API_URL}/attendance`)
+        fetch(`${API_URL}/students`, { headers }),
+        fetch(`${API_URL}/classes`, { headers }),
+        fetch(`${API_URL}/sheikhs`, { headers }),
+        fetch(`${API_URL}/transactions`, { headers }),
+        fetch(`${API_URL}/attendance`, { headers })
       ]);
       
       const [students, classes, sheikhs, transactions, attendance] = await Promise.all([

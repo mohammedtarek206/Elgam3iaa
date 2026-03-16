@@ -54,12 +54,16 @@ const FinanceManager = () => {
     totalExpense: transactions.filter(t => t.type === 'مصروف').reduce((acc, t) => acc + (t.amount || 0), 0),
   };
 
-  const handleSubmit = async (e) => {
+  const handleAddTransaction = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_URL}/transactions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
       if (res.ok) {

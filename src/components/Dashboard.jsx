@@ -17,12 +17,14 @@ const Dashboard = () => {
   }, []);
 
   const fetchDashboardStats = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
     try {
       const [studRes, sheikhRes, classRes, transRes] = await Promise.all([
-        fetch(`${API_URL}/students`),
-        fetch(`${API_URL}/sheikhs`),
-        fetch(`${API_URL}/classes`),
-        fetch(`${API_URL}/transactions`)
+        fetch(`${API_URL}/students`, { headers }),
+        fetch(`${API_URL}/sheikhs`, { headers }),
+        fetch(`${API_URL}/classes`, { headers }),
+        fetch(`${API_URL}/transactions`, { headers })
       ]);
 
       const [students, sheikhs, classes, transactions] = await Promise.all([

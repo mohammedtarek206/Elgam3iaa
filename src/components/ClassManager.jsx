@@ -16,8 +16,8 @@ const ClassManager = () => {
   const fetchData = async () => {
     try {
       const [classRes, sheikhRes] = await Promise.all([
-        fetch(`${API_URL}/classes`),
-        fetch(`${API_URL}/sheikhs`)
+        fetch(`${API_URL}/classes`, { headers }),
+        fetch(`${API_URL}/sheikhs`, { headers })
       ]);
       const [classData, sheikhData] = await Promise.all([
         classRes.json(),
@@ -66,12 +66,16 @@ const ClassManager = () => {
     setSaving(true);
     const method = editingClass ? 'PUT' : 'POST';
     const url = editingClass ? `${API_URL}/classes/${editingClass._id}` : `${API_URL}/classes`;
+    const token = localStorage.getItem('token');
 
     try {
       console.log(`Sending ${method} request to ${url}...`);
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
@@ -92,8 +96,12 @@ const ClassManager = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الفصل؟')) {
+      const token = localStorage.getItem('token');
       try {
-        await fetch(`${API_URL}/classes/${id}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/classes/${id}`, { 
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         fetchData();
       } catch (err) {
         console.error('Error deleting class:', err);

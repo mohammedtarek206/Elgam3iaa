@@ -7,14 +7,24 @@ const API_URL = '/api';
 const GrantsManager = () => {
   const [grants, setGrants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false); // Added state for form visibility
+  const [formData, setFormData] = useState({ // Added state for form data
+    studentName: '',
+    type: 'إعفاء من الرسوم',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    reason: ''
+  });
 
   useEffect(() => {
     fetchGrants();
   }, []);
 
   const fetchGrants = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` }; // Define headers once
     try {
-      const res = await fetch(`${API_URL}/grants`);
+      const res = await fetch(`${API_URL}/grants`, { headers }); // Use headers object
       const data = await res.json();
       setGrants(data);
       setLoading(false);
@@ -24,21 +34,16 @@ const GrantsManager = () => {
     }
   };
 
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    studentName: '',
-    type: 'إعفاء من الرسوم',
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    reason: ''
-  });
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_URL}/grants`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
       if (res.ok) {

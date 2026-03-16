@@ -13,8 +13,11 @@ const ExamsManager = () => {
   }, []);
 
   const fetchExams = async () => {
+    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/exams`);
+      const res = await fetch(`${API_URL}/exams`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       setExams(data);
       setLoading(false);
@@ -34,10 +37,14 @@ const ExamsManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_URL}/exams`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
       if (res.ok) {

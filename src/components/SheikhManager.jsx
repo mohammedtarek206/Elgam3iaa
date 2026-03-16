@@ -15,11 +15,13 @@ const SheikhManager = () => {
   }, []);
 
   const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
     try {
       const [sheikhRes, classRes, studRes] = await Promise.all([
-        fetch(`${API_URL}/sheikhs`),
-        fetch(`${API_URL}/classes`),
-        fetch(`${API_URL}/students`)
+        fetch(`${API_URL}/sheikhs`, { headers }),
+        fetch(`${API_URL}/classes`, { headers }),
+        fetch(`${API_URL}/students`, { headers })
       ]);
       const [sheikhData, classData, studData] = await Promise.all([
         sheikhRes.json(),
@@ -40,7 +42,6 @@ const SheikhManager = () => {
   const [editingSheikh, setEditingSheikh] = useState(null);
   const [viewingSheikh, setViewingSheikh] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -77,12 +78,17 @@ const SheikhManager = () => {
     setSaving(true);
     const method = editingSheikh ? 'PUT' : 'POST';
     const url = editingSheikh ? `${API_URL}/sheikhs/${editingSheikh._id}` : `${API_URL}/sheikhs`;
+    
+    const token = localStorage.getItem('token');
 
     try {
       console.log(`Sending ${method} request to ${url}...`);
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
@@ -95,7 +101,7 @@ const SheikhManager = () => {
       }
     } catch (err) {
       console.error('Error saving sheikh:', err);
-      alert('لا يمكن الاتصال بالسيرفر! تأكد من تشغيل الـ Backend');
+      alert('لا يمكن الاتصال بالسيرفر! يرجى التأكد من أنك مسجل الدخول.');
     } finally {
       setSaving(false);
     }
@@ -103,8 +109,12 @@ const SheikhManager = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الشيخ؟')) {
+      const token = localStorage.getItem('token');
       try {
-        await fetch(`${API_URL}/sheikhs/${id}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/sheikhs/${id}`, { 
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         fetchData();
       } catch (err) {
         console.error('Error deleting sheikh:', err);

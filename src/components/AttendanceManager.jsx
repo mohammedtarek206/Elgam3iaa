@@ -58,10 +58,16 @@ const AttendanceManager = () => {
       return;
     }
 
+    const token = localStorage.getItem('token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
       const res = await fetch(`${API_URL}/attendance`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({
           date: selectedDate,
           attendanceType: activeTab === 'students' ? 'student' : 'sheikh',

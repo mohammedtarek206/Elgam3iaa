@@ -15,11 +15,13 @@ const StudentManager = () => {
   }, []);
 
   const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
     try {
       const [studRes, sheikhRes, classRes] = await Promise.all([
-        fetch(`${API_URL}/students`),
-        fetch(`${API_URL}/sheikhs`),
-        fetch(`${API_URL}/classes`)
+        fetch(`${API_URL}/students`, { headers }),
+        fetch(`${API_URL}/sheikhs`, { headers }),
+        fetch(`${API_URL}/classes`, { headers })
       ]);
       const [studData, sheikhData, classData] = await Promise.all([
         studRes.json(),
@@ -84,6 +86,8 @@ const StudentManager = () => {
     setSaving(true);
     const method = editingStudent ? 'PUT' : 'POST';
     const url = editingStudent ? `${API_URL}/students/${editingStudent._id}` : `${API_URL}/students`;
+    
+    const token = localStorage.getItem('token');
 
     // Ensure monthlyFees is a number
     const payload = {
@@ -95,7 +99,10 @@ const StudentManager = () => {
       console.log(`Sending ${method} request to ${url}...`);
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(payload)
       });
       
@@ -109,7 +116,7 @@ const StudentManager = () => {
       }
     } catch (err) {
       console.error('Error saving student:', err);
-      alert('لا يمكن الاتصال بالسيرفر! تأكد من تشغيل الـ Backend عن طريق npm run server');
+      alert('لا يمكن الاتصال بالسيرفر! يرجى التأكد من أنك مسجل الدخول.');
     } finally {
       setSaving(false);
     }
@@ -137,9 +144,13 @@ const StudentManager = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
+      const token = localStorage.getItem('token');
       try {
-        await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' });
-        fetchStudents();
+        await fetch(`${API_URL}/students/${id}`, { 
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        fetchData();
       } catch (err) {
         console.error('Error deleting student:', err);
       }
