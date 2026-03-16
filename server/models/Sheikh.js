@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const sheikhSchema = new mongoose.Schema({
   name: { type: String, required: true },
   nationalId: { type: String, unique: true, sparse: true },
+  qualification: String,
   phone: String,
   address: String,
   assignedClasses: [String],

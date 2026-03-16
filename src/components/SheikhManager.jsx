@@ -49,6 +49,7 @@ const SheikhManager = () => {
     assignedClasses: [],
     hireDate: new Date().toISOString().split('T')[0],
     salary: '',
+    qualification: '',
     notes: ''
   });
 
@@ -250,6 +251,7 @@ const SheikhManager = () => {
             <tr>
                <th>#</th>
                <th>اسم الشيخ</th>
+               <th>المستوى/الإجازة</th>
                <th>الرقم القومي</th>
               <th>رقم الهاتف</th>
               <th>الفصول المسؤولة عنها</th>
@@ -266,6 +268,7 @@ const SheikhManager = () => {
                   <User size={18} className="user-icon" />
                    {sheikh.name}
                 </td>
+                <td className="text-primary font-bold">{sheikh.qualification || '---'}</td>
                 <td>{sheikh.nationalId || '---'}</td>
                 <td>{sheikh.phone}</td>
                 <td>
@@ -303,6 +306,10 @@ const SheikhManager = () => {
                 <div className="form-group">
                   <label>الرقم القومي</label>
                   <input value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>المستوى التعليمي / الإجازة</label>
+                  <input placeholder="مثلاً: لسانس أصول دين / إجازة حفص" value={formData.qualification} onChange={e => setFormData({...formData, qualification: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label>رقم الهاتف</label>
