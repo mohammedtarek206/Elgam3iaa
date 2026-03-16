@@ -36,8 +36,35 @@ import ExamsManager from './components/ExamsManager';
 import ReportsManager from './components/ReportsManager';
 import Dashboard from './components/Dashboard';
 
+import Login from './components/Login';
+import { LogOut } from 'lucide-react';
+
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setCurrentPage('home');
+  };
+
+  if (!user) {
+    return (
+      <div className="app-container" dir="rtl">
+        <header className="main-header">
+          <h1>منصة الجمعية الشرعية</h1>
+        </header>
+        <main className="content">
+          <Login onLogin={setUser} />
+        </main>
+      </div>
+    );
+  }
 
   const renderHome = () => (
     <div className="dashboard-grid">
@@ -59,10 +86,16 @@ function App() {
   return (
     <div className="app-container" dir="rtl">
       <header className="main-header">
-        <h1>منصة الجمعية الشرعية</h1>
+        <div className="header-info">
+          <h1>منصة الجمعية الشرعية</h1>
+          <span className="user-welcome">مرحباً، {user.username}</span>
+        </div>
         <div className="header-actions">
           <button className="icon-btn" title="بحث"><Search size={24} /></button>
           <button className="icon-btn" title="طباعة"><Printer size={24} /></button>
+          <button className="icon-btn logout-btn" title="تسجيل الخروج" onClick={handleLogout}>
+            <LogOut size={24} />
+          </button>
         </div>
       </header>
 
@@ -107,11 +140,33 @@ function App() {
           padding-top: 10px;
         }
 
+        .header-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .user-welcome {
+          font-size: 0.9rem;
+          color: var(--secondary);
+          font-weight: 600;
+        }
+
         .main-header h1 {
           font-size: 2.2rem;
           color: var(--primary);
           font-weight: 800;
           letter-spacing: -1px;
+          line-height: 1;
+        }
+
+        .logout-btn {
+          color: #e74c3c !important;
+        }
+
+        .logout-btn:hover {
+          background: #e74c3c !important;
+          color: white !important;
         }
 
         .header-actions {

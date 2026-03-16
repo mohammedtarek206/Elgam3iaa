@@ -11,7 +11,22 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB Atlas'))
+  .then(async () => {
+    console.log('✅ Connected to MongoDB Atlas');
+    // Create default admin if not exists
+    const User = require('./models/User');
+    const adminExists = await User.findOne({ username: 'admin' });
+    if (!adminExists) {
+      const admin = new User({
+        username: 'admin',
+        password: 'password123'
+      });
+      await admin.save();
+      console.log('🚀 Default admin user created (admin/password123)');
+    } else {
+      console.log('ℹ️ Admin user already exists');
+    }
+  })
   .catch(err => console.error('❌ Could not connect to MongoDB', err));
 
 app.get('/api/test', (req, res) => {
@@ -22,14 +37,62 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Models
-const Student = require('./models/Student');
-const Sheikh = require('./models/Sheikh');
-const Class = require('./models/Class');
-const Attendance = require('./models/Attendance');
-const Transaction = require('./models/Transaction');
-const Grant = require('./models/Grant');
-const Exam = require('./models/Exam');
+const User = require('./models/User');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+// --- Auth Routes ---
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = new User({ username, password });
+    await user.save();
+    res.status(201).send({ message: 'User registered successfully' });
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    console.log(`Login attempt for username: ${username}`);
+    const user = await User.findOne({ username });
+    
+    if (!user) {
+      console.log(`User not found: ${username}`);
+      return res.status(401).send({ message: 'بيانات الدخول غير صحيحة' });
+    }
+    
+    const isMatch = await user.comparePassword(password);
+    console.log(`Password match for ${username}: ${isMatch}`);
+    
+    if (!isMatch) {
+      return res.status(401).send({ message: 'بيانات الدخول غير صحيحة' });
+    }
+    
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret_key', { expiresIn: '1d' });
+    res.send({ token, user: { username: user.username, role: user.role } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// Middleware to protect routes
+const auth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) throw new Error();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+    const user = await User.findById(decoded.id);
+    if (!user) throw new Error();
+    req.user = user;
+    next();
+  } catch (e) {
+    res.status(401).send({ message: 'يرجى تسجيل الدخول' });
+  }
+};
 
 // --- Student Routes ---
 app.get('/api/students', async (req, res) => {
