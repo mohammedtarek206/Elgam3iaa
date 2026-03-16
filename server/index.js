@@ -14,9 +14,12 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch(err => console.error('❌ Could not connect to MongoDB', err));
 
-// Test route
 app.get('/api/test', (req, res) => {
-  res.send({ status: 'ok', message: 'Backend is working!' });
+  res.send({ 
+    status: 'ok', 
+    message: 'Backend is working!',
+    dbStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
+  });
 });
 
 // Models
