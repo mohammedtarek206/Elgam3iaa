@@ -258,10 +258,13 @@ app.get('/api/attendance', auth, async (req, res) => {
 
 app.post('/api/attendance', auth, async (req, res) => {
   try {
+    console.log('📥 Incoming Attendance Record:', JSON.stringify(req.body, null, 2));
     const record = new Attendance(req.body);
     await record.save();
+    console.log('✅ Attendance saved successfully ID:', record._id);
     res.send(record);
   } catch (err) {
+    console.error('❌ Error saving attendance:', err);
     res.status(400).send({ message: err.message });
   }
 });

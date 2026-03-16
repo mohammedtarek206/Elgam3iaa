@@ -24,38 +24,52 @@ const AttendanceManager = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
+      console.log('Fetching people and attendance data...');
       const [studRes, sheikhRes, classRes, attRes] = await Promise.all([
         fetch(`${API_URL}/students`, { headers }),
         fetch(`${API_URL}/sheikhs`, { headers }),
         fetch(`${API_URL}/classes`, { headers }),
         fetch(`${API_URL}/attendance`, { headers })
       ]);
+
+      if (!studRes.ok || !sheikhRes.ok || !classRes.ok || !attRes.ok) {
+        console.error('One or more requests failed:', {
+          stud: studRes.status,
+          sheikh: sheikhRes.status,
+          class: classRes.status,
+          att: attRes.status
+        });
+        return;
+      }
+
       const [sData, shData, cData, aData] = await Promise.all([
         studRes.json(),
         sheikhRes.json(),
         classRes.json(),
         attRes.json()
       ]);
-      setStudents(sData);
-      setSheikhs(shData);
-      setClasses(cData);
-      setAttendanceHistory(aData);
 
-      // Check if today's attendance is already recorded for both types
-      const today = new Date().toISOString().split('T')[0];
-      const todayAtt = aData.filter(h => h.date === today);
-      
-      const newAttState = {};
-      aData.forEach(h => {
-        const type = h.attendanceType === 'student' ? 'students' : 'sheikhs';
-        h.records.forEach(r => {
-          newAttState[`${type}_${r.personId}_${h.date}`] = r.status;
+      if (Array.isArray(sData)) setStudents(sData);
+      if (Array.isArray(shData)) setSheikhs(shData);
+      if (Array.isArray(cData)) setClasses(cData);
+      if (Array.isArray(aData)) {
+        setAttendanceHistory(aData);
+        
+        const newAttState = {};
+        aData.forEach(h => {
+          const type = h.attendanceType === 'student' ? 'students' : 'sheikhs';
+          if (h.records && Array.isArray(h.records)) {
+            h.records.forEach(r => {
+              newAttState[`${type}_${r.personId}_${h.date}`] = r.status;
+            });
+          }
         });
-      });
-      setAttendance(newAttState);
+        setAttendance(newAttState);
+        console.log('Attendance state hydrated:', Object.keys(newAttState).length, 'records');
+      }
 
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error in fetchPeople:', err);
     }
   };
 
@@ -97,6 +111,7 @@ const AttendanceManager = () => {
     }
 
     try {
+      console.log('Saving attendance for:', activeTab, 'Records:', records.length);
       const res = await fetch(`${API_URL}/attendance`, {
         method: 'POST',
         headers: headers,
@@ -108,10 +123,15 @@ const AttendanceManager = () => {
       });
       if (res.ok) {
         alert('تم حفظ الحضور بنجاح');
-        fetchPeople(); // Refresh history
+        await fetchPeople(); // Ensure list is refreshed
+      } else {
+        const errBody = await res.json();
+        console.error('Save failed:', errBody);
+        alert(`فشل الحفظ: ${errBody.message || 'خطأ غير معروف'}`);
       }
     } catch (err) {
       console.error('Error saving attendance:', err);
+      alert('حدث خطأ أثناء الاتصال بالسيرفر');
     }
   };
 
