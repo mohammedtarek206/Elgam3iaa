@@ -19,11 +19,13 @@ const FinanceManager = () => {
   }, []);
 
   const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
     try {
       const [transRes, studRes, sheikhRes] = await Promise.all([
-        fetch(`${API_URL}/transactions`),
-        fetch(`${API_URL}/students`),
-        fetch(`${API_URL}/sheikhs`)
+        fetch(`${API_URL}/transactions`, { headers }),
+        fetch(`${API_URL}/students`, { headers }),
+        fetch(`${API_URL}/sheikhs`, { headers })
       ]);
       const [transData, studData, sheikhData] = await Promise.all([
         transRes.json(),
@@ -54,7 +56,7 @@ const FinanceManager = () => {
     totalExpense: transactions.filter(t => t.type === 'مصروف').reduce((acc, t) => acc + (t.amount || 0), 0),
   };
 
-  const handleAddTransaction = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
