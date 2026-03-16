@@ -13,4 +13,4 @@ const sheikhSchema = new mongoose.Schema({
   studentsCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Sheikh', sheikhSchema);
+module.exports = mongoose.models.Sheikh || mongoose.model('Sheikh', sheikhSchema);

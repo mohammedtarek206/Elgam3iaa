@@ -8,4 +8,4 @@ const grantSchema = new mongoose.Schema({
   reason: String
 }, { timestamps: true });
 
-module.exports = mongoose.model('Grant', grantSchema);
+module.exports = mongoose.models.Grant || mongoose.model('Grant', grantSchema);

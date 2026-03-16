@@ -55,17 +55,22 @@ const AttendanceManager = () => {
       if (Array.isArray(aData)) {
         setAttendanceHistory(aData);
         
-        const newAttState = {};
+          const newAttState = {};
+        console.log('Hydrating attendance for', aData.length, 'history records');
         aData.forEach(h => {
           const type = h.attendanceType === 'student' ? 'students' : 'sheikhs';
           if (h.records && Array.isArray(h.records)) {
             h.records.forEach(r => {
-              newAttState[`${type}_${r.personId}_${h.date}`] = r.status;
+              // Ensure personId is a string for key mapping
+              const pId = r.personId?.toString();
+              if (pId) {
+                newAttState[`${type}_${pId}_${h.date}`] = r.status;
+              }
             });
           }
         });
         setAttendance(newAttState);
-        console.log('Attendance state hydrated:', Object.keys(newAttState).length, 'records');
+        console.log('Attendance state hydrated. Current activeTab:', activeTab);
       }
 
     } catch (err) {
