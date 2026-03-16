@@ -57,9 +57,12 @@ function App() {
     return (
       <div className="app-container" dir="rtl">
         <header className="main-header">
-          <div className="header-info">
-            <h1>الجمعية الشرعية كفر طلا</h1>
-            <span className="subtitle">مكتب تحفيظ القران الكريم</span>
+          <div className="header-brand">
+            <img src="/شعار_الجمعية_الشرعية.png" alt="اللوجو" className="header-logo" />
+            <div className="header-info">
+              <h1>الجمعية الشرعية كفر طلا</h1>
+              <span className="subtitle">مكتب تحفيظ القران الكريم</span>
+            </div>
           </div>
         </header>
         <main className="content">
@@ -69,30 +72,45 @@ function App() {
     );
   }
 
-  const renderHome = () => (
-    <div className="dashboard-grid">
-      {menuItems.map((item) => (
-        <button 
-          key={item.id} 
-          className="menu-card fade-in" 
-          onClick={() => setCurrentPage(item.id)}
-        >
-          <div className="icon-wrapper" style={{ backgroundColor: `${item.color}20`, color: item.color }}>
-            <item.icon size={48} />
+  const renderHome = () => {
+    const rows = [
+      menuItems.slice(0, 4),
+      menuItems.slice(4, 7),
+      menuItems.slice(7, 9)
+    ];
+
+    return (
+      <div className="pyramid-container">
+        {rows.map((row, idx) => (
+          <div key={idx} className={`menu-row row-${idx + 1}`}>
+            {row.map((item) => (
+              <button 
+                key={item.id} 
+                className="menu-card fade-in" 
+                onClick={() => setCurrentPage(item.id)}
+              >
+                <div className="icon-wrapper" style={{ backgroundColor: `${item.color}20`, color: item.color }}>
+                  <item.icon size={48} />
+                </div>
+                <span className="menu-label">{item.label}</span>
+              </button>
+            ))}
           </div>
-          <span className="menu-label">{item.label}</span>
-        </button>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="app-container" dir="rtl">
       <header className="main-header">
-        <div className="header-info">
-          <h1>الجمعية الشرعية كفر طلا</h1>
-          <span className="subtitle">مكتب تحفيظ القران الكريم</span>
-          <span className="user-welcome">مرحباً، {user.username}</span>
+        <div className="header-brand">
+          <img src="/شعار_الجمعية_الشرعية.png" alt="اللوجو" className="header-logo" />
+          <div className="header-info">
+            <h1>الجمعية الشرعية كفر طلا</h1>
+            <span className="subtitle">مكتب تحفيظ القران الكريم</span>
+            <span className="user-welcome">مرحباً، {user.username}</span>
+          </div>
         </div>
         <div className="header-actions">
           <button className="icon-btn" title="بحث"><Search size={24} /></button>
@@ -201,14 +219,36 @@ function App() {
           font-size: 1.1rem;
         }
 
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .header-brand {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .header-logo {
+          width: 100px;
+          height: 100px;
+          object-fit: contain;
+          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .pyramid-container {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
+          align-items: center;
+          padding: 20px 0;
+        }
+
+        .menu-row {
+          display: flex;
           gap: 24px;
-          padding: 12px;
+          justify-content: center;
+          width: 100%;
         }
 
         .menu-card {
+          width: 220px;
           background: var(--white);
           padding: 32px 16px;
           border-radius: var(--radius);
@@ -218,7 +258,8 @@ function App() {
           align-items: center;
           gap: 16px;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          border: 2px solid transparent;
+          border: 2px solid transparent; backdrop-filter: blur(8px);
+          background: rgba(255, 255, 255, 0.9);
         }
 
         .menu-card:hover {
