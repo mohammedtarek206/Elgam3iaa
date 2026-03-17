@@ -26,7 +26,11 @@ const GrantsManager = () => {
     try {
       const res = await fetch(`${API_URL}/grants`, { headers }); // Use headers object
       const data = await res.json();
-      setGrants(data);
+      if (Array.isArray(data)) {
+        setGrants(data);
+      } else {
+        console.error('API returned non-array for grants:', data);
+      }
       setLoading(false);
     } catch (err) {
       console.error('Error fetching grants:', err);

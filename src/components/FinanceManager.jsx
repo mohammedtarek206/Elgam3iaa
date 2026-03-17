@@ -6,11 +6,23 @@ const API_URL = '/api';
 
 const FinanceManager = () => {
   const [activeTab, setActiveTab] = useState('summary');
-  const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('cache_transactions')) || []);
-  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
-  const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
-  const [classes, setClasses] = useState(() => JSON.parse(localStorage.getItem('cache_classes')) || []);
-  const [loading, setLoading] = useState(!transactions.length);
+  const [transactions, setTransactions] = useState(() => {
+    const cached = JSON.parse(localStorage.getItem('cache_transactions'));
+    return Array.isArray(cached) ? cached : [];
+  });
+  const [students, setStudents] = useState(() => {
+    const cached = JSON.parse(localStorage.getItem('cache_students'));
+    return Array.isArray(cached) ? cached : [];
+  });
+  const [sheikhs, setSheikhs] = useState(() => {
+    const cached = JSON.parse(localStorage.getItem('cache_sheikhs'));
+    return Array.isArray(cached) ? cached : [];
+  });
+  const [classes, setClasses] = useState(() => {
+    const cached = JSON.parse(localStorage.getItem('cache_classes'));
+    return Array.isArray(cached) ? cached : [];
+  });
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -32,16 +44,27 @@ const FinanceManager = () => {
         transRes.json(),
         initRes.json()
       ]);
-      setTransactions(transData);
-      setStudents(initData.students);
-      setSheikhs(initData.sheikhs);
-      setClasses(initData.classes || []);
-
-      // Update Cache
-      localStorage.setItem('cache_transactions', JSON.stringify(transData));
-      localStorage.setItem('cache_students', JSON.stringify(initData.students));
-      localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
-      localStorage.setItem('cache_classes', JSON.stringify(initData.classes || []));
+      if (Array.isArray(transData)) {
+        setTransactions(transData);
+        localStorage.setItem('cache_transactions', JSON.stringify(transData));
+      } else {
+        console.error('Invalid transactions data:', transData);
+      }
+      
+      if (initData.students && Array.isArray(initData.students)) {
+        setStudents(initData.students);
+        localStorage.setItem('cache_students', JSON.stringify(initData.students));
+      }
+      
+      if (initData.sheikhs && Array.isArray(initData.sheikhs)) {
+        setSheikhs(initData.sheikhs);
+        localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
+      }
+      
+      if (initData.classes && Array.isArray(initData.classes)) {
+        setClasses(initData.classes);
+        localStorage.setItem('cache_classes', JSON.stringify(initData.classes));
+      }
 
       setLoading(false);
     } catch (err) {
