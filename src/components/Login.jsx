@@ -314,27 +314,28 @@ const Login = ({ onLogin }) => {
         }
 
         .quick-links-grid {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
         }
 
         .quick-link-card {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 15px;
-          width: 100%;
+          justify-content: center;
+          gap: 10px;
           background: #ffffff;
           border: 2px solid #f1f5f9;
-          padding: 16px 20px;
+          padding: 15px 10px;
           border-radius: 16px;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          text-align: right;
+          text-align: center;
         }
 
         .quick-link-card:hover {
-          transform: translateY(-3px);
+          transform: translateY(-5px);
           box-shadow: 0 10px 25px rgba(0,0,0,0.05);
           border-color: transparent;
         }
@@ -343,8 +344,8 @@ const Login = ({ onLogin }) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 50px;
-          height: 50px;
+          width: 45px;
+          height: 45px;
           border-radius: 12px;
           flex-shrink: 0;
           transition: all 0.3s ease;
@@ -353,17 +354,18 @@ const Login = ({ onLogin }) => {
         .ql-text {
           display: flex;
           flex-direction: column;
+          align-items: center;
           gap: 4px;
         }
 
         .ql-title {
-          font-size: 1.1rem;
+          font-size: 1rem;
           font-weight: 800;
           color: #1e293b;
         }
 
         .ql-desc {
-          font-size: 0.85rem;
+          font-size: 0.75rem;
           font-weight: 600;
           color: #64748b;
         }
@@ -394,6 +396,20 @@ const Login = ({ onLogin }) => {
         .sheikh-link:hover {
           background: #fffbeb;
           border-color: #fed7aa;
+        }
+
+        @media (max-width: 600px) {
+          .quick-links-grid {
+            grid-template-columns: 1fr;
+          }
+          .quick-link-card {
+            flex-direction: row;
+            text-align: right;
+            justify-content: flex-start;
+          }
+          .ql-text {
+            align-items: flex-start;
+          }
         }
 
         @media (max-width: 480px) {
