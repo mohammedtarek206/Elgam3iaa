@@ -94,11 +94,11 @@ const ExamsManager = () => {
     const token = localStorage.getItem('token');
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `${API_URL}/exams/${editingId}` : `${API_URL}/exams`;
-    
+
     try {
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -108,14 +108,14 @@ const ExamsManager = () => {
         fetchExams();
         setShowForm(false);
         setEditingId(null);
-        setFormData({ 
-          name: '', 
-          date: new Date().toISOString().split('T')[0], 
-          className: '', 
-          examiner: '', 
+        setFormData({
+          name: '',
+          date: new Date().toISOString().split('T')[0],
+          className: '',
+          examiner: '',
           notes: '',
           examModel: 'أ',
-          results: [] 
+          results: []
         });
       }
     } catch (err) {
@@ -209,11 +209,11 @@ const ExamsManager = () => {
               <div className="form-grid">
                 <div className="form-group">
                   <label>اسم الاختبار/المسابقة</label>
-                  <input required placeholder="مثلاً: اختبار شهر مارس" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <input required placeholder="مثلاً: اختبار شهر مارس" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>التاريخ</label>
-                  <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                  <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                 </div>
                 {!editingId ? (
                   <div className="form-group">
@@ -226,19 +226,19 @@ const ExamsManager = () => {
                 ) : (
                   <div className="form-group">
                     <label>الفصل (غير قابل للتعديل)</label>
-                    <input readOnly value={formData.className} style={{background: '#f9f9f9', cursor: 'not-allowed'}} />
+                    <input readOnly value={formData.className} style={{ background: '#f9f9f9', cursor: 'not-allowed' }} />
                   </div>
                 )}
                 <div className="form-group">
                   <label>المحفظ المختبر (الشيخ)</label>
-                  <select required value={formData.examiner} onChange={e => setFormData({...formData, examiner: e.target.value})}>
+                  <select required value={formData.examiner} onChange={e => setFormData({ ...formData, examiner: e.target.value })}>
                     <option value="">اختر الشيخ...</option>
                     {sheikhs.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
                   <label>نموذج الاختبار الافتراضي</label>
-                  <select value={formData.examModel} onChange={e => setFormData({...formData, examModel: e.target.value})}>
+                  <select value={formData.examModel} onChange={e => setFormData({ ...formData, examModel: e.target.value })}>
                     <option value="أ">نموذج أ</option>
                     <option value="ب">نموذج ب</option>
                     <option value="ج">نموذج ج</option>
@@ -247,39 +247,39 @@ const ExamsManager = () => {
                 </div>
                 <div className="form-group full-width">
                   <label>ملاحظات عامة</label>
-                  <textarea rows="2" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea>
+                  <textarea rows="2" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })}></textarea>
                 </div>
               </div>
 
               <div className="results-entry-section">
                 <div className="section-title-flex">
                   <h4>رصد درجات الطلاب</h4>
-                  <div className="flex-actions" style={{display: 'flex', gap: '10px'}}>
+                  <div className="flex-actions" style={{ display: 'flex', gap: '10px' }}>
                     <div className="student-search-add">
-                      <select 
-                        className="inline-input" 
-                        style={{width: '200px'}}
+                      <select
+                        className="inline-input"
+                        style={{ width: '200px' }}
                         onChange={(e) => {
                           const studentId = e.target.value;
                           if (!studentId) return;
                           const student = students.find(s => s._id === studentId);
                           if (student && !formData.results.find(r => r.studentId === studentId)) {
-                              setFormData({
-                                ...formData,
-                                results: [
-                                  ...formData.results,
-                                  {
-                                    studentName: student.name,
-                                    studentId: student._id,
-                                    score: '',
-                                    grade: '',
-                                    reward: '',
-                                    examModel: formData.examModel,
-                                    examiner: formData.examiner,
-                                    notes: ''
-                                  }
-                                ]
-                              });
+                            setFormData({
+                              ...formData,
+                              results: [
+                                ...formData.results,
+                                {
+                                  studentName: student.name,
+                                  studentId: student._id,
+                                  score: '',
+                                  grade: '',
+                                  reward: '',
+                                  examModel: formData.examModel,
+                                  examiner: formData.examiner,
+                                  notes: ''
+                                }
+                              ]
+                            });
                           }
                           e.target.value = "";
                         }}
@@ -304,8 +304,8 @@ const ExamsManager = () => {
                           examiner: formData.examiner,
                           notes: ''
                         }));
-                        if(newOnes.length > 0) {
-                          setFormData({...formData, results: [...formData.results, ...newOnes]});
+                        if (newOnes.length > 0) {
+                          setFormData({ ...formData, results: [...formData.results, ...newOnes] });
                         }
                       }}>إضافة باقي الفصل</button>
                     )}
@@ -328,38 +328,38 @@ const ExamsManager = () => {
                         <tr key={idx}>
                           <td className="font-bold">{res.studentName}</td>
                           <td>
-                            <input 
-                              type="number" 
-                              className="inline-input" 
-                              style={{width: '60px'}}
-                              value={res.score} 
+                            <input
+                              type="number"
+                              className="inline-input"
+                              style={{ width: '60px' }}
+                              value={res.score}
                               onChange={e => {
                                 const newRes = [...formData.results];
                                 newRes[idx].score = e.target.value;
-                                setFormData({...formData, results: newRes});
-                              }} 
+                                setFormData({ ...formData, results: newRes });
+                              }}
                             />
                           </td>
                           <td>
-                            <input 
-                              className="inline-input" 
-                              value={res.grade} 
+                            <input
+                              className="inline-input"
+                              value={res.grade}
                               placeholder="ممتاز..."
                               onChange={e => {
                                 const newRes = [...formData.results];
                                 newRes[idx].grade = e.target.value;
-                                setFormData({...formData, results: newRes});
-                              }} 
+                                setFormData({ ...formData, results: newRes });
+                              }}
                             />
                           </td>
                           <td>
-                            <select 
+                            <select
                               className="inline-input"
-                              value={res.examModel} 
+                              value={res.examModel}
                               onChange={e => {
                                 const newRes = [...formData.results];
                                 newRes[idx].examModel = e.target.value;
-                                setFormData({...formData, results: newRes});
+                                setFormData({ ...formData, results: newRes });
                               }}
                             >
                               <option value="أ">أ</option>
@@ -369,23 +369,23 @@ const ExamsManager = () => {
                             </select>
                           </td>
                           <td>
-                            <input 
-                              className="inline-input" 
-                              value={res.notes} 
+                            <input
+                              className="inline-input"
+                              value={res.notes}
                               onChange={e => {
                                 const newRes = [...formData.results];
                                 newRes[idx].notes = e.target.value;
-                                setFormData({...formData, results: newRes});
-                              }} 
+                                setFormData({ ...formData, results: newRes });
+                              }}
                             />
                           </td>
                           <td>
-                            <button 
-                              type="button" 
-                              className="remove-res-btn" 
+                            <button
+                              type="button"
+                              className="remove-res-btn"
                               onClick={() => {
                                 const newRes = formData.results.filter((_, i) => i !== idx);
-                                setFormData({...formData, results: newRes});
+                                setFormData({ ...formData, results: newRes });
                               }}
                               title="حذف من الاختبار"
                             >
@@ -398,7 +398,7 @@ const ExamsManager = () => {
                   </table>
                 </div>
               </div>
-              
+
               <div className="form-actions">
                 <button type="submit" className="submit-btn">{editingId ? 'تحديث النتائج' : 'حفظ الاختبار'}</button>
                 <button type="button" className="cancel-btn" onClick={() => { setShowForm(false); setEditingId(null); }}>إلغاء</button>
@@ -437,12 +437,12 @@ const ExamsManager = () => {
                     </tr>
                   ))}
                   {(!viewingResults.results || viewingResults.results.length === 0) && (
-                    <tr><td colSpan="5" style={{textAlign: 'center'}}>لا توجد نتائج مسجلة</td></tr>
+                    <tr><td colSpan="5" style={{ textAlign: 'center' }}>لا توجد نتائج مسجلة</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <div className="modal-footer" style={{marginTop: '20px', textAlign: 'left'}}>
+            <div className="modal-footer" style={{ marginTop: '20px', textAlign: 'left' }}>
               <p><strong>ملاحظات عامة:</strong> {viewingResults.notes || 'لا توجد'}</p>
               <p><strong>الممتحن الرئيسي:</strong> {viewingResults.examiner}</p>
             </div>
@@ -464,7 +464,7 @@ const ExamsManager = () => {
               </tr>
             </thead>
             <tbody>
-              {exams.slice(0, 10).flatMap(exam => 
+              {exams.slice(0, 10).flatMap(exam =>
                 (exam.results || []).map((res, i) => (
                   <tr key={`${exam._id}-${i}`}>
                     <td className="font-bold">{res.studentName}</td>
@@ -476,7 +476,7 @@ const ExamsManager = () => {
                 ))
               ).slice(0, 10)}
               {exams.length === 0 && (
-                <tr><td colSpan="5" style={{textAlign: 'center'}}>لا توجد نتائج متاحة</td></tr>
+                <tr><td colSpan="5" style={{ textAlign: 'center' }}>لا توجد نتائج متاحة</td></tr>
               )}
             </tbody>
           </table>
@@ -582,43 +582,211 @@ const ExamsManager = () => {
           border-radius: 8px;
         }
 
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.85);
+          z-index: 2000;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
         .modal-content {
-          max-width: 800px;
+          max-width: none;
+          width: 100%;
+          height: 100vh;
+          max-height: none;
+          overflow-y: hidden;
+          padding: 30px;
+          display: flex;
+          flex-direction: column;
+          border-radius: 0;
+          background: white;
+        }
+
+        .modal-content form {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .form-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+          margin-bottom: 20px;
+        }
+
+        .results-entry-section {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          margin-top: 10px;
+          padding-top: 15px;
+          border-top: 2px solid #f1f1f1;
+        }
+
+        .table-container.mini {
+          flex: 1;
+          max-height: none;
+          overflow-y: auto;
+          margin-top: 10px;
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          background: #fafafa;
+        }
+
+        .table-container.mini table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+        }
+
+        .table-container.mini th {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          background: #f8f9fa;
+          color: var(--primary);
+          padding: 15px 12px;
+          font-weight: 800;
+          border-bottom: 2px solid #eee;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .table-container.mini td {
+          padding: 8px 12px;
+          border-bottom: 1px solid #eee;
+          background: white;
+        }
+
+        .inline-input {
+          padding: 8px 12px;
+          border: 1.5px solid #e0e0e0;
+          border-radius: 8px;
+          font-family: inherit;
+          font-size: 0.95rem;
+          transition: all 0.2s;
+          width: 100%;
+        }
+
+        .inline-input:focus {
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+          outline: none;
+        }
+
+        .font-bold {
+          font-weight: 700;
+          color: var(--primary);
+        }
+
+        .remove-res-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #fff5f5;
+          color: #ff5252;
+          border: 1px solid #ffe3e3;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .remove-res-btn:hover {
+          background: #ff5252;
+          color: white;
+          transform: scale(1.1);
+        }
+
+        .form-actions {
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #eee;
         }
 
         .exam-card {
           position: relative;
+          background: white;
+          border: 1px solid #edf2f7;
+          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .exam-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+          border-color: var(--primary);
         }
 
         .exam-delete-btn {
           position: absolute;
-          top: 10px;
-          left: 10px;
-          color: #e74c3c;
+          top: 15px;
+          left: 15px;
+          color: #a0aec0;
           cursor: pointer;
-          opacity: 0.3;
-          transition: opacity 0.2s;
+          transition: color 0.2s;
           padding: 5px;
-        }
-
-        .exam-card:hover .exam-delete-btn {
-          opacity: 1;
-        }
-
-        .remove-res-btn {
-          color: #e74c3c;
-          background: none;
-          border: none;
-          cursor: pointer;
+          background: #f7fafc;
+          border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
+        .exam-delete-btn:hover {
+          color: #e53e3e;
+          background: #fff5f5;
+        }
+
         .student-search-add select {
-          border-color: var(--accent);
+          border: 2px solid var(--accent);
+          background: white;
           color: var(--primary);
           font-weight: 700;
+          cursor: pointer;
+          height: 42px;
+        }
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 25px;
+          padding-bottom: 15px;
+          border-bottom: 2px solid var(--accent);
+        }
+
+        .modal-header h3 {
+          font-size: 1.5rem;
+          color: var(--primary);
+          margin: 0;
+        }
+
+        .close-btn {
+          background: #f7fafc;
+          border: none;
+          color: #718096;
+          cursor: pointer;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        
+        .close-btn:hover {
+          background: #e53e3e;
+          color: white;
         }
       `}</style>
     </div>
