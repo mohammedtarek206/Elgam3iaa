@@ -4,6 +4,21 @@ import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
 
+const SURAH_LIST = [
+  "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال", "التوبة", "يونس",
+  "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء", "الكهف", "مريم", "طه", 
+  "الأنبياء", "الحج", "المؤمنون", "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم",
+  "لقمان", "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر",
+  "فصلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح", "الحجرات", "ق",
+  "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة", "الحديد", "المجادلة", "الحشر", "الممتحنة",
+  "الصف", "الجمعة", "المنافقون", "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج",
+  "نوح", "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات", "عبس",
+  "التكوير", "الانفطار", "المطففين", "الانشقاق", "البروج", "الطارق", "الأعلى", "الغاشية", "الفجر", "البلد",
+  "الشمس", "الليل", "الضحى", "الشرح", "التين", "العلق", "القدر", "البينة", "الزلزلة", "العاديات",
+  "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر",
+  "المسد", "الإخلاص", "الفلق", "الناس"
+];
+
 const StudentManager = () => {
   const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
   const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
@@ -388,12 +403,31 @@ const StudentManager = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>المستوى (مثلاً: جزء عم)</label>
-                  <input required value={formData.level} onChange={e => setFormData({...formData, level: e.target.value})} />
+                  <label>مستوى الحفظ الحالي</label>
+                  <select 
+                    required 
+                    value={formData.level} 
+                    onChange={e => setFormData({...formData, level: e.target.value})}
+                  >
+                    <option value="">اختر المستوى...</option>
+                    <option value="تمهيدي">تمهيدي (نور بيان)</option>
+                    <option value="جزء عم">جزء عم</option>
+                    <option value="جزء تبارك">جزء تبارك</option>
+                    <option value="5 أجزاء">5 أجزاء</option>
+                    <option value="10 أجزاء">10 أجزاء</option>
+                    <option value="نصف القرآن">نصف القرآن</option>
+                    <option value="القرآن كاملاً">القرآن كاملاً</option>
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>السورة الحالية</label>
-                  <input value={formData.currentSurah} onChange={e => setFormData({...formData, currentSurah: e.target.value})} />
+                  <select 
+                    value={formData.currentSurah} 
+                    onChange={e => setFormData({...formData, currentSurah: e.target.value})}
+                  >
+                    <option value="">اختر السورة...</option>
+                    {SURAH_LIST.map((s, idx) => <option key={idx} value={s}>{idx + 1}. {s}</option>)}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>الحالة الاجتماعية</label>
