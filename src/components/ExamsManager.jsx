@@ -123,6 +123,22 @@ const ExamsManager = () => {
     }
   };
 
+  const handleDeleteExam = async (id) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا الاختبار نهائياً؟')) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_URL}/exams/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchExams();
+      }
+    } catch (err) {
+      console.error('Error deleting exam:', err);
+    }
+  };
+
   const exportToExcel = () => {
     const dataToExport = exams.map(e => ({
       'اسم الاختبار': e.name,
@@ -158,6 +174,9 @@ const ExamsManager = () => {
       <div className="exams-grid">
         {exams.map(exam => (
           <div key={exam._id} className="exam-card">
+            <div className="exam-delete-btn" onClick={() => handleDeleteExam(exam._id)} title="حذف الاختبار">
+              <X size={18} />
+            </div>
             <div className="exam-icon">
               <Trophy size={32} color="#f1c40f" />
             </div>
@@ -167,17 +186,17 @@ const ExamsManager = () => {
                 <div className="meta-item"><Calendar size={16} /> {exam.date}</div>
                 <div className="meta-item"><Users size={16} /> {exam.className}</div>
               </div>
-                <div className="exam-meta">
-                  <div className="meta-item"><CheckCircle size={16} /> ممتحن: {exam.examiner}</div>
-                </div>
-              </div>
-              <div className="exam-actions-btns">
-                <button className="view-results-btn" onClick={() => setViewingResults(exam)}>عرض الدرجات</button>
-                <button className="edit-results-btn" onClick={() => openEditForm(exam)}>رصد الاختبار</button>
+              <div className="exam-meta">
+                <div className="meta-item"><CheckCircle size={16} /> ممتحن: {exam.examiner}</div>
               </div>
             </div>
-          ))}
-        </div>
+            <div className="exam-actions-btns">
+              <button className="view-results-btn" onClick={() => setViewingResults(exam)}>عرض الدرجات</button>
+              <button className="edit-results-btn" onClick={() => openEditForm(exam)}>رصد الاختبار</button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {showForm && (
         <div className="modal-overlay">
@@ -232,10 +251,45 @@ const ExamsManager = () => {
                 </div>
               </div>
 
-              {formData.className && (
-                <div className="results-entry-section">
-                  <div className="section-title-flex" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                    <h4>رصد درجات الطلاب - {formData.className}</h4>
+              <div className="results-entry-section">
+                <div className="section-title-flex">
+                  <h4>رصد درجات الطلاب</h4>
+                  <div className="flex-actions" style={{display: 'flex', gap: '10px'}}>
+                    <div className="student-search-add">
+                      <select 
+                        className="inline-input" 
+                        style={{width: '200px'}}
+                        onChange={(e) => {
+                          const studentId = e.target.value;
+                          if (!studentId) return;
+                          const student = students.find(s => s._id === studentId);
+                          if (student && !formData.results.find(r => r.studentId === studentId)) {
+                              setFormData({
+                                ...formData,
+                                results: [
+                                  ...formData.results,
+                                  {
+                                    studentName: student.name,
+                                    studentId: student._id,
+                                    score: '',
+                                    grade: '',
+                                    reward: '',
+                                    examModel: formData.examModel,
+                                    examiner: formData.examiner,
+                                    notes: ''
+                                  }
+                                ]
+                              });
+                          }
+                          e.target.value = "";
+                        }}
+                      >
+                        <option value="">إضافة طالب يدوياً...</option>
+                        {students.filter(s => !formData.results.find(r => r.studentId === s._id)).map(s => (
+                          <option key={s._id} value={s._id}>{s.name} ({s.className})</option>
+                        ))}
+                      </select>
+                    </div>
                     {editingId && (
                       <button type="button" className="refresh-students-btn" onClick={() => {
                         const classStudents = students.filter(s => s.className === formData.className);
@@ -253,83 +307,98 @@ const ExamsManager = () => {
                         if(newOnes.length > 0) {
                           setFormData({...formData, results: [...formData.results, ...newOnes]});
                         }
-                      }}>تحديث قائمة الطلاب</button>
+                      }}>إضافة باقي الفصل</button>
                     )}
                   </div>
-                  <div className="table-container mini">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>الطالب</th>
-                          <th>الدرجة</th>
-                          <th>التقدير</th>
-                          <th>النموذج</th>
-                          <th>ملاحظات</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {formData.results.map((res, idx) => (
-                          <tr key={idx}>
-                            <td>{res.studentName}</td>
-                            <td>
-                              <input 
-                                type="number" 
-                                className="inline-input" 
-                                style={{width: '60px'}}
-                                value={res.score} 
-                                onChange={e => {
-                                  const newRes = [...formData.results];
-                                  newRes[idx].score = e.target.value;
-                                  setFormData({...formData, results: newRes});
-                                }} 
-                              />
-                            </td>
-                            <td>
-                              <input 
-                                className="inline-input" 
-                                value={res.grade} 
-                                placeholder="ممتاز..."
-                                onChange={e => {
-                                  const newRes = [...formData.results];
-                                  newRes[idx].grade = e.target.value;
-                                  setFormData({...formData, results: newRes});
-                                }} 
-                              />
-                            </td>
-                            <td>
-                              <select 
-                                className="inline-input"
-                                value={res.examModel} 
-                                onChange={e => {
-                                  const newRes = [...formData.results];
-                                  newRes[idx].examModel = e.target.value;
-                                  setFormData({...formData, results: newRes});
-                                }}
-                              >
-                                <option value="أ">أ</option>
-                                <option value="ب">ب</option>
-                                <option value="ج">ج</option>
-                                <option value="د">د</option>
-                              </select>
-                            </td>
-                            <td>
-                              <input 
-                                className="inline-input" 
-                                value={res.notes} 
-                                onChange={e => {
-                                  const newRes = [...formData.results];
-                                  newRes[idx].notes = e.target.value;
-                                  setFormData({...formData, results: newRes});
-                                }} 
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
                 </div>
-              )}
+                <div className="table-container mini">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>الطالب</th>
+                        <th>الدرجة</th>
+                        <th>التقدير</th>
+                        <th>النموذج</th>
+                        <th>ملاحظات</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.results.map((res, idx) => (
+                        <tr key={idx}>
+                          <td className="font-bold">{res.studentName}</td>
+                          <td>
+                            <input 
+                              type="number" 
+                              className="inline-input" 
+                              style={{width: '60px'}}
+                              value={res.score} 
+                              onChange={e => {
+                                const newRes = [...formData.results];
+                                newRes[idx].score = e.target.value;
+                                setFormData({...formData, results: newRes});
+                              }} 
+                            />
+                          </td>
+                          <td>
+                            <input 
+                              className="inline-input" 
+                              value={res.grade} 
+                              placeholder="ممتاز..."
+                              onChange={e => {
+                                const newRes = [...formData.results];
+                                newRes[idx].grade = e.target.value;
+                                setFormData({...formData, results: newRes});
+                              }} 
+                            />
+                          </td>
+                          <td>
+                            <select 
+                              className="inline-input"
+                              value={res.examModel} 
+                              onChange={e => {
+                                const newRes = [...formData.results];
+                                newRes[idx].examModel = e.target.value;
+                                setFormData({...formData, results: newRes});
+                              }}
+                            >
+                              <option value="أ">أ</option>
+                              <option value="ب">ب</option>
+                              <option value="ج">ج</option>
+                              <option value="د">د</option>
+                            </select>
+                          </td>
+                          <td>
+                            <input 
+                              className="inline-input" 
+                              value={res.notes} 
+                              onChange={e => {
+                                const newRes = [...formData.results];
+                                newRes[idx].notes = e.target.value;
+                                setFormData({...formData, results: newRes});
+                              }} 
+                            />
+                          </td>
+                          <td>
+                            <button 
+                              type="button" 
+                              className="remove-res-btn" 
+                              onClick={() => {
+                                const newRes = formData.results.filter((_, i) => i !== idx);
+                                setFormData({...formData, results: newRes});
+                              }}
+                              title="حذف من الاختبار"
+                            >
+                              <X size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
               <div className="form-actions">
                 <button type="submit" className="submit-btn">{editingId ? 'تحديث النتائج' : 'حفظ الاختبار'}</button>
                 <button type="button" className="cancel-btn" onClick={() => { setShowForm(false); setEditingId(null); }}>إلغاء</button>
@@ -515,6 +584,41 @@ const ExamsManager = () => {
 
         .modal-content {
           max-width: 800px;
+        }
+
+        .exam-card {
+          position: relative;
+        }
+
+        .exam-delete-btn {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          color: #e74c3c;
+          cursor: pointer;
+          opacity: 0.3;
+          transition: opacity 0.2s;
+          padding: 5px;
+        }
+
+        .exam-card:hover .exam-delete-btn {
+          opacity: 1;
+        }
+
+        .remove-res-btn {
+          color: #e74c3c;
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .student-search-add select {
+          border-color: var(--accent);
+          color: var(--primary);
+          font-weight: 700;
         }
       `}</style>
     </div>

@@ -457,6 +457,15 @@ app.put('/api/exams/:id', auth, async (req, res) => {
   }
 });
 
+app.delete('/api/exams/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await Exam.findByIdAndDelete(req.params.id);
+    res.send({ message: 'تم حذف الاختبار بنجاح' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 // --- Stats Endpoint for Dashboard ---
 app.get('/api/stats', auth, async (req, res) => {
   try {
