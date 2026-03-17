@@ -31,16 +31,23 @@ const SheikhManager = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const res = await fetch(`${API_URL}/init-data`, { headers });
-      const data = await res.json();
-      setSheiks(data.sheikhs);
-      setClasses(data.classes);
-      setStudents(data.students);
-      
+      const [initRes, attRes] = await Promise.all([
+        fetch(`${API_URL}/init-data`, { headers }),
+        fetch(`${API_URL}/attendance?type=sheikh`, { headers })
+      ]);
+      const [initData, attData] = await Promise.all([
+        initRes.json(),
+        attRes.json()
+      ]);
+      if (initData.classes) setClasses(initData.classes);
+      if (initData.sheikhs) setSheikhs(initData.sheikhs);
+      if (initData.students) setStudents(initData.students);
+      if (Array.isArray(attData)) setAttendanceHistory(attData);
+
       // Update Cache
-      localStorage.setItem('cache_sheikhs', JSON.stringify(data.sheikhs));
-      localStorage.setItem('cache_classes', JSON.stringify(data.classes));
-      localStorage.setItem('cache_students', JSON.stringify(data.students));
+      if (initData.classes) localStorage.setItem('cache_classes', JSON.stringify(initData.classes));
+      if (initData.sheikhs) localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
+      if (initData.students) localStorage.setItem('cache_students', JSON.stringify(initData.students));
       
       setLoading(false);
     } catch (err) {

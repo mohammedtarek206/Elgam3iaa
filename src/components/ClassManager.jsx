@@ -29,15 +29,15 @@ const ClassManager = () => {
         initRes.json(),
         attRes.json()
       ]);
-      setClasses(initData.classes);
-      setSheikhs(initData.sheikhs);
-      setStudents(initData.students);
-      setAttendanceHistory(attData);
+      if (initData.classes) setClasses(initData.classes);
+      if (initData.sheikhs) setSheikhs(initData.sheikhs);
+      if (initData.students) setStudents(initData.students);
+      if (Array.isArray(attData)) setAttendanceHistory(attData);
 
       // Update Cache
-      localStorage.setItem('cache_classes', JSON.stringify(initData.classes));
-      localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
-      localStorage.setItem('cache_students', JSON.stringify(initData.students));
+      if (initData.classes) localStorage.setItem('cache_classes', JSON.stringify(initData.classes));
+      if (initData.sheikhs) localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
+      if (initData.students) localStorage.setItem('cache_students', JSON.stringify(initData.students));
 
       setLoading(false);
     } catch (err) {
