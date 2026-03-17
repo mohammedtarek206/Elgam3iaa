@@ -398,6 +398,15 @@ app.post('/api/transactions', auth, async (req, res) => {
   }
 });
 
+app.delete('/api/transactions/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await Transaction.findByIdAndDelete(req.params.id);
+    res.send({ message: 'Transaction deleted' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 // --- Grant Routes ---
 app.get('/api/grants', auth, async (req, res) => {
   try {

@@ -234,6 +234,28 @@ const ClassManager = () => {
               </div>
             </div>
             <div className="card-footer no-print">
+              <button className="export-class-btn" onClick={() => {
+                const classStudents = (students || []).filter(s => s && s.className === cls.name);
+                if (classStudents.length === 0) {
+                  alert('لا يوجد طلاب في هذا الفصل حالياً');
+                  return;
+                }
+                const dataToExport = classStudents.map(s => ({
+                  'اسم الطالب': s.name,
+                  'رقم الهاتف': s.phone,
+                  'المحفظ': s.sheikh,
+                  'المستوى': s.level,
+                  'تاريخ الاشتراك': s.joinDate,
+                  'الرقم القومي': s.nationalId || '---'
+                }));
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Students");
+                XLSX.writeFile(wb, `طلاب_فصل_${cls.name}.xlsx`);
+              }}>
+                <FileDown size={14} />
+                تصدير طلاب الفصل
+              </button>
               <button className="stats-btn" onClick={() => {
                 const classStudents = (students || []).filter(s => s && s.className === cls.name);
                 const classStudentIds = classStudents.map(s => s._id);
@@ -337,15 +359,21 @@ const ClassManager = () => {
           padding-top: 15px;
           border-top: 1px dashed #ddd;
           text-align: center;
+          display: flex;
+          gap: 10px;
+          justify-content: center;
         }
-        .stats-btn {
-          background: #3498db;
-          color: white;
+        .stats-btn, .export-class-btn {
           padding: 8px 16px;
           border-radius: 6px;
           font-weight: 700;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
+        .stats-btn { background: #3498db; color: white; }
+        .export-class-btn { background: #27ae60; color: white; }
         @media print {
           .no-print { display: none !important; }
           .class-manager { padding: 0 !important; }

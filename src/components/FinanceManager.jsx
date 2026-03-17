@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Wallet, TrendingUp, TrendingDown, Clock, Calendar, FileDown, Printer, X, Users, UserCheck, Settings, Receipt } from 'lucide-react';
+import { Plus, Search, Wallet, TrendingUp, TrendingDown, Clock, Calendar, FileDown, Printer, X, Users, UserCheck, Settings, Receipt, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
@@ -107,6 +107,25 @@ const FinanceManager = () => {
   const filteredTransactions = transactions.filter(t =>
     (t.notes && t.notes.includes(searchTerm)) || t.category.includes(searchTerm)
   );
+  
+  const handleDeleteTransaction = async (id) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذه المعاملة؟')) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_URL}/transactions/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'فشل الحذف');
+      }
+    } catch (err) {
+      alert('خطأ في الاتصال بالسيرفر');
+    }
+  };
 
   const renderPersonList = (list, type) => (
     <div className="person-selection-grid">
@@ -165,6 +184,13 @@ const FinanceManager = () => {
                       <td>{t.date}</td>
                       <td>{t.category}</td>
                       <td>{t.amount} ج.م</td>
+                      {JSON.parse(localStorage.getItem('user'))?.role === 'admin' && (
+                        <td className="no-print">
+                          <button className="delete-btn-mini" onClick={() => handleDeleteTransaction(t._id)}>
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {transactions.filter(t => t.refId === selectedPerson._id).length === 0 && (
@@ -278,6 +304,13 @@ const FinanceManager = () => {
                             {t.type === 'دخل' ? 'إيراد' : 'مصروف'}
                           </span>
                         </td>
+                        {JSON.parse(localStorage.getItem('user'))?.role === 'admin' && (
+                          <td className="no-print">
+                            <button className="delete-btn-table" onClick={() => handleDeleteTransaction(t._id)} title="حذف">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -647,6 +680,34 @@ const FinanceManager = () => {
 
         .history-table th { background: #f8f9fa; padding: 12px; text-align: right; font-size: 0.9rem; }
         .history-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+
+        .delete-btn-table, .delete-btn-mini {
+          padding: 6px;
+          border-radius: 6px;
+          color: #e74c3c;
+          background: #fdedec;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .delete-btn-table:hover, .delete-btn-mini:hover {
+          background: #e74c3c;
+          color: white;
+        }
+
+        @media (max-width: 768px) {
+          .person-selection-grid {
+            grid-template-columns: 1fr;
+            height: auto;
+          }
+          .list-side {
+            border-left: none;
+            border-bottom: 1px solid var(--gray-light);
+            padding-bottom: 20px;
+          }
+        }
       `}</style>
     </div>
   );

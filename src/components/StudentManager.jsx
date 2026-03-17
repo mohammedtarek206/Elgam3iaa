@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Check, Star, Clock, FileDown, Printer } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Check, Star, Clock, FileDown, Printer, Fingerprint, Heart } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
@@ -215,6 +215,27 @@ const StudentManager = () => {
               <strong>{student.currentSurah || 'غير محدد'}</strong>
             </div>
           </div>
+          <div className="profile-stat-card">
+            <Fingerprint size={32} color="#9b59b6" />
+            <div className="stat-info">
+              <span>الرقم القومي</span>
+              <strong>{student.nationalId || '---'}</strong>
+            </div>
+          </div>
+          <div className="profile-stat-card">
+            <Heart size={32} color="#e74c3c" />
+            <div className="stat-info">
+              <span>الحالة</span>
+              <strong>{student.socialStatus || 'عادي'}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="profile-details-list">
+          <div className="detail-row"><span>رقم الهاتف:</span> <strong>{student.phone}</strong></div>
+          <div className="detail-row"><span>الفصل:</span> <strong>{student.className || student.class}</strong></div>
+          <div className="detail-row"><span>المحفظ:</span> <strong>{student.sheikh}</strong></div>
+          <div className="detail-row"><span>تاريخ الاشتراك:</span> <strong>{student.joinDate}</strong></div>
         </div>
 
         <div className="profile-tabs">
@@ -291,6 +312,7 @@ const StudentManager = () => {
               <th>الشيخ</th>
               <th>الفصل</th>
               <th>المستوى</th>
+              {user.role === 'admin' && <th>الرقم القومي</th>}
               <th>الرسوم</th>
               <th className="no-print">العمليات</th>
             </tr>
@@ -304,6 +326,7 @@ const StudentManager = () => {
                 <td>{student.sheikh}</td>
                 <td>{student.className || student.class}</td>
                 <td><span className="level-badge">{student.level}</span></td>
+                {user.role === 'admin' && <td>{student.nationalId || '---'}</td>}
                 <td>{student.monthlyFees} ج.م</td>
                 <td className="actions no-print">
                   <button className="edit-btn" onClick={() => handleOpenForm(student)}><Edit2 size={18} /></button>
@@ -379,6 +402,10 @@ const StudentManager = () => {
                 <div className="form-group">
                   <label>تاريخ الميلاد</label>
                   <input type="date" value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>الرقم القومي</label>
+                  <input maxLength="14" value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label>الرسوم الشهرية</label>
@@ -614,7 +641,27 @@ const StudentManager = () => {
           th { background: #f9f9f9 !important; color: black !important; }
         }
 
+        .profile-details-list {
+          margin-top: 24px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          background: #f8f9fa;
+          padding: 20px;
+          border-radius: 12px;
+        }
+
+        .detail-row {
+          display: flex;
+          gap: 8px;
+          font-size: 1rem;
+        }
+
+        .detail-row span { color: #7f8c8d; font-weight: 600; }
+        .detail-row strong { color: var(--primary); }
+
         @media (max-width: 600px) {
+          .profile-details-list { grid-template-columns: 1fr; }
           .form-grid { grid-template-columns: 1fr; }
           .full-width { grid-column: span 1; }
           .header-actions { flex-direction: column; gap: 5px; }

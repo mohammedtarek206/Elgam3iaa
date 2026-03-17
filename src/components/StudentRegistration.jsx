@@ -113,12 +113,17 @@ const StudentRegistration = ({ onBack }) => {
               </select>
             </div>
             <div className="input-group">
-              <label><Heart size={18} /> الحالة (اجتماعية/صحية)</label>
-              <input 
-                placeholder="مثال: يتيم / سليم / احتياجات خاصة" 
+              <label><Heart size={18} /> الحالة (الاجتماعية)</label>
+              <select 
+                required
                 value={formData.socialStatus} 
-                onChange={e => setFormData({...formData, socialStatus: e.target.value})} 
-              />
+                onChange={e => setFormData({...formData, socialStatus: e.target.value})}
+              >
+                <option value="">اختر الحالة</option>
+                <option value="عادي">عادي</option>
+                <option value="يتيم">يتيم</option>
+                <option value="غير قادر">غير قادر</option>
+              </select>
             </div>
           </div>
 
