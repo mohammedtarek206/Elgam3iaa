@@ -87,6 +87,13 @@ const Login = ({ onLogin }) => {
           <button type="submit" className="login-btn" disabled={loading}>
             {loading ? 'جاري التحميل...' : 'دخول'}
           </button>
+
+          <div className="login-footer">
+            <p>طالب جديد؟</p>
+            <button type="button" className="register-link-btn" onClick={() => window.dispatchEvent(new CustomEvent('open-registration'))}>
+              تقديم طلب التحاق جديد
+            </button>
+          </div>
         </form>
       </div>
 
@@ -223,6 +230,26 @@ const Login = ({ onLogin }) => {
           background: #cbd5e1;
           cursor: not-allowed;
           transform: none;
+        }
+
+        .login-footer {
+          text-align: center;
+          margin-top: 10px;
+          border-top: 1px solid #eee;
+          padding-top: 15px;
+        }
+
+        .login-footer p {
+          font-size: 0.9rem;
+          margin-bottom: 5px;
+          color: #7f8c8d;
+        }
+
+        .register-link-btn {
+          color: var(--accent);
+          font-weight: 700;
+          font-size: 1rem;
+          text-decoration: underline;
         }
 
         @media (max-width: 480px) {

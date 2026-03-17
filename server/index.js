@@ -15,6 +15,7 @@ const Attendance = require('./models/Attendance');
 const Transaction = require('./models/Transaction');
 const Grant = require('./models/Grant');
 const Exam = require('./models/Exam');
+const StudentRequest = require('./models/StudentRequest');
 
 const app = express();
 app.use(cors());
@@ -195,6 +196,64 @@ app.delete('/api/students/:id', [auth, isAdmin], async (req, res) => {
   try {
     await Student.findByIdAndDelete(req.params.id);
     res.send({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// --- Student Request Routes (New) ---
+app.post('/api/public/register', async (req, res) => {
+  try {
+    const request = new StudentRequest(req.body);
+    await request.save();
+    res.status(201).send({ message: 'تم استلام طلبك بنجاح، سيتم مراجعته من قبل الإدارة' });
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.get('/api/admin/student-requests', [auth, isAdmin], async (req, res) => {
+  try {
+    const requests = await StudentRequest.find({ status: 'pending' }).sort({ createdAt: -1 });
+    res.send(requests);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const { className, sheikh } = req.body;
+    const request = await StudentRequest.findById(req.params.id);
+    if (!request) return res.status(404).send({ message: 'الطلب غير موجود' });
+
+    // Create Student
+    const student = new Student({
+      name: request.name,
+      phone: request.phone,
+      sheikh: sheikh,
+      className: className,
+      level: request.level,
+      socialStatus: request.socialStatus,
+      nationalId: request.nationalId,
+      joinDate: new Date().toISOString().split('T')[0]
+    });
+
+    await student.save();
+    
+    // Delete Request after approval
+    await StudentRequest.findByIdAndDelete(req.params.id);
+    
+    res.send({ message: 'تم قبول الطالب وتوجيهه لقسم الطلاب', student });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/admin/reject-student/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await StudentRequest.findByIdAndDelete(req.params.id);
+    res.send({ message: 'تم رفض الطلب وحذفه' });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }

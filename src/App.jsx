@@ -11,7 +11,8 @@ import {
   FileText,
   Search,
   Plus,
-  Printer
+  Printer,
+  UserPlus
 } from 'lucide-react';
 
 const menuItems = [
@@ -23,6 +24,7 @@ const menuItems = [
   { id: 'finance', label: 'إدارة النقدية', icon: Wallet, color: '#1abc9c' },
   { id: 'grants', label: 'المنح والعطاءات', icon: Gift, color: '#f1c40f' },
   { id: 'exams', label: 'الاختبارات والمسابقات', icon: Trophy, color: '#d35400' },
+  { id: 'registration', label: 'طلبات الالتحاق', icon: UserPlus, color: '#f39c12' },
   { id: 'reports', label: 'التقارير', icon: FileText, color: '#7f8c8d' },
 ];
 
@@ -35,12 +37,22 @@ import GrantsManager from './components/GrantsManager';
 import ExamsManager from './components/ExamsManager';
 import ReportsManager from './components/ReportsManager';
 import Dashboard from './components/Dashboard';
+import RegistrationManager from './components/RegistrationManager';
+import StudentRegistration from './components/StudentRegistration';
 
 import Login from './components/Login';
 import { LogOut } from 'lucide-react';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Listen for registration event from Login
+  React.useEffect(() => {
+    const handleOpenReg = () => setIsRegistering(true);
+    window.addEventListener('open-registration', handleOpenReg);
+    return () => window.removeEventListener('open-registration', handleOpenReg);
+  }, []);
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -54,6 +66,9 @@ function App() {
   };
 
   if (!user) {
+    if (isRegistering) {
+      return <StudentRegistration onBack={() => setIsRegistering(false)} />;
+    }
     return (
       <div className="app-container" dir="rtl">
         <header className="main-header">
@@ -82,7 +97,7 @@ function App() {
     if (user.role === 'admin') {
       rows.push(filteredItems.slice(0, 4));
       rows.push(filteredItems.slice(4, 7));
-      rows.push(filteredItems.slice(7, 9));
+      rows.push(filteredItems.slice(7, 10)); // Adjusted for extra item
     } else {
       // For manager, simpler 3-2 layout
       rows.push(filteredItems.slice(0, 3));
@@ -153,6 +168,7 @@ function App() {
         {currentPage === 'reports' && <ReportsManager />}
         
         {currentPage === 'dashboard' && <Dashboard />}
+        {currentPage === 'registration' && <RegistrationManager />}
       </main>
 
       <style>{`
