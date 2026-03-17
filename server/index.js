@@ -128,6 +128,14 @@ const auth = async (req, res, next) => {
   }
 };
 
+const isAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).send({ message: 'غير مسموح! هذه الصلاحية للمدير فقط' });
+  }
+};
+
 // --- Student Routes ---
 app.get('/api/students', auth, async (req, res) => {
   try {
@@ -161,7 +169,7 @@ app.put('/api/students/:id', auth, async (req, res) => {
   }
 });
 
-app.delete('/api/students/:id', auth, async (req, res) => {
+app.delete('/api/students/:id', [auth, isAdmin], async (req, res) => {
   try {
     await Student.findByIdAndDelete(req.params.id);
     res.send({ message: 'Deleted' });
@@ -199,7 +207,7 @@ app.put('/api/sheikhs/:id', auth, async (req, res) => {
   }
 });
 
-app.delete('/api/sheikhs/:id', auth, async (req, res) => {
+app.delete('/api/sheikhs/:id', [auth, isAdmin], async (req, res) => {
   try {
     await Sheikh.findByIdAndDelete(req.params.id);
     res.send({ message: 'Deleted' });
@@ -237,7 +245,7 @@ app.put('/api/classes/:id', auth, async (req, res) => {
   }
 });
 
-app.delete('/api/classes/:id', auth, async (req, res) => {
+app.delete('/api/classes/:id', [auth, isAdmin], async (req, res) => {
   try {
     await Class.findByIdAndDelete(req.params.id);
     res.send({ message: 'Deleted' });

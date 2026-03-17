@@ -11,6 +11,8 @@ const ClassManager = () => {
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [user] = useState(() => JSON.parse(localStorage.getItem('user')) || { role: 'admin' });
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -184,7 +186,9 @@ const ClassManager = () => {
               <h3>{cls.name}</h3>
               <div className="card-actions no-print">
                 <button onClick={() => handleOpenForm(cls)}><Edit2 size={16} /></button>
-                <button onClick={() => handleDelete(cls._id)} className="delete"><Trash2 size={16} /></button>
+                {user.role === 'admin' && (
+                  <button onClick={() => handleDelete(cls._id)} className="delete"><Trash2 size={16} /></button>
+                )}
               </div>
             </div>
             <div className="card-body">

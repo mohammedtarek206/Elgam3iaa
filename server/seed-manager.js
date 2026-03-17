@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -25,7 +25,7 @@ async function seedManager() {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected.');
 
-    const username = 'alsharea';
+    const username = 'Yahia';
     const password = '12345678';
 
     const existingUser = await User.findOne({ username });

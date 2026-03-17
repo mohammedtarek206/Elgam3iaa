@@ -11,6 +11,8 @@ const SheikhManager = () => {
   const [loading, setLoading] = useState(true);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
 
+  const [user] = useState(() => JSON.parse(localStorage.getItem('user')) || { role: 'admin' });
+
   useEffect(() => {
     fetchData();
     fetchAttendance();
@@ -304,7 +306,9 @@ const SheikhManager = () => {
                 <td>{students.filter(s => s.sheikh === sheikh.name).length}</td>
                 <td className="actions no-print">
                   <button className="edit-btn" onClick={() => handleOpenForm(sheikh)}><Edit2 size={18} /></button>
-                  <button className="delete-btn" onClick={() => handleDelete(sheikh._id)}><Trash2 size={18} /></button>
+                  {user.role === 'admin' && (
+                    <button className="delete-btn" onClick={() => handleDelete(sheikh._id)}><Trash2 size={18} /></button>
+                  )}
                 </td>
               </tr>
             ))}
