@@ -73,12 +73,31 @@ const ExamsManager = () => {
     setFormData({ ...formData, className, results: initialResults });
   };
 
+  const [editingId, setEditingId] = useState(null);
+
+  const openEditForm = (exam) => {
+    setFormData({
+      name: exam.name,
+      date: exam.date,
+      className: exam.className,
+      examiner: exam.examiner || '',
+      notes: exam.notes || '',
+      examModel: exam.examModel || 'أ',
+      results: exam.results || []
+    });
+    setEditingId(exam._id);
+    setShowForm(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
+    const method = editingId ? 'PUT' : 'POST';
+    const url = editingId ? `${API_URL}/exams/${editingId}` : `${API_URL}/exams`;
+    
     try {
-      const res = await fetch(`${API_URL}/exams`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method,
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -88,6 +107,7 @@ const ExamsManager = () => {
       if (res.ok) {
         fetchExams();
         setShowForm(false);
+        setEditingId(null);
         setFormData({ 
           name: '', 
           date: new Date().toISOString().split('T')[0], 
@@ -147,21 +167,24 @@ const ExamsManager = () => {
                 <div className="meta-item"><Calendar size={16} /> {exam.date}</div>
                 <div className="meta-item"><Users size={16} /> {exam.className}</div>
               </div>
-              <div className="exam-meta">
-                <div className="meta-item"><CheckCircle size={16} /> ممتحن: {exam.examiner}</div>
+                <div className="exam-meta">
+                  <div className="meta-item"><CheckCircle size={16} /> ممتحن: {exam.examiner}</div>
+                </div>
+              </div>
+              <div className="exam-actions-btns">
+                <button className="view-results-btn" onClick={() => setViewingResults(exam)}>عرض الدرجات</button>
+                <button className="edit-results-btn" onClick={() => openEditForm(exam)}>رصد الاختبار</button>
               </div>
             </div>
-            <button className="view-results-btn" onClick={() => setViewingResults(exam)}>عرض النتائج ({exam.results?.length || 0})</button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
       {showForm && (
         <div className="modal-overlay">
           <div className="modal-content fade-in">
             <div className="modal-header">
-              <h3>إضافة اختبار/مسابقة جديدة</h3>
-              <button className="close-btn" onClick={() => setShowForm(false)}><X size={24} /></button>
+              <h3>{editingId ? 'رصد درجات طلاب وقائمة الاختبار' : 'إضافة اختبار/مسابقة جديدة'}</h3>
+              <button className="close-btn" onClick={() => { setShowForm(false); setEditingId(null); }}><X size={24} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
@@ -173,13 +196,20 @@ const ExamsManager = () => {
                   <label>التاريخ</label>
                   <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
                 </div>
-                <div className="form-group">
-                  <label>الفصل المختار</label>
-                  <select required value={formData.className} onChange={e => handleClassChange(e.target.value)}>
-                    <option value="">اختر الفصل...</option>
-                    {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
-                  </select>
-                </div>
+                {!editingId ? (
+                  <div className="form-group">
+                    <label>الفصل المختار</label>
+                    <select required value={formData.className} onChange={e => handleClassChange(e.target.value)}>
+                      <option value="">اختر الفصل...</option>
+                      {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label>الفصل (غير قابل للتعديل)</label>
+                    <input readOnly value={formData.className} style={{background: '#f9f9f9', cursor: 'not-allowed'}} />
+                  </div>
+                )}
                 <div className="form-group">
                   <label>المحفظ المختبر (الشيخ)</label>
                   <select required value={formData.examiner} onChange={e => setFormData({...formData, examiner: e.target.value})}>
@@ -204,7 +234,28 @@ const ExamsManager = () => {
 
               {formData.className && (
                 <div className="results-entry-section">
-                  <h4>رصد درجات الطلاب - {formData.className}</h4>
+                  <div className="section-title-flex" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
+                    <h4>رصد درجات الطلاب - {formData.className}</h4>
+                    {editingId && (
+                      <button type="button" className="refresh-students-btn" onClick={() => {
+                        const classStudents = students.filter(s => s.className === formData.className);
+                        const existingIds = (formData.results || []).map(r => r.studentId);
+                        const newOnes = classStudents.filter(s => !existingIds.includes(s._id)).map(s => ({
+                          studentName: s.name,
+                          studentId: s._id,
+                          score: '',
+                          grade: '',
+                          reward: '',
+                          examModel: formData.examModel,
+                          examiner: formData.examiner,
+                          notes: ''
+                        }));
+                        if(newOnes.length > 0) {
+                          setFormData({...formData, results: [...formData.results, ...newOnes]});
+                        }
+                      }}>تحديث قائمة الطلاب</button>
+                    )}
+                  </div>
                   <div className="table-container mini">
                     <table>
                       <thead>
@@ -280,8 +331,8 @@ const ExamsManager = () => {
                 </div>
               )}
               <div className="form-actions">
-                <button type="submit" className="submit-btn">حفظ الاختبار</button>
-                <button type="button" className="cancel-btn" onClick={() => setShowForm(false)}>إلغاء</button>
+                <button type="submit" className="submit-btn">{editingId ? 'تحديث النتائج' : 'حفظ الاختبار'}</button>
+                <button type="button" className="cancel-btn" onClick={() => { setShowForm(false); setEditingId(null); }}>إلغاء</button>
               </div>
             </form>
           </div>
@@ -409,46 +460,57 @@ const ExamsManager = () => {
 
         .meta-item { display: flex; align-items: center; gap: 6px; }
 
-        .view-results-btn {
-          width: 100%;
+        .exam-actions-btns {
+          display: flex;
+          gap: 8px;
+          margin-top: 10px;
+        }
+
+        .edit-results-btn {
+          flex: 1;
           padding: 10px;
-          background: var(--gray-light);
+          background: var(--primary);
+          color: white;
+          border-radius: 8px;
+          font-weight: 700;
+          transition: all 0.2s;
+        }
+
+        .edit-results-btn:hover {
+          background: var(--secondary);
+          transform: translateY(-2px);
+        }
+
+        .view-results-btn {
+          flex: 1;
+          padding: 10px;
+          background: #ecf0f1;
           border-radius: 8px;
           font-weight: 700;
           color: var(--primary);
         }
 
-        .grade-pill {
-          padding: 4px 10px;
-          border-radius: 4px;
-          font-weight: 700;
-          font-size: 0.8rem;
-        }
-
-        .grade-pill.excelent { background: #e8f5e9; color: #2e7d32; }
-
-        .results-entry-section {
-          margin-top: 24px;
-          border-top: 2px dashed #eee;
-          padding-top: 20px;
-        }
-
-        .results-entry-section h4 {
+        .section-title-flex {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 12px;
-          color: var(--secondary);
         }
 
-        .inline-input {
-          padding: 6px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-family: inherit;
-          width: 100%;
+        .refresh-students-btn {
+          background: var(--accent);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 0.8rem;
+          font-weight: 700;
         }
 
         .table-container.mini {
-          max-height: 300px;
+          max-height: 400px;
           overflow-y: auto;
+          border: 1px solid #eee;
+          border-radius: 8px;
         }
 
         .modal-content {

@@ -448,6 +448,15 @@ app.post('/api/exams', auth, async (req, res) => {
   }
 });
 
+app.put('/api/exams/:id', auth, async (req, res) => {
+  try {
+    const exam = await Exam.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.send(exam);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
 // --- Stats Endpoint for Dashboard ---
 app.get('/api/stats', auth, async (req, res) => {
   try {
