@@ -57,13 +57,10 @@ function App() {
     return (
       <div className="app-container" dir="rtl">
         <header className="main-header">
-          <div className="header-brand">
-            <img src="/شعار_الجمعية_الشرعية.png" alt="اللوجو" className="header-logo" />
             <div className="header-info">
               <h1>الجمعية الشرعية كفر طلا</h1>
               <span className="subtitle">مكتب تحفيظ القران الكريم</span>
             </div>
-          </div>
         </header>
         <main className="content">
           <Login onLogin={setUser} />
