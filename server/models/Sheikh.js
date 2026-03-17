@@ -10,6 +10,7 @@ const sheikhSchema = new mongoose.Schema({
   hireDate: String,
   salary: Number,
   notes: String,
+  isNewRegistration: { type: Boolean, default: false },
   studentsCount: { type: Number, default: 0 }
 }, { timestamps: true });
 

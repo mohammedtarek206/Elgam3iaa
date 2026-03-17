@@ -309,6 +309,7 @@ const SheikhManager = () => {
                 <td className="font-bold flex-cell" onClick={() => handleViewProfile(sheikh)}>
                   <User size={18} className="user-icon" />
                    {sheikh.name}
+                   {sheikh.isNewRegistration && <span className="new-badge">جديد</span>}
                 </td>
                 <td className="text-primary font-bold">{sheikh.qualification || '---'}</td>
                 <td>{sheikh.nationalId || '---'}</td>
@@ -499,6 +500,17 @@ const SheikhManager = () => {
         }
 
         .status-dot.green { background: #2ecc71; }
+
+        .new-badge {
+          background: #ffeaa7;
+          color: #d35400;
+          font-size: 0.7rem;
+          padding: 2px 8px;
+          border-radius: 12px;
+          margin-right: 8px;
+          font-weight: 800;
+          border: 1px solid #fdcb6e;
+        }
       `}</style>
     </div>
   );

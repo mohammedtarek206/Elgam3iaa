@@ -360,7 +360,8 @@ app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
       address: request.address,
       assignedClasses: [className], // Assigning to the list of classes
       hireDate: new Date().toISOString().split('T')[0],
-      salary: 0 // default
+      salary: 0, // default
+      isNewRegistration: true
     });
 
     await sheikh.save();
