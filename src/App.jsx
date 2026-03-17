@@ -73,7 +73,7 @@ function App() {
     // Filter items based on role
     const allowedIds = user.role === 'admin' 
       ? menuItems.map(i => i.id) 
-      : ['students', 'sheikhs', 'attendance', 'finance', 'reports'];
+      : ['students', 'sheikhs', 'attendance', 'finance', 'classes'];
     
     const filteredItems = menuItems.filter(item => allowedIds.includes(item.id));
 
