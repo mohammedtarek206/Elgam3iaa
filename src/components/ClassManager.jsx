@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, X, User, DollarSign, Award, AlertTriangle, Users as UsersIcon, FileDown, Printer, Check } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Users, Clock, MapPin, FileDown, Printer, Check, Edit as Edit2Icon } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
@@ -200,7 +200,7 @@ const ClassManager = () => {
               </div>
               <div className="info-row">
                 <Users size={18} />
-                <span>عدد الطلاب: <strong>{students.filter(s => s.className === cls.name).length}</strong></span>
+                <span>عدد الطلاب: <strong>{(students || []).filter(s => s && s.className === cls.name).length}</strong></span>
               </div>
               <div className="info-row">
                 <Check size={18} color="#2ecc71" />
@@ -235,13 +235,13 @@ const ClassManager = () => {
             </div>
             <div className="card-footer no-print">
               <button className="stats-btn" onClick={() => {
-                const classStudents = students.filter(s => s.className === cls.name);
+                const classStudents = (students || []).filter(s => s && s.className === cls.name);
                 const classStudentIds = classStudents.map(s => s._id);
-                const presentCount = attendanceHistory.filter(h => h.attendanceType === 'student').reduce((acc, h) => {
-                  return acc + h.records.filter(r => classStudentIds.includes(r.personId) && (r.status === 'present' || r.status === 'late')).length;
+                const presentCount = (attendanceHistory || []).filter(h => h && h.attendanceType === 'student').reduce((acc, h) => {
+                  return acc + (h.records || []).filter(r => r && classStudentIds.includes(r.personId) && (r.status === 'present' || r.status === 'late')).length;
                 }, 0);
-                const totalCount = attendanceHistory.filter(h => h.attendanceType === 'student').reduce((acc, h) => {
-                  return acc + h.records.filter(r => classStudentIds.includes(r.personId)).length;
+                const totalCount = (attendanceHistory || []).filter(h => h && h.attendanceType === 'student').reduce((acc, h) => {
+                  return acc + (h.records || []).filter(r => r && classStudentIds.includes(r.personId)).length;
                 }, 0);
                 alert(`إحصائيات الفصل (${cls.name}):\n- إجمالي الطلاب: ${classStudents.length}\n- إجمالي أيام الحضور المسجلة: ${totalCount}\n- إجمالي مرات الحضور: ${presentCount}\n- النسبة العامة: ${totalCount > 0 ? Math.round((presentCount/totalCount)*100) : 0}%`);
               }}>عرض إحصائيات متقدمة</button>
