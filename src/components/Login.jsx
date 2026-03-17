@@ -40,7 +40,7 @@ const Login = ({ onLogin }) => {
       <div className="login-card">
         <div className="login-header">
           <div className="logo-icon">
-            <LogIn size={40} />
+            <img src="/شعار_الجمعية_الشرعية.png" alt="الجمعية الشرعية" className="login-logo-img" />
           </div>
           <h2>تسجيل الدخول</h2>
           <p>منصة الجمعية الشرعية</p>
@@ -115,16 +115,19 @@ const Login = ({ onLogin }) => {
         }
 
         .logo-icon {
-          width: 80px;
-          height: 80px;
-          background: var(--accent);
-          color: white;
-          border-radius: 20px;
+          width: 120px;
+          height: 120px;
           display: flex;
           align-items: center;
           justify-content: center;
           margin: 0 auto 16px;
-          box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .login-logo-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
         }
 
         .login-header h2 {
