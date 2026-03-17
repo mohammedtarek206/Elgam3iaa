@@ -212,6 +212,70 @@ app.post('/api/public/register', async (req, res) => {
   }
 });
 
+// --- Public Guardian Follow-up Route ---
+app.get('/api/public/student-followup/:nationalId', async (req, res) => {
+  try {
+    const { nationalId } = req.params;
+    
+    // 1. Find the student
+    const student = await Student.findOne({ nationalId });
+    if (!student) {
+      return res.status(404).send({ message: 'عذراً، لا يوجد طالب مسجل بهذا الرقم القومي.' });
+    }
+
+    // 2. Fetch Attendance (only extracting this student's status)
+    const attendances = await Attendance.find({ 
+      'records.personId': student._id.toString() 
+    }).sort({ date: -1 }).limit(30); // Last 30 records
+    
+    const studentAttendance = attendances.map(att => {
+      const record = att.records.find(r => r.personId === student._id.toString());
+      return {
+        date: att.date,
+        status: record ? record.status : 'absent'
+      };
+    });
+
+    // 3. Fetch Transactions (matching student._id as refId)
+    const transactions = await Transaction.find({
+      refId: student._id.toString()
+    }).sort({ date: -1 });
+
+    // 4. Fetch Exams (matching student._id in results array)
+    const allExams = await Exam.find({
+      'results.studentId': student._id
+    }).sort({ date: -1 });
+
+    const studentExams = allExams.map(exam => {
+      const result = exam.results.find(r => r.studentId && r.studentId.toString() === student._id.toString());
+      return {
+        examName: exam.name,
+        date: exam.date,
+        score: result ? result.score : 0,
+        grade: result ? result.grade : '',
+        reward: result ? result.reward : '',
+        notes: result ? result.notes : ''
+      };
+    });
+
+    res.send({
+      student: {
+        name: student.name,
+        className: student.className,
+        level: student.level,
+        currentSurah: student.currentSurah,
+        sheikh: student.sheikh,
+        joinDate: student.joinDate
+      },
+      attendance: studentAttendance,
+      transactions: transactions.map(t => ({ date: t.date, amount: t.amount, category: t.category, notes: t.notes })),
+      exams: studentExams
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 app.get('/api/admin/student-requests', [auth, isAdmin], async (req, res) => {
   try {
     const requests = await StudentRequest.find({ status: 'pending' }).sort({ createdAt: -1 });

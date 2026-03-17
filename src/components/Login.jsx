@@ -96,6 +96,12 @@ const Login = ({ onLogin }) => {
             <button type="button" className="register-link-btn" onClick={() => window.dispatchEvent(new CustomEvent('open-registration'))}>
               تقديم طلب التحاق جديد
             </button>
+            <div style={{ marginTop: '15px' }}>
+              <p>ولي أمر؟</p>
+              <button type="button" className="register-link-btn" style={{ color: '#2ecc71' }} onClick={() => window.dispatchEvent(new CustomEvent('open-parent-followup'))}>
+                متابعة ولي الأمر
+              </button>
+            </div>
           </div>
         </form>
       </div>
