@@ -258,7 +258,7 @@ const SheikhManager = () => {
     <div className="sheikh-manager">
       <div className="module-header no-print">
         <div className="header-left">
-          <h2>إدارة الشيوخ</h2>
+          <h2>إدارة المحفظين</h2>
           <span className="count-badge">{sheikhs.length} محفظ</span>
         </div>
         <div className="header-actions">
@@ -305,7 +305,7 @@ const SheikhManager = () => {
           <tbody>
             {filteredSheikhs.map((sheikh, index) => (
               <tr key={sheikh._id}>
-                <td>{index + 1}</td>
+                <td>{(index + 1)}</td>
                 <td className="font-bold flex-cell" onClick={() => handleViewProfile(sheikh)}>
                   <User size={18} className="user-icon" />
                    {sheikh.name}
@@ -338,13 +338,13 @@ const SheikhManager = () => {
         <div className="modal-overlay no-print">
           <div className="modal-content fade-in">
             <div className="modal-header">
-              <h3>{editingSheikh ? 'تعديل بيانات شيخ' : 'إضافة شيخ جديد'}</h3>
+              <h3>{editingSheikh ? 'تعديل بيانات محفظ' : 'إضافة محفظ جديد'}</h3>
               <button className="close-btn" onClick={() => setShowForm(false)}><X size={24} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-group">
-                  <label>اسم الشيخ</label>
+                  <label>اسم المحفظ</label>
                   <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div className="form-group">

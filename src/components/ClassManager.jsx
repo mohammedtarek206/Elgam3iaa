@@ -126,7 +126,7 @@ const ClassManager = () => {
   const exportToExcel = () => {
     const dataToExport = filteredClasses.map(c => ({
       'اسم الفصل': c.name,
-      'الشيخ': c.sheikh,
+      'المحفظ': c.sheikh,
       'عدد الطلاب': c.studentsCount,
       'المكان': c.location,
       'المواعيد': c.timing
@@ -196,7 +196,7 @@ const ClassManager = () => {
             <div className="card-body">
               <div className="info-row">
                 <Users size={18} />
-                <span>الشيخ المسؤول: <strong>{getSheikhsForClass(cls.name)}</strong></span>
+                <span>المحفظ المسؤول: <strong>{getSheikhsForClass(cls.name)}</strong></span>
               </div>
               <div className="info-row">
                 <Users size={18} />
@@ -260,7 +260,7 @@ const ClassManager = () => {
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-group">
-                  <label>اسم الفصل</label>
+                  <th>اسم المحفظ</th>
                   <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div className="form-group">
@@ -278,7 +278,7 @@ const ClassManager = () => {
               </div>
               <div className="form-actions">
                 <button type="submit" className="submit-btn" disabled={saving}>
-                  {saving ? 'جاري الحفظ...' : (editingClass ? 'حفظ التعديلات' : 'إضافة الفصل')}
+                  {saving ? 'جاري الحفظ...' : (editingSheikh ? 'حفظ التعديلات' : 'إضافة المحفظ')}
                 </button>
                 <button type="button" className="cancel-btn" onClick={() => setShowForm(false)}>إلغاء</button>
               </div>

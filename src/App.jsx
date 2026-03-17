@@ -17,7 +17,7 @@ import {
 const menuItems = [
   { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard, color: '#3498db' },
   { id: 'students', label: 'إدارة الطلاب', icon: Users, color: '#2ecc71' },
-  { id: 'sheikhs', label: 'إدارة الشيوخ', icon: UserRound, color: '#9b59b6' },
+  { id: 'sheikhs', label: 'إدارة المحفظين', icon: UserRound, color: '#9b59b6' },
   { id: 'classes', label: 'إدارة الفصول', icon: School, color: '#e67e22' },
   { id: 'attendance', label: 'الحضور والغياب', icon: CalendarCheck, color: '#e74c3c' },
   { id: 'finance', label: 'إدارة النقدية', icon: Wallet, color: '#1abc9c' },
