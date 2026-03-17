@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 const API_URL = '/api';
 
 const ClassManager = () => {
+  const [classes, setClasses] = useState([]);
   const [sheikhs, setSheikhs] = useState([]);
   const [students, setStudents] = useState([]);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
@@ -225,6 +226,19 @@ const ClassManager = () => {
                 <span>المواعيد: <strong>{cls.timing}</strong></span>
               </div>
             </div>
+            <div className="card-footer no-print">
+              <button className="stats-btn" onClick={() => {
+                const classStudents = students.filter(s => s.className === cls.name);
+                const classStudentIds = classStudents.map(s => s._id);
+                const presentCount = attendanceHistory.filter(h => h.attendanceType === 'student').reduce((acc, h) => {
+                  return acc + h.records.filter(r => classStudentIds.includes(r.personId) && (r.status === 'present' || r.status === 'late')).length;
+                }, 0);
+                const totalCount = attendanceHistory.filter(h => h.attendanceType === 'student').reduce((acc, h) => {
+                  return acc + h.records.filter(r => classStudentIds.includes(r.personId)).length;
+                }, 0);
+                alert(`إحصائيات الفصل (${cls.name}):\n- إجمالي الطلاب: ${classStudents.length}\n- إجمالي أيام الحضور المسجلة: ${totalCount}\n- إجمالي مرات الحضور: ${presentCount}\n- النسبة العامة: ${totalCount > 0 ? Math.round((presentCount/totalCount)*100) : 0}%`);
+              }}>عرض إحصائيات متقدمة</button>
+            </div>
           </div>
         ))}
       </div>
@@ -311,6 +325,20 @@ const ClassManager = () => {
 
         .info-row strong { color: var(--secondary); }
 
+        .card-footer {
+          margin-top: 20px;
+          padding-top: 15px;
+          border-top: 1px dashed #ddd;
+          text-align: center;
+        }
+        .stats-btn {
+          background: #3498db;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 0.9rem;
+        }
         @media print {
           .no-print { display: none !important; }
           .class-manager { padding: 0 !important; }

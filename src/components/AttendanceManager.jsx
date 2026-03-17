@@ -79,8 +79,9 @@ const AttendanceManager = () => {
   };
 
   const handleStatusChange = (type, id, status) => {
-    if (checkIsLocked(type)) {
-      alert('لا يمكن التعديل بعد حفظ الحضور لهذا اليوم');
+    // Only block if the specific person already has a saved status for today
+    if (isPersonLocked(type, id)) {
+      alert('تم بالفعل تسجيل حالة هذا الشخص لليوم ولا يمكن التعديل');
       return;
     }
     setAttendance({
@@ -89,9 +90,23 @@ const AttendanceManager = () => {
     });
   };
 
-  const checkIsLocked = (type) => {
+  const isPersonLocked = (type, id) => {
     const attType = type === 'students' ? 'student' : 'sheikh';
-    return attendanceHistory.some(h => h.date === selectedDate && h.attendanceType === attType);
+    const dayRecord = attendanceHistory.find(h => h.date === selectedDate && h.attendanceType === attType);
+    if (!dayRecord) return false;
+    return dayRecord.records.some(r => r.personId === id);
+  };
+
+  const checkIsLocked = (type) => {
+    // For the global button, we'll check if everyone in the current view is already locked
+    const dayRecord = attendanceHistory.find(h => h.date === selectedDate && (type === 'students' ? 'student' : 'sheikh'));
+    if (!dayRecord) return false;
+    
+    const currentList = type === 'students' 
+      ? students.filter(s => !selectedClass || s.className === selectedClass)
+      : sheikhs.filter(s => !selectedClass || (s.assignedClasses && s.assignedClasses.includes(selectedClass)));
+    
+    return currentList.every(p => dayRecord.records.some(r => r.personId === p._id));
   };
 
   const getStatus = (type, id) => attendance[`${type}_${id}_${selectedDate}`] || null;
@@ -102,7 +117,7 @@ const AttendanceManager = () => {
       personId: p._id,
       name: p.name,
       status: getStatus(activeTab, p._id)
-    })).filter(r => r.status);
+    })).filter(r => r.status && !isPersonLocked(activeTab, r.personId));
 
     if (records.length === 0) {
       alert('الرجاء تسجيل حالة واحدة على الأقل');

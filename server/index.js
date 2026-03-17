@@ -257,12 +257,28 @@ app.get('/api/attendance', auth, async (req, res) => {
 });
 
 app.post('/api/attendance', auth, async (req, res) => {
+  const { date, attendanceType, records } = req.body;
   try {
-    console.log('📥 Incoming Attendance Record:', JSON.stringify(req.body, null, 2));
-    const record = new Attendance(req.body);
-    await record.save();
-    console.log('✅ Attendance saved successfully ID:', record._id);
-    res.send(record);
+    console.log(`📥 Upserting Attendance for ${date} (${attendanceType})`);
+    
+    // Find existing document for this date and type
+    const existing = await Attendance.findOne({ date, attendanceType });
+    
+    if (existing) {
+      // Merge records: update existing ones, add new ones
+      const recordMap = new Map(existing.records.map(r => [r.personId, r]));
+      records.forEach(newRec => {
+        recordMap.set(newRec.personId, newRec);
+      });
+      existing.records = Array.from(recordMap.values());
+      await existing.save();
+      res.send(existing);
+    } else {
+      const record = new Attendance(req.body);
+      await record.save();
+      res.send(record);
+    }
+    console.log('✅ Attendance updated successfully');
   } catch (err) {
     console.error('❌ Error saving attendance:', err);
     res.status(400).send({ message: err.message });
