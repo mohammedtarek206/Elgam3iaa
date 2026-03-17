@@ -21,21 +21,17 @@ const ClassManager = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const [classRes, sheikhRes, studRes, attRes] = await Promise.all([
-        fetch(`${API_URL}/classes`, { headers }),
-        fetch(`${API_URL}/sheikhs`, { headers }),
-        fetch(`${API_URL}/students`, { headers }),
+      const [initRes, attRes] = await Promise.all([
+        fetch(`${API_URL}/init-data`, { headers }),
         fetch(`${API_URL}/attendance`, { headers })
       ]);
-      const [classData, sheikhData, studData, attData] = await Promise.all([
-        classRes.json(),
-        sheikhRes.json(),
-        studRes.json(),
+      const [initData, attData] = await Promise.all([
+        initRes.json(),
         attRes.json()
       ]);
-      setClasses(classData);
-      setSheikhs(sheikhData);
-      setStudents(studData);
+      setClasses(initData.classes);
+      setSheikhs(initData.sheikhs);
+      setStudents(initData.students);
       setAttendanceHistory(attData);
       setLoading(false);
     } catch (err) {

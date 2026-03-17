@@ -31,19 +31,11 @@ const StudentManager = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const [studRes, sheikhRes, classRes] = await Promise.all([
-        fetch(`${API_URL}/students`, { headers }),
-        fetch(`${API_URL}/sheikhs`, { headers }),
-        fetch(`${API_URL}/classes`, { headers })
-      ]);
-      const [studData, sheikhData, classData] = await Promise.all([
-        studRes.json(),
-        sheikhRes.json(),
-        classRes.json()
-      ]);
-      setStudents(studData);
-      setSheikhs(sheikhData);
-      setClasses(classData);
+      const res = await fetch(`${API_URL}/init-data`, { headers });
+      const data = await res.json();
+      setStudents(data.students);
+      setSheikhs(data.sheikhs);
+      setClasses(data.classes);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching students:', err);

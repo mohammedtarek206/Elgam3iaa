@@ -28,41 +28,45 @@ if (!process.env.JWT_SECRET) {
   console.warn('⚠️ WARNING: JWT_SECRET is not defined. Using default "secret_key"');
 }
 
-// Connect to MongoDB
+// MongoDB Connection Caching for Serverless
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
-  try {
-    if (mongoose.connection.readyState >= 1) return;
-    
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB Atlas');
-    
-    // Seed default admin
-    const adminExists = await User.findOne({ username: 'admin' });
-    if (!adminExists) {
-      const admin = new User({
-        username: 'admin',
-        password: 'password123',
-        role: 'admin'
-      });
-      await admin.save();
-      console.log('🚀 Default admin user created (admin/password123)');
-    } else {
-      console.log('ℹ️ Admin user already exists');
-    }
-  } catch (err) {
-    console.error('❌ MongoDB Connection Error:', err.message);
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+    };
+
+    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then((mongoose) => {
+      console.log('✅ Connected to MongoDB Atlas');
+      return mongoose;
+    });
   }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
 };
 
-// Connect on startup
-connectDB();
-
-// Middleware to ensure DB connection (for Vercel)
+// Middleware to ensure DB connection
 app.use(async (req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
+  try {
     await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).send({ message: "خطأ في الاتصال بقاعدة البيانات" });
   }
-  next();
 });
 
 app.get('/api/test', (req, res) => {
@@ -138,7 +142,20 @@ const isAdmin = (req, res, next) => {
   }
 };
 
-// --- Student Routes ---
+// --- Bulk Data Route for Optimization ---
+app.get('/api/init-data', auth, async (req, res) => {
+  try {
+    const [students, sheikhs, classes] = await Promise.all([
+      Student.find().sort({ createdAt: -1 }),
+      Sheikh.find().sort({ createdAt: -1 }),
+      Class.find().sort({ createdAt: -1 })
+    ]);
+    res.send({ students, sheikhs, classes });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 app.get('/api/students', auth, async (req, res) => {
   try {
     const students = await Student.find().sort({ createdAt: -1 });

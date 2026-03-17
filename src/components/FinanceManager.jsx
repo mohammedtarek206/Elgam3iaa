@@ -22,19 +22,17 @@ const FinanceManager = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const [transRes, studRes, sheikhRes] = await Promise.all([
+      const [transRes, initRes] = await Promise.all([
         fetch(`${API_URL}/transactions`, { headers }),
-        fetch(`${API_URL}/students`, { headers }),
-        fetch(`${API_URL}/sheikhs`, { headers })
+        fetch(`${API_URL}/init-data`, { headers })
       ]);
-      const [transData, studData, sheikhData] = await Promise.all([
+      const [transData, initData] = await Promise.all([
         transRes.json(),
-        studRes.json(),
-        sheikhRes.json()
+        initRes.json()
       ]);
       setTransactions(transData);
-      setStudents(studData);
-      setSheikhs(sheikhData);
+      setStudents(initData.students);
+      setSheikhs(initData.sheikhs);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);
