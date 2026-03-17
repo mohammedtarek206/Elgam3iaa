@@ -70,11 +70,24 @@ function App() {
   }
 
   const renderHome = () => {
-    const rows = [
-      menuItems.slice(0, 4),
-      menuItems.slice(4, 7),
-      menuItems.slice(7, 9)
-    ];
+    // Filter items based on role
+    const allowedIds = user.role === 'admin' 
+      ? menuItems.map(i => i.id) 
+      : ['students', 'sheikhs', 'attendance', 'finance', 'reports'];
+    
+    const filteredItems = menuItems.filter(item => allowedIds.includes(item.id));
+
+    // Calculate rows dynamically based on filtered list
+    const rows = [];
+    if (user.role === 'admin') {
+      rows.push(filteredItems.slice(0, 4));
+      rows.push(filteredItems.slice(4, 7));
+      rows.push(filteredItems.slice(7, 9));
+    } else {
+      // For manager, simpler 3-2 layout
+      rows.push(filteredItems.slice(0, 3));
+      rows.push(filteredItems.slice(3, 5));
+    }
 
     return (
       <div className="pyramid-container">
