@@ -16,6 +16,7 @@ const Transaction = require('./models/Transaction');
 const Grant = require('./models/Grant');
 const Exam = require('./models/Exam');
 const StudentRequest = require('./models/StudentRequest');
+const SheikhRequest = require('./models/SheikhRequest');
 
 const app = express();
 app.use(cors());
@@ -318,6 +319,64 @@ app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => 
 app.post('/api/admin/reject-student/:id', [auth, isAdmin], async (req, res) => {
   try {
     await StudentRequest.findByIdAndDelete(req.params.id);
+    res.send({ message: 'تم رفض الطلب وحذفه' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// --- Sheikh Request Routes (New) ---
+app.post('/api/public/register-sheikh', async (req, res) => {
+  try {
+    const request = new SheikhRequest(req.body);
+    await request.save();
+    res.status(201).send({ message: 'تم استلام طلبك بنجاح، سيتم مراجعته من قبل الإدارة' });
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.get('/api/admin/sheikh-requests', [auth, isAdmin], async (req, res) => {
+  try {
+    const requests = await SheikhRequest.find({ status: 'pending' }).sort({ createdAt: -1 });
+    res.send(requests);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const { className } = req.body;
+    const request = await SheikhRequest.findById(req.params.id);
+    if (!request) return res.status(404).send({ message: 'الطلب غير موجود' });
+
+    // Create Sheikh
+    const sheikh = new Sheikh({
+      name: request.name,
+      nationalId: request.nationalId,
+      qualification: request.qualification,
+      phone: request.phone,
+      address: request.address,
+      assignedClasses: [className], // Assigning to the list of classes
+      hireDate: new Date().toISOString().split('T')[0],
+      salary: 0 // default
+    });
+
+    await sheikh.save();
+    
+    // Delete Request after approval
+    await SheikhRequest.findByIdAndDelete(req.params.id);
+    
+    res.send({ message: 'تم قبول المحفظ وتعيينه للفصل بنجاح', sheikh });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/admin/reject-sheikh/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await SheikhRequest.findByIdAndDelete(req.params.id);
     res.send({ message: 'تم رفض الطلب وحذفه' });
   } catch (err) {
     res.status(500).send({ message: err.message });

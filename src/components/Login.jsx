@@ -102,6 +102,12 @@ const Login = ({ onLogin }) => {
                 متابعة ولي الأمر
               </button>
             </div>
+            <div style={{ marginTop: '15px' }}>
+              <p>محفظ جديد؟</p>
+              <button type="button" className="register-link-btn" style={{ color: '#d35400' }} onClick={() => window.dispatchEvent(new CustomEvent('open-sheikh-registration'))}>
+                تقديم طلب التحاق محفظ
+              </button>
+            </div>
           </div>
         </form>
       </div>

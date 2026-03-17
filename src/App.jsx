@@ -40,6 +40,7 @@ import Dashboard from './components/Dashboard';
 import RegistrationManager from './components/RegistrationManager';
 import StudentRegistration from './components/StudentRegistration';
 import ParentFollowUp from './components/ParentFollowUp';
+import SheikhRegistration from './components/SheikhRegistration';
 
 import Login from './components/Login';
 import { LogOut } from 'lucide-react';
@@ -48,16 +49,20 @@ function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isRegistering, setIsRegistering] = useState(false);
   const [isParentFollowup, setIsParentFollowup] = useState(false);
+  const [isSheikhRegistering, setIsSheikhRegistering] = useState(false);
   
   // Listen for registration event from Login
   React.useEffect(() => {
     const handleOpenReg = () => setIsRegistering(true);
     const handleOpenParent = () => setIsParentFollowup(true);
+    const handleOpenSheikh = () => setIsSheikhRegistering(true);
     window.addEventListener('open-registration', handleOpenReg);
     window.addEventListener('open-parent-followup', handleOpenParent);
+    window.addEventListener('open-sheikh-registration', handleOpenSheikh);
     return () => {
       window.removeEventListener('open-registration', handleOpenReg);
       window.removeEventListener('open-parent-followup', handleOpenParent);
+      window.removeEventListener('open-sheikh-registration', handleOpenSheikh);
     };
   }, []);
   const [user, setUser] = useState(() => {
@@ -78,6 +83,9 @@ function App() {
     }
     if (isParentFollowup) {
       return <ParentFollowUp onBack={() => setIsParentFollowup(false)} />;
+    }
+    if (isSheikhRegistering) {
+      return <SheikhRegistration onBack={() => setIsSheikhRegistering(false)} />;
     }
     return (
       <div className="login-page-wrapper" dir="rtl">
