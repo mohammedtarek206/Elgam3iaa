@@ -5,11 +5,11 @@ import * as XLSX from 'xlsx';
 const API_URL = '/api';
 
 const ClassManager = () => {
-  const [classes, setClasses] = useState([]);
-  const [sheikhs, setSheikhs] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState(() => JSON.parse(localStorage.getItem('cache_classes')) || []);
+  const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
+  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!classes.length);
 
   const [user] = useState(() => JSON.parse(localStorage.getItem('user')) || { role: 'admin' });
 
@@ -33,6 +33,12 @@ const ClassManager = () => {
       setSheikhs(initData.sheikhs);
       setStudents(initData.students);
       setAttendanceHistory(attData);
+
+      // Update Cache
+      localStorage.setItem('cache_classes', JSON.stringify(initData.classes));
+      localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
+      localStorage.setItem('cache_students', JSON.stringify(initData.students));
+
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);

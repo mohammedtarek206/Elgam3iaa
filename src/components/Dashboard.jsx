@@ -4,16 +4,19 @@ import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, A
 const API_URL = '/api';
 
 const Dashboard = () => {
-  const [students, setStudents] = useState([]);
+  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_recent_students')) || []);
   const [sheikhs, setSheikhs] = useState([]);
   const [attendance, setAttendance] = useState([]);
-  const [stats, setStats] = useState({
-    studentCount: 0,
-    sheikhCount: 0,
-    totalClasses: 0,
-    revenue: 0,
-    attendanceRate: 0,
-    loading: true
+  const [stats, setStats] = useState(() => {
+    const cached = JSON.parse(localStorage.getItem('cache_stats'));
+    return cached || {
+      totalRevenue: 0,
+      totalStudents: 0,
+      totalSheikhs: 0,
+      totalClasses: 0,
+      attendanceRate: 0,
+      loading: true
+    };
   });
 
   useEffect(() => {
@@ -29,14 +32,20 @@ const Dashboard = () => {
       
       setStudents(data.recentStudents || []); // Used for activity list
       
-      setStats({
+      const statsData = {
         totalRevenue: data.totalRevenue,
         totalStudents: data.totalStudents,
         totalSheikhs: data.totalSheikhs,
         totalClasses: data.totalClasses,
         attendanceRate: data.attendanceRate,
         loading: false
-      });
+      };
+
+      setStats(statsData);
+      
+      // Update Cache
+      localStorage.setItem('cache_stats', JSON.stringify(statsData));
+      localStorage.setItem('cache_recent_students', JSON.stringify(data.recentStudents));
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
       setStats(prev => ({ ...prev, loading: false }));

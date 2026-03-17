@@ -111,7 +111,11 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).send({ message: 'بيانات الدخول غير صحيحة' });
     }
     
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret_key', { expiresIn: '1d' });
+    const token = jwt.sign(
+      { id: user._id, role: user.role, username: user.username }, 
+      process.env.JWT_SECRET || 'secret_key', 
+      { expiresIn: '1d' }
+    );
     res.send({ token, user: { username: user.username, role: user.role } });
   } catch (err) {
     console.error('Login error:', err);
@@ -120,14 +124,13 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Middleware to protect routes
-const auth = async (req, res, next) => {
+const auth = (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) throw new Error();
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
-    const user = await User.findById(decoded.id);
-    if (!user) throw new Error();
-    req.user = user;
+    // Using decoded data directly to avoid DB trip
+    req.user = decoded;
     next();
   } catch (e) {
     res.status(401).send({ message: 'يرجى تسجيل الدخول' });

@@ -5,10 +5,10 @@ import * as XLSX from 'xlsx';
 const API_URL = '/api';
 
 const SheikhManager = () => {
-  const [sheikhs, setSheikhs] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
+  const [classes, setClasses] = useState(() => JSON.parse(localStorage.getItem('cache_classes')) || []);
+  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
+  const [loading, setLoading] = useState(!sheikhs.length);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
 
   const [user] = useState(() => JSON.parse(localStorage.getItem('user')) || { role: 'admin' });
@@ -36,6 +36,12 @@ const SheikhManager = () => {
       setSheiks(data.sheikhs);
       setClasses(data.classes);
       setStudents(data.students);
+      
+      // Update Cache
+      localStorage.setItem('cache_sheikhs', JSON.stringify(data.sheikhs));
+      localStorage.setItem('cache_classes', JSON.stringify(data.classes));
+      localStorage.setItem('cache_students', JSON.stringify(data.students));
+      
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);

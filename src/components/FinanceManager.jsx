@@ -6,10 +6,10 @@ const API_URL = '/api';
 
 const FinanceManager = () => {
   const [activeTab, setActiveTab] = useState('summary');
-  const [transactions, setTransactions] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [sheikhs, setSheikhs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('cache_transactions')) || []);
+  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
+  const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
+  const [loading, setLoading] = useState(!transactions.length);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPerson, setSelectedPerson] = useState(null);
 
@@ -33,6 +33,12 @@ const FinanceManager = () => {
       setTransactions(transData);
       setStudents(initData.students);
       setSheikhs(initData.sheikhs);
+
+      // Update Cache
+      localStorage.setItem('cache_transactions', JSON.stringify(transData));
+      localStorage.setItem('cache_students', JSON.stringify(initData.students));
+      localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
+
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);
