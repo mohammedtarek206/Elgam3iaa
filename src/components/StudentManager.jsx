@@ -67,6 +67,7 @@ const StudentManager = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClassFilter, setSelectedClassFilter] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -184,10 +185,11 @@ const StudentManager = () => {
     }
   };
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (s.phone && s.phone.includes(searchTerm))
-  );
+  const filteredStudents = students.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.phone && s.phone.includes(searchTerm));
+    const matchesClass = selectedClassFilter === '' || s.className === selectedClassFilter || s.class === selectedClassFilter;
+    return matchesSearch && matchesClass;
+  });
 
   const [viewingStudent, setViewingStudent] = useState(null);
 
@@ -309,13 +311,25 @@ const StudentManager = () => {
       </div>
 
       <div className="search-bar no-print">
-        <Search className="search-icon" size={20} />
-        <input 
-          type="text" 
-          placeholder="بحث عن طالب بالاسم أو الرقم..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="filter-group">
+          <select 
+            className="filter-select"
+            value={selectedClassFilter} 
+            onChange={(e) => setSelectedClassFilter(e.target.value)}
+          >
+            <option value="">جميع الفصول</option>
+            {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="search-input-wrapper">
+          <Search className="search-icon" size={20} />
+          <input 
+            type="text" 
+            placeholder="بحث عن طالب بالاسم أو الرقم..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="table-container">
@@ -536,8 +550,30 @@ const StudentManager = () => {
         }
 
         .search-bar {
-          position: relative;
+          display: flex;
+          gap: 15px;
           margin-bottom: 24px;
+        }
+
+        .filter-group {
+          flex: 0 0 200px;
+        }
+
+        .filter-select {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid var(--gray-light);
+          border-radius: 8px;
+          font-size: 1rem;
+          background: #f8f9fa;
+          color: var(--primary);
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .search-input-wrapper {
+          position: relative;
+          flex: 1;
         }
 
         .search-icon {
@@ -548,7 +584,7 @@ const StudentManager = () => {
           color: #999;
         }
 
-        .search-bar input {
+        .search-input-wrapper input {
           width: 100%;
           padding: 12px 48px 12px 12px;
           border: 2px solid var(--gray-light);

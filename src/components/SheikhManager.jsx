@@ -60,6 +60,7 @@ const SheikhManager = () => {
   const [editingSheikh, setEditingSheikh] = useState(null);
   const [viewingSheikh, setViewingSheikh] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClassFilter, setSelectedClassFilter] = useState('');
 
   const handleViewProfile = (sheikh) => {
     setViewingSheikh(sheikh);
@@ -164,11 +165,14 @@ const SheikhManager = () => {
     XLSX.writeFile(wb, "الشيوخ.xlsx");
   };
 
-  const filteredSheikhs = (sheikhs || []).filter(s => 
-    s && ((s.name || '').includes(searchTerm) || 
-    (s.phone || '').includes(searchTerm) ||
-    (s.assignedClasses && s.assignedClasses.some(className => (className || '').includes(searchTerm))))
-  );
+  const filteredSheikhs = (sheikhs || []).filter(s => {
+    if (!s) return false;
+    const matchesSearch = (s.name || '').includes(searchTerm) || 
+                          (s.phone || '').includes(searchTerm) ||
+                          (s.assignedClasses && s.assignedClasses.some(className => (className || '').includes(searchTerm)));
+    const matchesClass = selectedClassFilter === '' || (s.assignedClasses && s.assignedClasses.includes(selectedClassFilter));
+    return matchesSearch && matchesClass;
+  });
 
   const renderProfile = (sheikh) => {
     const sheikhStudents = (students || []).filter(s => s && s.sheikh === sheikh.name);
@@ -278,13 +282,25 @@ const SheikhManager = () => {
       </div>
 
       <div className="search-bar no-print">
-        <Search className="search-icon" size={20} />
-        <input 
-          type="text" 
-          placeholder="بحث عن شيخ بالاسم أو الرقم..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="filter-group">
+          <select 
+            className="filter-select"
+            value={selectedClassFilter} 
+            onChange={(e) => setSelectedClassFilter(e.target.value)}
+          >
+            <option value="">جميع الفصول</option>
+            {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="search-input-wrapper">
+          <Search className="search-icon" size={20} />
+          <input 
+            type="text" 
+            placeholder="بحث عن شيخ بالاسم أو الرقم..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="table-container">
@@ -427,6 +443,51 @@ const SheikhManager = () => {
           cursor: pointer;
           font-size: 0.95rem;
         }
+
+        .search-bar {
+          display: flex;
+          gap: 15px;
+          margin-bottom: 24px;
+        }
+
+        .filter-group {
+          flex: 0 0 200px;
+        }
+
+        .filter-select {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid var(--gray-light);
+          border-radius: 8px;
+          font-size: 1rem;
+          background: #f8f9fa;
+          color: var(--primary);
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .search-input-wrapper {
+          position: relative;
+          flex: 1;
+        }
+
+        .search-icon {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #999;
+        }
+
+        .search-input-wrapper input {
+          width: 100%;
+          padding: 12px 48px 12px 12px;
+          border: 2px solid var(--gray-light);
+          border-radius: 8px;
+          font-size: 1rem;
+          background: transparent;
+        }
+        
         .tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
         .class-tag { 
           background: var(--primary-light); 
