@@ -89,8 +89,8 @@ function App() {
                 className="menu-card fade-in" 
                 onClick={() => setCurrentPage(item.id)}
               >
-                <div className="icon-wrapper" style={{ backgroundColor: `${item.color}20`, color: item.color }}>
-                  <item.icon size={48} />
+                <div className="icon-wrapper" style={{ color: item.color }}>
+                  <item.icon size={56} />
                 </div>
                 <span className="menu-label">{item.label}</span>
               </button>
@@ -124,8 +124,9 @@ function App() {
       <main className="content">
         {currentPage === 'home' ? (
           <div className="welcome-section">
-            <h2>مرحباً بك في نظام إدارة مكتب التحفيظ</h2>
-            <p>اختر قسماً للمتابعة</p>
+            <img src="/شعار_الجمعية_الشرعية.png" alt="الجمعية الشرعية" className="home-hero-logo" />
+            <h2>الجمعية الشرعية كفر طلا</h2>
+            <p>مكتب تحفيظ القران الكريم</p>
           </div>
         ) : (
           <button className="back-btn" onClick={() => setCurrentPage('home')}>← العودة للرئيسية</button>
@@ -249,23 +250,31 @@ function App() {
 
         .menu-card {
           width: 220px;
-          background: var(--white);
           padding: 32px 16px;
           border-radius: var(--radius);
-          box-shadow: var(--shadow);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 16px;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          border: 2px solid transparent; backdrop-filter: blur(8px);
-          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(12px);
+          background: rgba(255, 255, 255, 0.6);
         }
 
-        .menu-card:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
-          border-color: var(--accent);
+        .home-hero-logo {
+          width: 180px;
+          height: 180px;
+          object-fit: contain;
+          margin-bottom: 20px;
+          filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+          animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
 
         .icon-wrapper {
