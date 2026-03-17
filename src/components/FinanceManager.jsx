@@ -9,8 +9,10 @@ const FinanceManager = () => {
   const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('cache_transactions')) || []);
   const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
   const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
+  const [classes, setClasses] = useState(() => JSON.parse(localStorage.getItem('cache_classes')) || []);
   const [loading, setLoading] = useState(!transactions.length);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
   const [selectedPerson, setSelectedPerson] = useState(null);
 
 
@@ -33,11 +35,13 @@ const FinanceManager = () => {
       setTransactions(transData);
       setStudents(initData.students);
       setSheikhs(initData.sheikhs);
+      setClasses(initData.classes || []);
 
       // Update Cache
       localStorage.setItem('cache_transactions', JSON.stringify(transData));
       localStorage.setItem('cache_students', JSON.stringify(initData.students));
       localStorage.setItem('cache_sheikhs', JSON.stringify(initData.sheikhs));
+      localStorage.setItem('cache_classes', JSON.stringify(initData.classes || []));
 
       setLoading(false);
     } catch (err) {
@@ -130,15 +134,33 @@ const FinanceManager = () => {
   const renderPersonList = (list, type) => (
     <div className="person-selection-grid">
       <div className="list-side">
-        <div className="search-mini">
-          <Search size={16} />
-          <input 
-            placeholder="بحث بالاسم..." 
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="filter-controls">
+          <div className="search-mini">
+            <Search size={16} />
+            <select 
+              className="class-filter-select"
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+            >
+              <option value="">كل الفصول</option>
+              {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="search-mini">
+            <Search size={16} />
+            <input 
+              placeholder="بحث بالاسم..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
         <div className="scroll-list">
-          {list.filter(p => p.name.includes(searchTerm)).map(p => (
+          {list.filter(p => {
+            const matchesClass = !selectedClass || (type === 'student' ? p.className === selectedClass : (p.assignedClasses || []).includes(selectedClass));
+            const matchesName = p.name.includes(searchTerm);
+            return matchesClass && matchesName;
+          }).map(p => (
             <div 
               key={p._id} 
               className={`person-item ${selectedPerson?._id === p._id ? 'active' : ''}`}
@@ -607,15 +629,35 @@ const FinanceManager = () => {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: var(--gray-light);
+          background: #f8f9fa;
           padding: 8px 12px;
           border-radius: 8px;
+          border: 1px solid #eee;
+        }
+
+        .filter-controls {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+
+        .class-filter-select {
+          border: none;
+          background: transparent;
+          font-family: inherit;
+          font-size: 0.9rem;
+          color: var(--text-color);
+          width: 100%;
+          cursor: pointer;
         }
 
         .search-mini input {
           border: none;
           background: transparent;
+          font-family: inherit;
           font-size: 0.9rem;
+          color: var(--text-color);
           width: 100%;
         }
 
