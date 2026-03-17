@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Clock, MapPin, Users, FileDown, Printer } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, User, DollarSign, Award, AlertTriangle, Users as UsersIcon, FileDown, Printer, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
@@ -137,13 +137,13 @@ const ClassManager = () => {
     XLSX.writeFile(wb, "الفصول.xlsx");
   };
 
-  const filteredClasses = classes.filter(c => 
-    c.name.includes(searchTerm)
+  const filteredClasses = (classes || []).filter(c => 
+    c && (c.name || '').includes(searchTerm)
   );
 
   const getSheikhsForClass = (className) => {
-    return sheikhs
-      .filter(s => s.assignedClasses && s.assignedClasses.includes(className))
+    return (sheikhs || [])
+      .filter(s => s && s.assignedClasses && s.assignedClasses.includes(className))
       .map(s => s.name)
       .join('، ') || 'غير معين';
   };
@@ -205,9 +205,9 @@ const ClassManager = () => {
               <div className="info-row">
                 <Check size={18} color="#2ecc71" />
                 <span>نسبة الانضباط: <strong>{(() => {
-                  const classStudents = students.filter(s => s.className === cls.name);
+                  const classStudents = (students || []).filter(s => s && s.className === cls.name);
                   const classStudentIds = classStudents.map(s => s._id);
-                  const relevantHistory = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => classStudentIds.includes(r.personId)));
+                  const relevantHistory = (attendanceHistory || []).filter(h => h && h.attendanceType === 'student' && (h.records || []).some(r => r && classStudentIds.includes(r.personId)));
                   
                   if (relevantHistory.length === 0) return '0%';
                   
@@ -215,11 +215,12 @@ const ClassManager = () => {
                   let totalPossible = 0;
                   
                   relevantHistory.forEach(h => {
-                    const classRecords = h.records.filter(r => classStudentIds.includes(r.personId));
-                    totalPresent += classRecords.filter(r => r.status === 'present' || r.status === 'late').length;
+                    const classRecords = (h.records || []).filter(r => r && classStudentIds.includes(r.personId));
+                    totalPresent += classRecords.filter(r => r && (r.status === 'present' || r.status === 'late')).length;
                     totalPossible += classRecords.length;
                   });
                   
+                  if (totalPossible === 0) return '0%';
                   return Math.round((totalPresent / totalPossible) * 100) + '%';
                 })()}</strong></span>
               </div>

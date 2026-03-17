@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, X, User, DollarSign, Award, AlertTriangle, Users as UsersIcon, FileDown, Printer } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, User, DollarSign, Award, AlertTriangle, Users as UsersIcon, FileDown, Printer, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
@@ -148,7 +148,7 @@ const SheikhManager = () => {
 
   const exportToExcel = () => {
     const dataToExport = filteredSheikhs.map(s => {
-      const count = students.filter(student => student.sheikh === s.name).length;
+      const count = (students || []).filter(student => student && student.sheikh === s.name).length;
       return {
         'الاسم': s.name,
         'الهاتف': s.phone,
@@ -164,14 +164,14 @@ const SheikhManager = () => {
     XLSX.writeFile(wb, "الشيوخ.xlsx");
   };
 
-  const filteredSheikhs = sheikhs.filter(s => 
-    s.name.includes(searchTerm) || 
-    s.phone.includes(searchTerm) ||
-    (s.assignedClasses && s.assignedClasses.some(className => className.includes(searchTerm)))
+  const filteredSheikhs = (sheikhs || []).filter(s => 
+    s && ((s.name || '').includes(searchTerm) || 
+    (s.phone || '').includes(searchTerm) ||
+    (s.assignedClasses && s.assignedClasses.some(className => (className || '').includes(searchTerm))))
   );
 
   const renderProfile = (sheikh) => {
-    const sheikhStudents = students.filter(s => s.sheikh === sheikh.name);
+    const sheikhStudents = (students || []).filter(s => s && s.sheikh === sheikh.name);
     
     return (
       <div className="modal-overlay">
@@ -194,9 +194,9 @@ const SheikhManager = () => {
               <div className="stat-info">
                 <span>نسبة الحضور</span>
                 <strong>{(() => {
-                  const totalDays = attendanceHistory.filter(h => h.attendanceType === 'sheikh' && h.records.some(r => r.personId === sheikh._id)).length;
+                  const totalDays = (attendanceHistory || []).filter(h => h && h.attendanceType === 'sheikh' && (h.records || []).some(r => r && r.personId === sheikh._id)).length;
                   if (totalDays === 0) return '0%';
-                  const presentDays = attendanceHistory.filter(h => h.attendanceType === 'sheikh' && h.records.some(r => r.personId === sheikh._id && (r.status === 'present' || r.status === 'late'))).length;
+                  const presentDays = (attendanceHistory || []).filter(h => h && h.attendanceType === 'sheikh' && (h.records || []).some(r => r && r.personId === sheikh._id && (r.status === 'present' || r.status === 'late'))).length;
                   return Math.round((presentDays / totalDays) * 100) + '%';
                 })()}</strong>
               </div>
@@ -245,6 +245,13 @@ const SheikhManager = () => {
         </div>
       </div>
     );
+  };
+
+  const getSheikhsForClass = (className) => {
+    return (sheikhs || [])
+      .filter(s => s && s.assignedClasses && s.assignedClasses.includes(className))
+      .map(s => s.name)
+      .join('، ') || 'غير معين';
   };
 
   return (
@@ -314,7 +321,7 @@ const SheikhManager = () => {
                   </div>
                 </td>
                 <td>{sheikh.hireDate}</td>
-                <td>{students.filter(s => s.sheikh === sheikh.name).length}</td>
+                <td>{(students || []).filter(s => s && s.sheikh === sheikh.name).length}</td>
                 <td className="actions no-print">
                   <button className="edit-btn" onClick={() => handleOpenForm(sheikh)}><Edit2 size={18} /></button>
                   {user.role === 'admin' && (
@@ -359,7 +366,7 @@ const SheikhManager = () => {
                  <div className="form-group full-width">
                   <label>الفصول المسؤول عنها (اختر واحد أو أكثر)</label>
                   <div className="checkbox-group">
-                    {classes.map(c => (
+                    {(classes || []).map(c => (
                       <label key={c._id} className="checkbox-item">
                         <input 
                           type="checkbox" 
