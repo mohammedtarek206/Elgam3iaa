@@ -43,7 +43,10 @@ const Login = ({ onLogin }) => {
             <img src="/شعار_الجمعية_الشرعية.png" alt="الجمعية الشرعية" className="login-logo-img" />
           </div>
           <h2>تسجيل الدخول</h2>
-          <p>منصة الجمعية الشرعية</p>
+          <div className="branding-labels">
+            <p className="main-brand">الجمعية الشرعية كفر طلا</p>
+            <p className="sub-brand">مشروع تحفيظ القران الكريم</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -102,18 +105,35 @@ const Login = ({ onLogin }) => {
           display: flex;
           justify-content: center;
           align-items: center;
-          min-height: 80vh;
+          min-height: 100vh;
           padding: 20px;
+          background: linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .login-container::before {
+          content: "";
+          position: absolute;
+          width: 300px;
+          height: 300px;
+          background: var(--primary-light);
+          border-radius: 50%;
+          top: -100px;
+          right: -100px;
+          opacity: 0.1;
         }
 
         .login-card {
-          background: var(--white);
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(10px);
           padding: 40px;
-          border-radius: 24px;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          border-radius: 30px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
           width: 100%;
           max-width: 450px;
-          border: 1px solid rgba(0,0,0,0.05);
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          z-index: 1;
         }
 
         .login-header {
@@ -122,36 +142,55 @@ const Login = ({ onLogin }) => {
         }
 
         .logo-icon {
-          width: 120px;
-          height: 120px;
+          width: 100px;
+          height: 100px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 0 auto 16px;
+          margin: 0 auto 20px;
+          background: white;
+          padding: 10px;
+          border-radius: 20px;
+          box-shadow: 0 10px 20px rgba(0,0,0,0.05);
         }
 
         .login-logo-img {
           width: 100%;
           height: 100%;
           object-fit: contain;
-          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
         }
 
         .login-header h2 {
           color: var(--primary);
-          font-size: 2rem;
-          margin-bottom: 8px;
+          font-size: 2.2rem;
+          margin-bottom: 12px;
+          font-weight: 800;
         }
 
-        .login-header p {
-          color: #666;
-          font-size: 1.1rem;
+        .branding-labels {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .main-brand {
+          color: var(--secondary);
+          font-size: 1.2rem;
+          font-weight: 700;
+          margin: 0;
+        }
+
+        .sub-brand {
+          color: #27ae60;
+          font-size: 1rem;
+          font-weight: 600;
+          margin: 0;
         }
 
         .login-form {
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 20px;
         }
 
         .error-message {

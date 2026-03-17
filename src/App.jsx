@@ -70,13 +70,7 @@ function App() {
       return <StudentRegistration onBack={() => setIsRegistering(false)} />;
     }
     return (
-      <div className="app-container" dir="rtl">
-        <header className="main-header">
-            <div className="header-info">
-              <h1>الجمعية الشرعية كفر طلا</h1>
-              <span className="subtitle">مكتب تحفيظ القران الكريم</span>
-            </div>
-        </header>
+      <div className="login-page-wrapper" dir="rtl">
         <main className="content">
           <Login onLogin={setUser} />
         </main>
@@ -172,6 +166,13 @@ function App() {
       </main>
 
       <style>{`
+        .login-page-wrapper {
+          min-height: 100vh;
+          margin: 0;
+          padding: 0;
+          background: linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%);
+        }
+
         .app-container {
           min-height: 100vh;
           padding: 24px;
