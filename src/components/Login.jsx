@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, User, LogIn, AlertCircle } from 'lucide-react';
+import { Lock, User, LogIn, AlertCircle, UserPlus, Users, GraduationCap } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -91,21 +91,37 @@ const Login = ({ onLogin }) => {
             {loading ? 'جاري التحميل...' : 'دخول'}
           </button>
 
-          <div className="login-footer">
-            <p>طالب جديد؟</p>
-            <button type="button" className="register-link-btn" onClick={() => window.dispatchEvent(new CustomEvent('open-registration'))}>
-              تقديم طلب التحاق جديد
-            </button>
-            <div style={{ marginTop: '15px' }}>
-              <p>ولي أمر؟</p>
-              <button type="button" className="register-link-btn" style={{ color: '#2ecc71' }} onClick={() => window.dispatchEvent(new CustomEvent('open-parent-followup'))}>
-                متابعة ولي الأمر
+          <div className="quick-links-container">
+            <h3 className="quick-links-title">خدمات البوابة</h3>
+            <div className="quick-links-grid">
+              <button type="button" className="quick-link-card student-link" onClick={() => window.dispatchEvent(new CustomEvent('open-registration'))}>
+                <div className="ql-icon-wrapper">
+                  <UserPlus className="ql-icon" size={24} />
+                </div>
+                <div className="ql-text">
+                  <span className="ql-title">طالب جديد</span>
+                  <span className="ql-desc">تقديم طلب التحاق</span>
+                </div>
               </button>
-            </div>
-            <div style={{ marginTop: '15px' }}>
-              <p>محفظ جديد؟</p>
-              <button type="button" className="register-link-btn" style={{ color: '#d35400' }} onClick={() => window.dispatchEvent(new CustomEvent('open-sheikh-registration'))}>
-                تقديم طلب التحاق محفظ
+
+              <button type="button" className="quick-link-card parent-link" onClick={() => window.dispatchEvent(new CustomEvent('open-parent-followup'))}>
+                <div className="ql-icon-wrapper">
+                  <Users className="ql-icon" size={24} />
+                </div>
+                <div className="ql-text">
+                  <span className="ql-title">ولي أمر</span>
+                  <span className="ql-desc">متابعة الطالب</span>
+                </div>
+              </button>
+
+              <button type="button" className="quick-link-card sheikh-link" onClick={() => window.dispatchEvent(new CustomEvent('open-sheikh-registration'))}>
+                <div className="ql-icon-wrapper">
+                  <GraduationCap className="ql-icon" size={24} />
+                </div>
+                <div className="ql-text">
+                  <span className="ql-title">محفظ جديد</span>
+                  <span className="ql-desc">طلب تدريس</span>
+                </div>
               </button>
             </div>
           </div>
@@ -283,24 +299,101 @@ const Login = ({ onLogin }) => {
           transform: none;
         }
 
-        .login-footer {
+        .quick-links-container {
+          margin-top: 30px;
+          border-top: 2px dashed #f1f5f9;
+          padding-top: 25px;
+        }
+
+        .quick-links-title {
           text-align: center;
-          margin-top: 10px;
-          border-top: 1px solid #eee;
-          padding-top: 15px;
-        }
-
-        .login-footer p {
-          font-size: 0.9rem;
-          margin-bottom: 5px;
-          color: #7f8c8d;
-        }
-
-        .register-link-btn {
-          color: var(--accent);
+          font-size: 1.1rem;
+          color: #64748b;
+          margin-bottom: 20px;
           font-weight: 700;
-          font-size: 1rem;
-          text-decoration: underline;
+        }
+
+        .quick-links-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .quick-link-card {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          width: 100%;
+          background: #ffffff;
+          border: 2px solid #f1f5f9;
+          padding: 16px 20px;
+          border-radius: 16px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          text-align: right;
+        }
+
+        .quick-link-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+          border-color: transparent;
+        }
+
+        .ql-icon-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 50px;
+          height: 50px;
+          border-radius: 12px;
+          flex-shrink: 0;
+          transition: all 0.3s ease;
+        }
+
+        .ql-text {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .ql-title {
+          font-size: 1.1rem;
+          font-weight: 800;
+          color: #1e293b;
+        }
+
+        .ql-desc {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #64748b;
+        }
+
+        /* Specific Link Colors & Styles */
+        .student-link .ql-icon-wrapper {
+          background: #e0f2fe;
+          color: #0284c7;
+        }
+        .student-link:hover {
+          background: #f0f9ff;
+          border-color: #bae6fd;
+        }
+
+        .parent-link .ql-icon-wrapper {
+          background: #ecfdf5;
+          color: #059669;
+        }
+        .parent-link:hover {
+          background: #f0fdf4;
+          border-color: #a7f3d0;
+        }
+
+        .sheikh-link .ql-icon-wrapper {
+          background: #fff7ed;
+          color: #ea580c;
+        }
+        .sheikh-link:hover {
+          background: #fffbeb;
+          border-color: #fed7aa;
         }
 
         @media (max-width: 480px) {
