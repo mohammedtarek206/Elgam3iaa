@@ -109,6 +109,7 @@ const RegistrationManager = () => {
                 <span className="request-date"><Calendar size={14} /> {req.requestDate}</span>
               </div>
               <div className="status-tag pending">انتظار</div>
+              <div className="type-tag new-student">طالب جديد</div>
             </div>
 
             <div className="request-card-body">
@@ -278,6 +279,22 @@ const RegistrationManager = () => {
           color: #f39c12;
         }
 
+        .type-tag {
+          position: absolute;
+          left: 0;
+          top: 30px;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 700;
+        }
+
+        .type-tag.new-student {
+          background: #e8f5e9;
+          color: #27ae60;
+          border: 1px solid #27ae60;
+        }
+
         .request-card-body {
           display: flex;
           flex-direction: column;
@@ -296,12 +313,13 @@ const RegistrationManager = () => {
         }
 
         .social-badge {
-          background: #eaf2f8;
-          color: #2980b9;
-          padding: 2px 12px;
+          background: #fdedec;
+          color: #e74c3c;
+          padding: 4px 15px;
           border-radius: 15px;
-          font-size: 0.8rem;
-          font-weight: 600;
+          font-size: 0.85rem;
+          font-weight: 800;
+          border: 1px solid #e74c3c;
         }
 
         .request-card-actions {

@@ -60,6 +60,7 @@ const StudentRegistration = ({ onBack }) => {
         <div className="reg-header">
           <img src="/شعار_الجمعية_الشرعية.png" alt="الجمعية الشرعية" className="reg-logo" />
           <h1>طلب التحاق جديد</h1>
+          <div className="registration-type-badge">طالب جديد</div>
           <p>يرجى ملء البيانات التالية بدقة للانضمام لمكتب تحفيظ القرآن</p>
         </div>
 
@@ -187,7 +188,19 @@ const StudentRegistration = ({ onBack }) => {
         .reg-header h1 {
           color: #2c3e50;
           font-size: 1.8rem;
-          margin-bottom: 10px;
+          margin-bottom: 5px;
+        }
+
+        .registration-type-badge {
+          display: inline-block;
+          background: #e8f5e9;
+          color: #27ae60;
+          padding: 5px 15px;
+          border-radius: 20px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          margin-bottom: 15px;
+          border: 1px solid #27ae60;
         }
 
         .reg-header p {
