@@ -12,6 +12,7 @@ const studentSchema = new mongoose.Schema({
   monthlyFees: Number,
   joinDate: String,
   nationalId: { type: String, sparse: true },
+  isNewStudent: { type: Boolean, default: false },
   notes: String,
   attendance: [{ date: String, status: String }]
 }, { timestamps: true });

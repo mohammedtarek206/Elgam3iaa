@@ -84,6 +84,7 @@ const StudentManager = () => {
         birthDate: '',
         monthlyFees: '',
         joinDate: new Date().toISOString().split('T')[0],
+        isNewStudent: false,
         notes: ''
       });
     }
@@ -321,7 +322,10 @@ const StudentManager = () => {
             {filteredStudents.length > 0 ? filteredStudents.map((student, index) => (
               <tr key={student._id}>
                 <td>{index + 1}</td>
-                <td className="font-bold stud-link" onClick={() => handleViewProfile(student)}>{student.name}</td>
+                <td className="font-bold stud-link" onClick={() => handleViewProfile(student)}>
+                  {student.name}
+                  {student.isNewStudent && <span className="new-badge-main">جديد</span>}
+                </td>
                 <td>{student.phone}</td>
                 <td>{student.sheikh}</td>
                 <td>{student.className || student.class}</td>
@@ -407,6 +411,18 @@ const StudentManager = () => {
                   <label>الرقم القومي</label>
                   <input maxLength="14" value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value})} />
                 </div>
+                {user.role === 'admin' && (
+                  <div className="form-group" style={{flexDirection: 'row', alignItems: 'center', gap: '10px'}}>
+                    <input 
+                      type="checkbox" 
+                      id="isNew"
+                      style={{width: '20px', height: '20px'}}
+                      checked={formData.isNewStudent} 
+                      onChange={e => setFormData({...formData, isNewStudent: e.target.checked})} 
+                    />
+                    <label htmlFor="isNew" style={{margin: 0}}>طالب جديد (تمييز بالعلامة)</label>
+                  </div>
+                )}
                 <div className="form-group">
                   <label>الرسوم الشهرية</label>
                   <input type="number" required value={formData.monthlyFees} onChange={e => setFormData({...formData, monthlyFees: e.target.value})} />
@@ -535,6 +551,18 @@ const StudentManager = () => {
           border-radius: 4px;
           font-size: 0.85rem;
           font-weight: 600;
+        }
+
+        .new-badge-main {
+          background: #e8f5e9;
+          color: #27ae60;
+          padding: 2px 8px;
+          border-radius: 10px;
+          font-size: 0.7rem;
+          font-weight: 800;
+          margin-right: 8px;
+          border: 1px solid #27ae60;
+          vertical-align: middle;
         }
 
         .actions {

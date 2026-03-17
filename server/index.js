@@ -236,6 +236,7 @@ app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => 
       level: request.level,
       socialStatus: request.socialStatus,
       nationalId: request.nationalId,
+      isNewStudent: true,
       joinDate: new Date().toISOString().split('T')[0]
     });
 
