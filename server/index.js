@@ -59,7 +59,9 @@ connectDB();
 
 // Middleware to ensure DB connection (for Vercel)
 app.use(async (req, res, next) => {
-  await connectDB();
+  if (mongoose.connection.readyState !== 1) {
+    await connectDB();
+  }
   next();
 });
 
@@ -257,7 +259,11 @@ app.delete('/api/classes/:id', [auth, isAdmin], async (req, res) => {
 // --- Attendance Routes ---
 app.get('/api/attendance', auth, async (req, res) => {
   try {
-    const attendance = await Attendance.find().sort({ date: -1 });
+    const query = {};
+    if (req.query.type) {
+      query.attendanceType = req.query.type;
+    }
+    const attendance = await Attendance.find(query).sort({ date: -1 });
     res.send(attendance);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -350,6 +356,43 @@ app.post('/api/exams', auth, async (req, res) => {
     res.send(exam);
   } catch (err) {
     res.status(400).send({ message: err.message });
+  }
+});
+
+// --- Stats Endpoint for Dashboard ---
+app.get('/api/stats', auth, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const [studentCount, sheikhCount, classCount, transactions, todayAtt] = await Promise.all([
+      Student.countDocuments(),
+      Sheikh.countDocuments(),
+      Class.countDocuments(),
+      Transaction.find({ type: 'دخل' }, 'amount'),
+      Attendance.findOne({ date: today, attendanceType: 'student' })
+    ]);
+
+    const totalRevenue = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    
+    let attendanceRate = 0;
+    if (todayAtt && todayAtt.records.length > 0) {
+      const present = todayAtt.records.filter(r => r.status === 'present' || r.status === 'late').length;
+      attendanceRate = Math.round((present / todayAtt.records.length) * 100);
+    }
+
+    // Get last 5 students for "Recent Activity"
+    const recentStudents = await Student.find().sort({ createdAt: -1 }).limit(5).select('name className');
+
+    res.send({
+      totalStudents: studentCount,
+      totalSheikhs: sheikhCount,
+      totalClasses: classCount,
+      totalRevenue,
+      attendanceRate,
+      recentStudents
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
 });
 

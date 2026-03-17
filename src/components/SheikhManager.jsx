@@ -15,14 +15,15 @@ const SheikhManager = () => {
 
   useEffect(() => {
     fetchData();
-    fetchAttendance();
   }, []);
 
-  const fetchAttendance = async () => {
+  const fetchSheikhAttendance = async (sheikhId) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/attendance`, { headers: { 'Authorization': `Bearer ${token}` } });
-      setAttendanceHistory(await res.json());
+      // Fetch only sheikh-type attendance
+      const res = await fetch(`${API_URL}/attendance?type=sheikh`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const allAtt = await res.json();
+      setAttendanceHistory(allAtt);
     } catch (err) {}
   };
 
@@ -54,6 +55,11 @@ const SheikhManager = () => {
   const [editingSheikh, setEditingSheikh] = useState(null);
   const [viewingSheikh, setViewingSheikh] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleViewProfile = (sheikh) => {
+    setViewingSheikh(sheikh);
+    fetchSheikhAttendance(sheikh._id);
+  };
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -288,7 +294,7 @@ const SheikhManager = () => {
             {filteredSheikhs.map((sheikh, index) => (
               <tr key={sheikh._id}>
                 <td>{index + 1}</td>
-                <td className="font-bold flex-cell" onClick={() => setViewingSheikh(sheikh)}>
+                <td className="font-bold flex-cell" onClick={() => handleViewProfile(sheikh)}>
                   <User size={18} className="user-icon" />
                    {sheikh.name}
                 </td>

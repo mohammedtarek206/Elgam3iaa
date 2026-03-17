@@ -15,14 +15,15 @@ const StudentManager = () => {
 
   useEffect(() => {
     fetchData();
-    fetchAttendance();
   }, []);
 
-  const fetchAttendance = async () => {
+  const fetchStudentAttendance = async (studentId) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/attendance`, { headers: { 'Authorization': `Bearer ${token}` } });
-      setAttendanceHistory(await res.json());
+      // Fetch only student-type attendance
+      const res = await fetch(`${API_URL}/attendance?type=student`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const allAtt = await res.json();
+      setAttendanceHistory(allAtt);
     } catch (err) {}
   };
 
@@ -176,6 +177,11 @@ const StudentManager = () => {
 
   const [viewingStudent, setViewingStudent] = useState(null);
 
+  const handleViewProfile = (student) => {
+    setViewingStudent(student);
+    fetchStudentAttendance(student._id);
+  };
+
   const renderProfile = (student) => (
     <div className="modal-overlay">
       <div className="modal-content profile-content fade-in">
@@ -295,7 +301,7 @@ const StudentManager = () => {
             {filteredStudents.length > 0 ? filteredStudents.map((student, index) => (
               <tr key={student._id}>
                 <td>{index + 1}</td>
-                <td className="font-bold stud-link" onClick={() => setViewingStudent(student)}>{student.name}</td>
+                <td className="font-bold stud-link" onClick={() => handleViewProfile(student)}>{student.name}</td>
                 <td>{student.phone}</td>
                 <td>{student.sheikh}</td>
                 <td>{student.className || student.class}</td>

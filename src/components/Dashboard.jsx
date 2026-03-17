@@ -24,41 +24,17 @@ const Dashboard = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const [studRes, sheikhRes, classRes, transRes, attRes] = await Promise.all([
-        fetch(`${API_URL}/students`, { headers }),
-        fetch(`${API_URL}/sheikhs`, { headers }),
-        fetch(`${API_URL}/classes`, { headers }),
-        fetch(`${API_URL}/transactions`, { headers }),
-        fetch(`${API_URL}/attendance`, { headers })
-      ]);
-
-      const [students, sheikhs, classes, transactions, attendance] = await Promise.all([
-        studRes.json(),
-        sheikhRes.json(),
-        classRes.json(),
-        transRes.json(),
-        attRes.json()
-      ]);
-
-      const revenue = transactions
-        .filter(t => t.type === 'دخل')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
-
-      setStudents(students);
-      setSheikhs(sheikhs);
-      setAttendance(attendance);
-
-      const today = new Date().toISOString().split('T')[0];
-      const todayAtt = attendance.find(h => h.date === today && h.attendanceType === 'student');
-      const presentToday = todayAtt ? todayAtt.records.filter(r => r.status === 'present' || r.status === 'late').length : 0;
-      const totalPossible = todayAtt ? todayAtt.records.length : 0;
-
+      const res = await fetch(`${API_URL}/stats`, { headers });
+      const data = await res.json();
+      
+      setStudents(data.recentStudents || []); // Used for activity list
+      
       setStats({
-        totalRevenue: revenue,
-        totalStudents: students.length,
-        totalSheikhs: sheikhs.length,
-        totalClasses: classes.length,
-        attendanceRate: totalPossible > 0 ? Math.round((presentToday / totalPossible) * 100) : 0,
+        totalRevenue: data.totalRevenue,
+        totalStudents: data.totalStudents,
+        totalSheikhs: data.totalSheikhs,
+        totalClasses: data.totalClasses,
+        attendanceRate: data.attendanceRate,
         loading: false
       });
     } catch (err) {

@@ -15,4 +15,9 @@ const studentSchema = new mongoose.Schema({
   attendance: [{ date: String, status: String }]
 }, { timestamps: true });
 
+studentSchema.index({ name: 1 });
+studentSchema.index({ phone: 1 });
+studentSchema.index({ sheikh: 1 });
+studentSchema.index({ className: 1 });
+
 module.exports = mongoose.models.Student || mongoose.model('Student', studentSchema);
