@@ -157,6 +157,25 @@ const StudentManager = () => {
     } finally {
       setSaving(false);
     }
+  const handleToggleActive = async (student) => {
+    if (!window.confirm(`هل أنت متأكد من ${student.isActive ? 'إيقاف تنشيط' : 'تنشيط'} هذا الطالب؟`)) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`/api/students/${student._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ...student, isActive: !student.isActive })
+      });
+      if (response.ok) {
+        fetchData();
+      }
+    } catch (err) {
+      console.error('Error toggling student status:', err);
+    }
   };
 
   const exportToExcel = () => {
@@ -353,6 +372,7 @@ const StudentManager = () => {
               <th>الفصل</th>
               <th>المستوى</th>
               {user.role === 'admin' && <th>الرقم القومي</th>}
+              <th>الحالة</th>
               <th>الرسوم</th>
               <th className="no-print">العمليات</th>
             </tr>
@@ -370,6 +390,15 @@ const StudentManager = () => {
                 <td>{student.className || student.class}</td>
                 <td><span className="level-badge">{student.level}</span></td>
                 {user.role === 'admin' && <td>{student.nationalId || '---'}</td>}
+                <td>
+                  <span 
+                    className={`status-chip ${student.isActive !== false ? 'active' : 'inactive'}`}
+                    onClick={() => user.role === 'admin' && handleToggleActive(student)}
+                    style={{ cursor: user.role === 'admin' ? 'pointer' : 'default' }}
+                  >
+                    {student.isActive !== false ? 'نشط' : 'ملغى التنشيط'}
+                  </span>
+                </td>
                 <td>{student.monthlyFees} ج.م</td>
                 <td className="actions no-print">
                   <button className="edit-btn" onClick={() => handleOpenForm(student)}><Edit2 size={18} /></button>
@@ -643,6 +672,32 @@ const StudentManager = () => {
           margin-right: 8px;
           border: 1px solid #27ae60;
           vertical-align: middle;
+        }
+
+        .status-chip {
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          display: inline-block;
+          transition: all 0.2s;
+        }
+
+        .status-chip.active {
+          background: #dcfce7;
+          color: #166534;
+          border: 1px solid #166534;
+        }
+
+        .status-chip.inactive {
+          background: #fee2e2;
+          color: #991b1b;
+          border: 1px solid #991b1b;
+        }
+
+        .status-chip:hover {
+          opacity: 0.8;
+          transform: scale(1.05);
         }
 
         .actions {

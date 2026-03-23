@@ -13,6 +13,7 @@ const studentSchema = new mongoose.Schema({
   joinDate: String,
   nationalId: { type: String, unique: true, sparse: true, minlength: 14, maxlength: 14 },
   isNewStudent: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
   notes: String,
   attendance: [{ date: String, status: String }]
 }, { timestamps: true });

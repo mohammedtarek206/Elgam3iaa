@@ -252,6 +252,10 @@ app.get('/api/public/student-followup/:nationalId', async (req, res) => {
       return res.status(404).send({ message: 'عذراً، لا يوجد طالب مسجل بهذا الرقم القومي.' });
     }
 
+    if (student.isActive === false) {
+      return res.status(403).send({ message: 'تم إلغاء تنشيط هذا الطالب' });
+    }
+
     // 2. Fetch Attendance (only extracting this student's status)
     const attendances = await Attendance.find({ 
       'records.personId': student._id.toString() 
