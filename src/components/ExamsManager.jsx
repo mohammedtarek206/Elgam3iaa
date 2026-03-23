@@ -151,40 +151,37 @@ const ExamsManager = () => {
     XLSX.writeFile(wb, "الاختبارات.xlsx");
   };
 
-  if (currentView === 'form') {
-    return (
-      <div className="exam-form-page fade-in">
+      <div className="exam-form-page">
         <div className="form-page-header">
-           <button className="back-btn-minimal" onClick={() => { setCurrentView('list'); setEditingId(null); }}>
-             <ArrowRight size={24} />
-             <span>العودة للقائمة</span>
-           </button>
            <div className="header-title-complex">
-              <Trophy size={32} className="header-icon-anim" />
+              <Trophy size={40} color="#f59e0b" />
               <div>
-                <h2>{editingId ? 'رصد درجات الاختبار' : 'إضافة اختبار جديد'}</h2>
-                <p>بيانات الاختبار ورصد درجات الطلاب بشكل منظم</p>
+                <h2>{editingId ? 'رصد وتعديل درجات الاختبار' : 'إضافة اختبار جديد'}</h2>
+                <p>قم بملء البيانات الأساسية ثم رصد درجات الطلاب</p>
               </div>
            </div>
+           <button className="back-btn-minimal" onClick={() => { setCurrentView('list'); setEditingId(null); }}>
+             <ArrowRight size={20} />
+             <span>رجوع</span>
+           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="premium-exam-form">
           <div className="form-sections-grid">
              {/* General Info Card */}
-             <div className="form-glass-card">
-                <div className="card-indicator"></div>
-                <h3 className="section-title"><Star size={20} /> البيانات الأساسية</h3>
-                <div className="form-row-complex">
+             <div className="form-card-section">
+                <h3 className="section-title"><Calendar size={24} /> المعلومات العامة</h3>
+                <div className="form-row-grid">
                   <div className="form-group-modern">
                     <label>اسم الاختبار/المسابقة</label>
-                    <input required placeholder="مثلاً: اختبار شهر مارس" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                    <input required placeholder="مثلاً: اختبار شهر رمضان" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                   </div>
                   <div className="form-group-modern">
-                    <label>التاريخ</label>
+                    <label>تاريخ الاختبار</label>
                     <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                   </div>
                 </div>
-                <div className="form-row-complex">
+                <div className="form-row-grid" style={{ marginTop: '25px' }}>
                    <div className="form-group-modern">
                     <label>الفصل المستهدف</label>
                     {!editingId ? (
@@ -197,7 +194,7 @@ const ExamsManager = () => {
                     )}
                   </div>
                   <div className="form-group-modern">
-                    <label>المحفظ المختبر (الشيخ)</label>
+                    <label>الشيخ المختبر</label>
                     <select required value={formData.examiner} onChange={e => setFormData({ ...formData, examiner: e.target.value })}>
                       <option value="">اختر الشيخ...</option>
                       {sheikhs.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
@@ -207,45 +204,45 @@ const ExamsManager = () => {
              </div>
 
              {/* Results Section */}
-             <div className="form-glass-card results-section-modern">
-                <h3 className="section-title"><Users size={20} /> رصد الدرجات والنتائج</h3>
-                <div className="results-actions-top">
-                   <div className="student-adder">
-                      <select
-                        className="premium-select"
-                        onChange={(e) => {
-                          const studentId = e.target.value;
-                          if (!studentId) return;
-                          const student = students.find(s => s._id === studentId);
-                          if (student && !formData.results.find(r => r.studentId === studentId)) {
-                            setFormData({
-                              ...formData,
-                              results: [
-                                ...formData.results,
-                                {
-                                  studentName: student.name,
-                                  studentId: student._id,
-                                  score: '',
-                                  grade: '',
-                                  reward: '',
-                                  examModel: formData.examModel,
-                                  examiner: formData.examiner,
-                                  notes: ''
-                                }
-                              ]
-                            });
-                          }
-                          e.target.value = "";
-                        }}
-                      >
-                        <option value="">إضافة طالب يدوياً من خارج الفصل...</option>
-                        {students.filter(s => !formData.results.find(r => r.studentId === s._id)).map(s => (
-                          <option key={s._id} value={s._id}>{s.name} ({s.className})</option>
-                        ))}
-                      </select>
-                   </div>
+             <div className="form-card-section">
+                <h3 className="section-title"><Users size={24} /> رصد الدرجات</h3>
+                
+                <div className="results-header-actions">
+                   <select
+                     className="premium-search-select"
+                     onChange={(e) => {
+                       const studentId = e.target.value;
+                       if (!studentId) return;
+                       const student = students.find(s => s._id === studentId);
+                       if (student && !formData.results.find(r => r.studentId === studentId)) {
+                         setFormData({
+                           ...formData,
+                           results: [
+                             ...formData.results,
+                             {
+                               studentName: student.name,
+                               studentId: student._id,
+                               score: '',
+                               grade: '',
+                               reward: '',
+                               examModel: formData.examModel,
+                               examiner: formData.examiner,
+                               notes: ''
+                             }
+                           ]
+                         });
+                       }
+                       e.target.value = "";
+                     }}
+                   >
+                     <option value="">بحث وإضافة طالب يدوي...</option>
+                     {students.filter(s => !formData.results.find(r => r.studentId === s._id)).map(s => (
+                       <option key={s._id} value={s._id}>{s.name} ({s.className})</option>
+                     ))}
+                   </select>
+
                    {editingId && (
-                      <button type="button" className="refresh-btn-glass" onClick={() => {
+                      <button type="button" className="add-class-students-btn" onClick={() => {
                         const classStudents = students.filter(s => s.className === formData.className);
                         const existingIds = (formData.results || []).map(r => r.studentId);
                         const newOnes = classStudents.filter(s => !existingIds.includes(s._id)).map(s => ({
@@ -261,29 +258,29 @@ const ExamsManager = () => {
                         if (newOnes.length > 0) {
                           setFormData({ ...formData, results: [...formData.results, ...newOnes] });
                         }
-                      }}>إضافة باقي طلاب الفصل</button>
+                      }}>إدراج باقي طلاب الفصل</button>
                    )}
                 </div>
 
                 <div className="modern-table-container">
-                  <table className="premium-table">
+                  <table className="results-modern-table">
                     <thead>
                       <tr>
-                        <th>اسم الطالب</th>
-                        <th>الدرجة (100)</th>
-                        <th>التقدير</th>
-                        <th>ملاحظات الطالب</th>
-                        <th style={{ width: '50px' }}></th>
+                        <th>الاسم</th>
+                        <th style={{ width: '120px' }}>الدرجة</th>
+                        <th style={{ width: '150px' }}>التقدير</th>
+                        <th>ملاحظات</th>
+                        <th style={{ width: '60px' }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {formData.results.map((res, idx) => (
-                        <tr key={idx} className="table-row-anim">
-                          <td className="st-name-cell">{res.studentName}</td>
+                        <tr key={idx} className="result-row-card">
+                          <td className="student-name-highlight">{res.studentName}</td>
                           <td>
                             <input
                               type="number"
-                              className="table-input"
+                              className="grade-input-mini"
                               placeholder="0"
                               value={res.score}
                               onChange={e => {
@@ -295,7 +292,7 @@ const ExamsManager = () => {
                           </td>
                           <td>
                             <select
-                               className="table-input"
+                               className="grade-input-mini"
                                value={res.grade}
                                onChange={e => {
                                  const newRes = [...formData.results];
@@ -312,8 +309,8 @@ const ExamsManager = () => {
                           </td>
                           <td>
                             <input
-                              className="table-input"
-                              placeholder="مثلاً: ممتاز في التجويد"
+                              className="grade-input-mini"
+                              placeholder="اختياري..."
                               value={res.notes}
                               onChange={e => {
                                 const newRes = [...formData.results];
@@ -325,28 +322,31 @@ const ExamsManager = () => {
                           <td>
                             <button
                               type="button"
-                              className="delete-row-btn"
+                              className="delete-btn-rounded"
                               onClick={() => {
                                 const newRes = formData.results.filter((_, i) => i !== idx);
                                 setFormData({ ...formData, results: newRes });
                               }}
                             >
-                              <X size={16} />
+                              <X size={18} />
                             </button>
                           </td>
                         </tr>
                       ))}
+                      {formData.results.length === 0 && (
+                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>لا يوجد طلاب مضافين لهذا الاختبار حالياً</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
              </div>
           </div>
 
-          <div className="form-footer-sticky">
-             <button type="button" className="secondary-btn-modern" onClick={() => { setCurrentView('list'); setEditingId(null); }}>إلغاء</button>
-             <button type="submit" className="primary-btn-modern">
-                <CheckCircle size={20} />
-                {editingId ? 'تحديث بيانات الاختبار' : 'حفظ ونشر الاختبار'}
+          <div className="form-page-footer">
+             <button type="button" className="secondary-btn-modern" onClick={() => { setCurrentView('list'); setEditingId(null); }}>إلغاء وتجاهل</button>
+             <button type="submit" className="btn-primary-premium">
+                <CheckCircle size={22} />
+                {editingId ? 'حفظ التعديلات' : 'نشر نتائج الاختبار'}
              </button>
           </div>
         </form>
@@ -481,131 +481,110 @@ const ExamsManager = () => {
       <style>{`
         /* --- General Layout --- */
         .exams-manager {
-          padding: 30px;
-          max-width: 1400px;
-          margin: 0 auto;
+          padding: 20px 0;
         }
 
-        /* --- Full Screen Form View --- */
+        /* --- Full Screen Sub-Page --- */
         .exam-form-page {
-          background: #fdfdfd;
-          min-height: 100vh;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 9999;
+          background: #f8fafc;
+          border-radius: 24px;
+          min-height: 80vh;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.08); /* Premium shadow */
           display: flex;
           flex-direction: column;
-          overflow-y: auto;
           direction: rtl;
+          overflow: hidden;
+          animation: slideUp 0.5s ease-out;
+          border: 1px solid #e2e8f0;
+          margin-bottom: 40px;
         }
 
-        /* Clean Header */
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Modern Sub-Header */
         .form-page-header {
           background: white;
-          padding: 15px 50px;
+          padding: 30px 40px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          border-bottom: 1px solid #edf2f7;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-          position: sticky;
-          top: 0;
-          z-index: 1000;
+          border-bottom: 2px solid #f1f5f9;
         }
 
-        .header-left-side {
+        .header-title-complex {
           display: flex;
           align-items: center;
-          gap: 25px;
+          gap: 20px;
         }
 
         .header-title-complex h2 {
           margin: 0;
-          font-size: 1.6rem;
-          color: #1a202c;
-          font-weight: 800;
+          font-size: 1.8rem;
+          color: #1e293b;
+          font-weight: 900;
         }
 
         .header-title-complex p {
           margin: 0;
-          color: #718096;
-          font-size: 0.85rem;
+          color: #64748b;
+          font-size: 0.95rem;
+          margin-top: 5px;
         }
 
         .back-btn-minimal {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          color: #4a5568;
-          font-weight: 700;
-          border-radius: 10px;
-          background: #f7fafc;
-          transition: all 0.2s;
+          gap: 10px;
+          padding: 12px 24px;
+          background: #f1f5f9;
+          color: #475569;
+          font-weight: 800;
+          border-radius: 14px;
+          transition: all 0.2s ease;
         }
 
         .back-btn-minimal:hover {
-          background: #edf2f7;
-          color: #2d3748;
-          transform: translateX(3px);
+          background: #e2e8f0;
+          color: #1e293b;
+          transform: translateX(5px);
         }
 
-        /* The Form Container */
+        /* The Form Content */
         .premium-exam-form {
-          flex: 1;
-          width: 100%;
-          max-width: 1100px;
-          margin: 40px auto;
-          padding: 0 20px 120px 20px;
-        }
-
-        .form-sections-grid {
+          padding: 40px;
           display: flex;
           flex-direction: column;
           gap: 40px;
         }
 
-        /* Premium Minimalist Cards */
-        .form-glass-card {
+        /* Sections */
+        .form-card-section {
            background: white;
-           border-radius: 24px;
-           padding: 40px;
+           border-radius: 20px;
+           padding: 35px;
            border: 1px solid #f1f5f9;
-           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-           position: relative;
+           box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
         }
 
         .section-title {
           display: flex;
           align-items: center;
-          gap: 15px;
-          font-size: 1.4rem;
+          gap: 12px;
+          font-size: 1.3rem;
           font-weight: 800;
-          color: #1a365d;
-          margin-bottom: 35px;
-          position: relative;
+          color: #0f172a;
+          margin-bottom: 30px;
+          padding-bottom: 15px;
+          border-bottom: 2px solid #f8fafc;
         }
 
-        .section-title::after {
-          content: '';
-          position: absolute;
-          bottom: -10px;
-          right: 0;
-          width: 60px;
-          height: 4px;
-          background: var(--accent);
-          border-radius: 2px;
-        }
-
-        /* Form Rows */
-        .form-row-complex {
+        .form-row-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 30px;
-          margin-bottom: 25px;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 25px;
         }
 
         .form-group-modern {
@@ -616,38 +595,29 @@ const ExamsManager = () => {
 
         .form-group-modern label {
           font-weight: 700;
-          color: #4a5568;
-          font-size: 0.95rem;
-          margin-right: 5px;
+          color: #334155;
+          font-size: 0.9rem;
         }
 
         .form-group-modern input, 
         .form-group-modern select {
-          padding: 14px 20px;
+          padding: 14px 18px;
           border: 2px solid #e2e8f0;
-          border-radius: 16px;
+          border-radius: 14px;
           font-size: 1rem;
-          background: #f8fafc;
-          transition: all 0.2s;
-          width: 100%;
+          transition: all 0.3s ease;
+          background: #fff;
         }
 
         .form-group-modern input:focus,
         .form-group-modern select:focus {
           border-color: var(--primary);
-          background: white;
+          box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.1);
           outline: none;
-          box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.08);
         }
 
-        .readonly-input {
-          background: #edf2f7;
-          color: #718096;
-          cursor: not-allowed;
-        }
-
-        /* Results Table Enhancement */
-        .results-actions-top {
+        /* Results Area */
+        .results-header-actions {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -655,119 +625,106 @@ const ExamsManager = () => {
           gap: 20px;
         }
 
-        .student-adder { flex: 1; }
-
-        .premium-select {
-          width: 100%;
+        .premium-search-select {
+          flex: 1;
           max-width: 400px;
           padding: 12px 20px;
           border: 2px solid var(--accent);
-          border-radius: 14px;
+          border-radius: 12px;
           font-weight: 700;
           color: var(--primary);
-          appearance: none;
-          background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat left 15px center;
         }
 
-        .refresh-btn-glass {
-          background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-          color: #0369a1;
+        .add-class-students-btn {
           padding: 12px 24px;
-          border-radius: 14px;
+          background: #f0fdf4;
+          color: #166534;
           font-weight: 800;
-          border: none;
-          cursor: pointer;
-          transition: all 0.3s;
-          white-space: nowrap;
+          border-radius: 12px;
+          border: 1px solid #dcfce7;
+          transition: all 0.2s;
         }
 
-        .refresh-btn-glass:hover {
-          filter: brightness(1.05);
+        .add-class-students-btn:hover {
+          background: #dcfce7;
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(3, 105, 161, 0.15);
         }
 
-        /* Modern Table */
-        .modern-table-container {
-          border-radius: 20px;
-          overflow: hidden;
-          border: 1px solid #e2e8f0;
-          background: white;
-        }
-
-        .premium-table {
+        /* The Grid/Table for results */
+        .results-modern-table {
           width: 100%;
-          border-collapse: collapse;
+          border-collapse: separate;
+          border-spacing: 0 12px;
         }
 
-        .premium-table th {
-          background: #f8fafc;
-          padding: 20px;
+        .results-modern-table th {
+          padding: 0 20px 10px 20px;
           text-align: right;
-          color: #4a5568;
-          font-weight: 800;
-          border-bottom: 2px solid #edf2f7;
+          color: #64748b;
+          font-weight: 700;
+          font-size: 0.9rem;
         }
 
-        .premium-table td {
-          padding: 15px 20px;
+        .result-row-card td {
+          background: white;
+          padding: 20px;
           border-bottom: 1px solid #f1f5f9;
+          border-top: 1px solid #f1f5f9;
         }
 
-        .st-name-cell {
-          font-weight: 800;
-          color: #2d3748;
+        .result-row-card td:first-child {
+          border-right: 1px solid #f1f5f9;
+          border-radius: 0 16px 16px 0;
         }
 
-        .table-input {
+        .result-row-card td:last-child {
+          border-left: 1px solid #f1f5f9;
+          border-radius: 16px 0 0 16px;
+        }
+
+        .student-name-highlight {
+          font-weight: 900;
+          color: #1e293b;
+          font-size: 1.05rem;
+        }
+
+        .grade-input-mini {
           padding: 10px 15px;
           border: 1.5px solid #e2e8f0;
           border-radius: 10px;
           width: 100%;
-          transition: border-color 0.2s;
+          font-weight: 600;
         }
 
-        .table-input:focus {
-          border-color: var(--primary);
-          outline: none;
-          background: #fff;
-        }
-
-        .delete-row-btn {
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          background: #fff5f5;
-          color: #fc8181;
+        .delete-btn-rounded {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: #fff1f2;
+          color: #e11d48;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.2s;
         }
 
-        .delete-row-btn:hover {
-          background: #feb2b2;
+        .delete-btn-rounded:hover {
+          background: #fb7185;
           color: white;
         }
 
-        /* Sticky Footer */
-        .form-footer-sticky {
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
+        /* Footer Sticky */
+        .form-page-footer {
           background: white;
-          padding: 25px 50px;
+          padding: 30px 40px;
           display: flex;
           justify-content: flex-end;
           gap: 20px;
-          border-top: 1px solid #edf2f7;
-          box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
-          z-index: 1000;
+          border-top: 2px solid #f1f5f9;
         }
 
-        .primary-btn-modern {
-          padding: 15px 45px;
+        .btn-primary-premium {
+          padding: 16px 45px;
           background: var(--primary);
           color: white;
           border-radius: 16px;
@@ -776,75 +733,65 @@ const ExamsManager = () => {
           display: flex;
           align-items: center;
           gap: 12px;
-          transition: all 0.3s;
-          box-shadow: 0 4px 15px rgba(25, 135, 84, 0.2);
+          box-shadow: 0 10px 15px -3px rgba(39, 174, 96, 0.3);
         }
 
-        .primary-btn-modern:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(25, 135, 84, 0.3);
+        .btn-primary-premium:hover {
           filter: brightness(1.1);
+          transform: translateY(-2px);
+          box-shadow: 0 20px 25px -5px rgba(39, 174, 96, 0.4);
         }
 
-        .secondary-btn-modern {
-          padding: 15px 35px;
-          background: #f7fafc;
-          color: #4a5568;
-          border-radius: 16px;
-          font-weight: 700;
-        }
-
-        /* --- List View Styling --- */
+        /* List View Cards */
         .exams-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 30px;
-          margin-top: 40px;
+          grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+          gap: 25px;
+          margin-top: 30px;
         }
 
         .exam-card {
-           background: white;
-           border-radius: 20px;
-           padding: 24px;
-           border: 1px solid #edf2f7;
-           box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-           transition: all 0.3s;
-           position: relative;
-           display: flex;
-           flex-direction: column;
-           gap: 20px;
+          background: white;
+          border-radius: 24px;
+          padding: 25px;
+          border: 1px solid #f1f5f9;
+          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+          transition: all 0.3s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
         }
 
-        .exam-card:hover { 
-          transform: translateY(-8px);
+        .exam-card:hover {
+          transform: translateY(-10px);
           box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
           border-color: var(--accent);
         }
 
-        /* Clean badges & indicators */
         .grade-pill {
-           padding: 6px 14px;
-           border-radius: 10px;
-           background: #f1f5f9;
-           color: #475569;
-           font-size: 0.85rem;
-           font-weight: 800;
+          display: inline-block;
+          padding: 6px 16px;
+          border-radius: 12px;
+          font-weight: 800;
+          font-size: 0.85rem;
+          background: #f1f5f9;
         }
 
-        .grade-pill.excelent {
-           background: #dcfce7;
-           color: #166534;
-        }
+        .grade-pill.excelent { background: #dcfce7; color: #166534; }
 
-        /* --- Responsive Fixes --- */
-        @media (max-width: 900px) {
-          .form-row-complex { grid-template-columns: 1fr; }
-          .premium-exam-form { margin: 20px auto; padding: 0 15px 120px 15px; }
-          .form-page-header { padding: 15px 20px; }
-          .form-footer-sticky { padding: 20px; flex-direction: column-reverse; }
-          .form-footer-sticky button { width: 100%; }
+        @media (max-width: 768px) {
+           .form-page-header { padding: 20px; flex-direction: column; align-items: flex-start; gap: 20px; }
+           .premium-exam-form { padding: 20px; }
+           .form-page-footer { padding: 20px; flex-direction: column-reverse; }
+           .form-page-footer button { width: 100%; }
         }
       `}</style>
+    </div>
+  );
+};
+
+export default ExamsManager;
+
     </div>
   );
 };
