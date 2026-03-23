@@ -162,6 +162,7 @@ const StudentManager = () => {
   const exportToExcel = () => {
     const dataToExport = filteredStudents.map(s => ({
       'الاسم': s.name,
+      'الرقم القومي': s.nationalId,
       'الهاتف': s.phone,
       'الشيخ': s.sheikh,
       'الفصل': s.className || s.class,

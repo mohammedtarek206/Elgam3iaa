@@ -186,7 +186,7 @@ app.post('/api/students', auth, async (req, res) => {
       }
     }
     if (req.body.phone && req.body.phone.length !== 11) {
-      return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 12 رقم' });
+      return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 11 رقم' });
     }
     const student = new Student(req.body);
     await student.save();
@@ -231,7 +231,7 @@ app.post('/api/public/register', async (req, res) => {
       }
     }
     if (phone && phone.length !== 11) {
-      return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 12 رقم' });
+      return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 11 رقم' });
     }
     const request = new StudentRequest(req.body);
     await request.save();

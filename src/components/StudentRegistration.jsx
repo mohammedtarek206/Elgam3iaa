@@ -142,23 +142,23 @@ const StudentRegistration = ({ onBack }) => {
 
           <div className="form-row">
             <div className="input-group">
-              <label><Phone size={18} /> رقم هاتف الطالب (12 رقم)</label>
+              <label><Phone size={18} /> رقم هاتف الطالب (11 رقم)</label>
               <input 
                 required
-                maxLength="12"
-                minLength="12"
-                placeholder="12 رقم" 
+                maxLength="11"
+                minLength="11"
+                placeholder="11 رقم" 
                 value={formData.phone} 
                 onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} 
               />
             </div>
             <div className="input-group">
-              <label><Phone size={18} /> رقم هاتف ولي الأمر (12 رقم)</label>
+              <label><Phone size={18} /> رقم هاتف ولي الأمر (11 رقم)</label>
               <input 
                 required 
-                maxLength="12"
-                minLength="12"
-                placeholder="12 رقم" 
+                maxLength="11"
+                minLength="11"
+                placeholder="11 رقم" 
                 value={formData.parentPhone} 
                 onChange={e => setFormData({...formData, parentPhone: e.target.value.replace(/\D/g, '')})} 
               />
