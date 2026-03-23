@@ -161,6 +161,7 @@ const SheikhManager = () => {
       const count = (students || []).filter(student => student && student.sheikh === s.name).length;
       return {
         'الاسم': s.name,
+        'الرقم القومي': s.nationalId || '---',
         'الهاتف': s.phone,
         'الفصول': (s.assignedClasses || []).join(', '),
         'تاريخ التعيين': s.hireDate,
