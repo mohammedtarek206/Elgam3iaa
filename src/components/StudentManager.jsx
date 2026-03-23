@@ -402,8 +402,8 @@ const StudentManager = () => {
                   <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>رقم هاتف ولي الأمر (12 رقم)</label>
-                  <input required maxLength="12" minLength="12" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
+                  <label>رقم هاتف ولي الأمر (11 رقم)</label>
+                  <input required maxLength="11" minLength="11" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
                 </div>
                 <div className="form-group">
                   <label>الفصل</label>

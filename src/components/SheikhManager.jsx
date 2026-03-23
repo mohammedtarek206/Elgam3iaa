@@ -382,8 +382,8 @@ const SheikhManager = () => {
                   <input placeholder="مثلاً: لسانس أصول دين / إجازة حفص" value={formData.qualification} onChange={e => setFormData({...formData, qualification: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>رقم الهاتف</label>
-                  <input required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  <label>رقم الهاتف (11 رقم)</label>
+                  <input required maxLength="11" minLength="11" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
                 </div>
                 <div className="form-group full-width">
                   <label>العنوان</label>
