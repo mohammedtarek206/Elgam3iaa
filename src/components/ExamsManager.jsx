@@ -151,6 +151,8 @@ const ExamsManager = () => {
     XLSX.writeFile(wb, "الاختبارات.xlsx");
   };
 
+  if (currentView === 'form') {
+    return (
       <div className="exam-form-page">
         <div className="form-page-header">
            <div className="header-title-complex">
@@ -786,12 +788,6 @@ const ExamsManager = () => {
            .form-page-footer button { width: 100%; }
         }
       `}</style>
-    </div>
-  );
-};
-
-export default ExamsManager;
-
     </div>
   );
 };
