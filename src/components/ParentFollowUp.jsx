@@ -62,9 +62,21 @@ const ParentFollowUp = ({ onBack }) => {
           </div>
         </form>
         {error && (
-          <div className="error-message fade-in">
-            <AlertCircle size={20} />
-            <span>{error}</span>
+          <div className="error-message-container fade-in">
+            <div className={`error-message ${error.includes('مستبعد') ? 'excluded' : ''}`}>
+              <AlertCircle size={20} />
+              <span>{error}</span>
+            </div>
+            {error.includes('مستبعد') && (
+              <a 
+                href="https://wa.me/201111347255" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="whatsapp-followup-btn"
+              >
+                تواصل واتساب للمتابعة
+              </a>
+            )}
           </div>
         )}
       </div>
@@ -257,6 +269,41 @@ const ParentFollowUp = ({ onBack }) => {
           display: flex;
           flex-direction: column;
           align-items: center;
+        }
+
+        .error-message-container {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-top: 24px;
+          align-items: center;
+        }
+
+        .whatsapp-followup-btn {
+          background: #25d366;
+          color: white;
+          padding: 12px 32px;
+          border-radius: 30px;
+          font-weight: bold;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+          transition: transform 0.2s, background 0.2s;
+        }
+
+        .whatsapp-followup-btn:hover {
+          background: #128c7e;
+          transform: translateY(-2px);
+        }
+
+        .error-message.excluded {
+          background: #fff7ed;
+          color: #9a3412;
+          border-right: 4px solid #f97316;
+          padding: 20px;
+          font-size: 1.1rem;
         }
 
         .attendance-warning {

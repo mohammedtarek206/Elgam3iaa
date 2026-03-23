@@ -253,7 +253,7 @@ app.get('/api/public/student-followup/:nationalId', async (req, res) => {
     }
 
     if (student.isActive === false) {
-      return res.status(403).send({ message: 'تم إلغاء تنشيط هذا الطالب' });
+      return res.status(403).send({ message: 'هذا الطالب مستبعد يرجى التواصل الواتساب على الرقم 01111347255' });
     }
 
     // 2. Fetch Attendance (only extracting this student's status)

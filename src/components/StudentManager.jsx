@@ -160,7 +160,7 @@ const StudentManager = () => {
   };
 
   const handleToggleActive = async (student) => {
-    if (!window.confirm(`هل أنت متأكد من ${student.isActive ? 'إيقاف تنشيط' : 'تنشيط'} هذا الطالب؟`)) return;
+    if (!window.confirm(`هل أنت متأكد من ${student.isActive ? 'استبعاد' : 'تنشيط'} هذا الطالب؟`)) return;
     
     const token = localStorage.getItem('token');
     try {
@@ -398,7 +398,7 @@ const StudentManager = () => {
                     onClick={() => user.role === 'admin' && handleToggleActive(student)}
                     style={{ cursor: user.role === 'admin' ? 'pointer' : 'default' }}
                   >
-                    {student.isActive !== false ? 'نشط' : 'ملغى التنشيط'}
+                    {student.isActive !== false ? 'نشط' : 'مستبعد'}
                   </span>
                 </td>
                 <td>{student.monthlyFees} ج.م</td>
