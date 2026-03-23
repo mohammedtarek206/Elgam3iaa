@@ -157,6 +157,8 @@ const StudentManager = () => {
     } finally {
       setSaving(false);
     }
+  };
+
   const handleToggleActive = async (student) => {
     if (!window.confirm(`هل أنت متأكد من ${student.isActive ? 'إيقاف تنشيط' : 'تنشيط'} هذا الطالب؟`)) return;
     
