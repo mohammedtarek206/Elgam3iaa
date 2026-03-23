@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 const studentRequestSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  phone: { type: String, minlength: 12, maxlength: 12 },
-  parentPhone: { type: String, minlength: 12, maxlength: 12 },
+  phone: { type: String, minlength: 11, maxlength: 11 },
+  parentPhone: { type: String, minlength: 11, maxlength: 11 },
   level: String,
   socialStatus: String,
   nationalId: { type: String, minlength: 14, maxlength: 14 },

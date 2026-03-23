@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  phone: { type: String, minlength: 12, maxlength: 12 },
+  phone: { type: String, minlength: 11, maxlength: 11 },
   sheikh: String,
   className: String, // 'class' is a reserved word in some contexts
   level: String,

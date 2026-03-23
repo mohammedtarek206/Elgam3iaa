@@ -185,7 +185,7 @@ app.post('/api/students', auth, async (req, res) => {
         return res.status(400).send({ message: 'هذا الرقم القومي مسجل من قبل' });
       }
     }
-    if (req.body.phone && req.body.phone.length !== 12) {
+    if (req.body.phone && req.body.phone.length !== 11) {
       return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 12 رقم' });
     }
     const student = new Student(req.body);
@@ -230,7 +230,7 @@ app.post('/api/public/register', async (req, res) => {
         return res.status(400).send({ message: 'هذا الرقم القومي مسجل من قبل' });
       }
     }
-    if (phone && phone.length !== 12) {
+    if (phone && phone.length !== 11) {
       return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 12 رقم' });
     }
     const request = new StudentRequest(req.body);
