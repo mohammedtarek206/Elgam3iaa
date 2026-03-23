@@ -142,7 +142,7 @@ function App() {
     <div className="app-container" dir="rtl">
       <header className="main-header">
         <div className="header-brand">
-          <img src="/تصميم بدون عنوان (3).png" alt="اللوجو" className="header-logo" />
+          <img src="/shariaa_logo.png" alt="اللوجو" className="header-logo" />
           <div className="header-info">
             <h1>الجمعية الشرعية كفر طلا</h1>
             <span className="subtitle">مكتب تحفيظ القران الكريم</span>
@@ -161,7 +161,7 @@ function App() {
       <main className="content">
         {currentPage === 'home' ? (
           <div className="welcome-section">
-            <img src="/تصميم بدون عنوان (3).png" alt="الجمعية الشرعية" className="home-hero-logo" />
+            <img src="/shariaa_logo.png" alt="الجمعية الشرعية" className="home-hero-logo" />
             <h2>الجمعية الشرعية كفر طلا</h2>
             <p>مكتب تحفيظ القران الكريم</p>
           </div>
