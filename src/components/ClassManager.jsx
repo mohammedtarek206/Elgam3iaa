@@ -291,7 +291,7 @@ const ClassManager = () => {
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-group">
-                  <th>اسم المحفظ</th>
+                  <label>اسم الفصل</label>
                   <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div className="form-group">
@@ -309,7 +309,7 @@ const ClassManager = () => {
               </div>
               <div className="form-actions">
                 <button type="submit" className="submit-btn" disabled={saving}>
-                  {saving ? 'جاري الحفظ...' : (editingSheikh ? 'حفظ التعديلات' : 'إضافة المحفظ')}
+                  {saving ? 'جاري الحفظ...' : (editingClass ? 'حفظ التعديلات' : 'إضافة فصل جديد')}
                 </button>
                 <button type="button" className="cancel-btn" onClick={() => setShowForm(false)}>إلغاء</button>
               </div>
