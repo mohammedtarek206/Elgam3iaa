@@ -271,7 +271,7 @@ const ParentFollowUp = ({ onBack }) => {
           display: flex;
           align-items: center;
           gap: 16px;
-          border-right: 6px solid;
+          border-right: 6px solid #ccc;
         }
 
         .attendance-warning.warning {
@@ -305,7 +305,6 @@ const ParentFollowUp = ({ onBack }) => {
           opacity: 0.9;
         }
 
-
         .container-header {
           text-align: center;
           margin-bottom: 40px;
@@ -321,7 +320,7 @@ const ParentFollowUp = ({ onBack }) => {
           display: flex;
           align-items: center;
           gap: 8px;
-          color: var(--primary);
+          color: #2c3e50;
           background: white;
           padding: 8px 16px;
           border-radius: 20px;
@@ -331,13 +330,13 @@ const ParentFollowUp = ({ onBack }) => {
         }
 
         .back-btn:hover {
-          background: var(--primary);
+          background: #2c3e50;
           color: white;
           transform: translateY(-2px);
         }
 
         .container-header h2 {
-          color: var(--primary);
+          color: #2c3e50;
           font-size: 2.2rem;
           margin-bottom: 12px;
           margin-top: 40px;
@@ -369,7 +368,7 @@ const ParentFollowUp = ({ onBack }) => {
         }
         
         .input-wrapper:focus-within {
-          border-color: var(--accent);
+          border-color: #3498db;
           box-shadow: 0 10px 25px rgba(52, 152, 219, 0.2);
         }
 
@@ -383,7 +382,7 @@ const ParentFollowUp = ({ onBack }) => {
         }
 
         .search-btn {
-          background: var(--primary);
+          background: #2c3e50;
           color: white;
           border: none;
           padding: 12px 24px;
@@ -398,7 +397,7 @@ const ParentFollowUp = ({ onBack }) => {
         }
 
         .search-btn:hover:not(:disabled) {
-          background: var(--secondary);
+          background: #34495e;
           transform: translateY(-2px);
         }
         
@@ -461,7 +460,7 @@ const ParentFollowUp = ({ onBack }) => {
 
         .card-header h3 {
           margin: 0;
-          color: var(--text-color);
+          color: #2c3e50;
           font-size: 1.3rem;
         }
 
@@ -476,7 +475,7 @@ const ParentFollowUp = ({ onBack }) => {
         .text-green { color: #2ecc71; background: #e8f5e9; }
         .text-blue { color: #3498db; background: #ebf5fb; }
         .text-orange { color: #f39c12; background: #fef5e7; }
-        .text-primary { color: var(--primary); font-weight: bold; }
+        .text-primary { color: #2c3e50; font-weight: bold; }
         .text-success { color: #27ae60; font-weight: bold; }
 
         .info-grid {
@@ -501,7 +500,7 @@ const ParentFollowUp = ({ onBack }) => {
         }
 
         .info-value {
-          color: var(--text-color);
+          color: #2c3e50;
           font-size: 1.1rem;
           font-weight: 500;
         }
@@ -527,7 +526,7 @@ const ParentFollowUp = ({ onBack }) => {
         td {
           padding: 16px 12px;
           border-bottom: 1px solid #f1f5f9;
-          color: var(--text-color);
+          color: #2c3e50;
         }
 
         tr:last-child td {
