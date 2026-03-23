@@ -174,6 +174,20 @@ app.get('/api/students', auth, async (req, res) => {
 app.post('/api/students', auth, async (req, res) => {
   console.log('Incoming student data:', req.body);
   try {
+    const { nationalId } = req.body;
+    if (nationalId) {
+      if (nationalId.length !== 14) {
+        return res.status(400).send({ message: 'الرقم القومي يجب أن يكون 14 رقم' });
+      }
+      const existing = await Student.findOne({ nationalId });
+      const existingReq = await StudentRequest.findOne({ nationalId });
+      if (existing || existingReq) {
+        return res.status(400).send({ message: 'هذا الرقم القومي مسجل من قبل' });
+      }
+    }
+    if (req.body.phone && req.body.phone.length !== 12) {
+      return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 12 رقم' });
+    }
     const student = new Student(req.body);
     await student.save();
     console.log('✅ Student saved successfully');
@@ -205,6 +219,20 @@ app.delete('/api/students/:id', [auth, isAdmin], async (req, res) => {
 // --- Student Request Routes (New) ---
 app.post('/api/public/register', async (req, res) => {
   try {
+    const { nationalId, phone } = req.body;
+    if (nationalId) {
+      if (nationalId.length !== 14) {
+        return res.status(400).send({ message: 'الرقم القومي يجب أن يكون 14 رقم' });
+      }
+      const existing = await Student.findOne({ nationalId });
+      const existingReq = await StudentRequest.findOne({ nationalId });
+      if (existing || existingReq) {
+        return res.status(400).send({ message: 'هذا الرقم القومي مسجل من قبل' });
+      }
+    }
+    if (phone && phone.length !== 12) {
+      return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 12 رقم' });
+    }
     const request = new StudentRequest(req.body);
     await request.save();
     res.status(201).send({ message: 'تم استلام طلبك بنجاح، سيتم مراجعته من قبل الإدارة' });
@@ -614,13 +642,40 @@ app.get('/api/stats', auth, async (req, res) => {
     // Get last 5 students for "Recent Activity"
     const recentStudents = await Student.find().sort({ createdAt: -1 }).limit(5).select('name className');
 
+    // Attendance Warnings
+    const allRecentAttendance = await Attendance.find({ attendanceType: 'student' })
+      .sort({ date: -1 })
+      .limit(30);
+
+    const studentsWithAbsences = [];
+    const allStudents = await Student.find({}, '_id name className');
+
+    for (const student of allStudents) {
+      let absenceCount = 0;
+      allRecentAttendance.forEach(att => {
+        const record = att.records.find(r => r.personId === student._id.toString());
+        if (record && record.status === 'absent') {
+          absenceCount++;
+        }
+      });
+      if (absenceCount > 3) {
+        studentsWithAbsences.push({
+          _id: student._id,
+          name: student.name,
+          className: student.className,
+          absenceCount
+        });
+      }
+    }
+
     res.send({
       totalStudents: studentCount,
       totalSheikhs: sheikhCount,
       totalClasses: classCount,
       totalRevenue,
       attendanceRate,
-      recentStudents
+      recentStudents,
+      atRiskStudents: studentsWithAbsences
     });
   } catch (err) {
     res.status(500).send({ message: err.message });

@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 const studentRequestSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  phone: String,
-  parentPhone: String,
+  phone: { type: String, minlength: 12, maxlength: 12 },
+  parentPhone: { type: String, minlength: 12, maxlength: 12 },
   level: String,
   socialStatus: String,
-  nationalId: String,
+  nationalId: { type: String, minlength: 14, maxlength: 14 },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   requestDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
 }, { timestamps: true });

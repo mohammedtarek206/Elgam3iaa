@@ -20,9 +20,18 @@ const SURAH_LIST = [
 ];
 
 const StudentManager = () => {
-  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
-  const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
-  const [classes, setClasses] = useState(() => JSON.parse(localStorage.getItem('cache_classes')) || []);
+  const [students, setStudents] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cache_students')) || []; }
+    catch(e) { return []; }
+  });
+  const [sheikhs, setSheikhs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cache_sheikhs')) || []; }
+    catch(e) { return []; }
+  });
+  const [classes, setClasses] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cache_classes')) || []; }
+    catch(e) { return []; }
+  });
   const [loading, setLoading] = useState(!students.length);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
 
@@ -393,8 +402,8 @@ const StudentManager = () => {
                   <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>رقم هاتف ولي الأمر</label>
-                  <input required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  <label>رقم هاتف ولي الأمر (12 رقم)</label>
+                  <input required maxLength="12" minLength="12" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
                 </div>
                 <div className="form-group">
                   <label>الفصل</label>
@@ -456,8 +465,8 @@ const StudentManager = () => {
                   <input type="date" value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>الرقم القومي</label>
-                  <input maxLength="14" value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value})} />
+                  <label>الرقم القومي (14 رقم)</label>
+                  <input required maxLength="14" minLength="14" value={formData.nationalId} onChange={e => setFormData({...formData, nationalId: e.target.value.replace(/\D/g, '')})} />
                 </div>
                 {user.role === 'admin' && (
                   <div className="form-group" style={{flexDirection: 'row', alignItems: 'center', gap: '10px'}}>

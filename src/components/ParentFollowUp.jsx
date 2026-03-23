@@ -69,8 +69,37 @@ const ParentFollowUp = ({ onBack }) => {
         )}
       </div>
 
+        </div>
+      )}
+
       {studentData && (
         <div className="student-dashboard fade-in">
+          {(() => {
+            const absences = studentData.attendance.filter(a => a.status === 'absent').length;
+            if (absences > 6) {
+              return (
+                <div className="attendance-warning critical fade-in">
+                  <AlertCircle size={24} />
+                  <div className="warning-text">
+                    <strong>تنبيه هام جداً: الطالب منقطع</strong>
+                    <p>لقد غاب الطالب أكثر من 6 حصص ({absences} حصة). يرجى مراجعة الإدارة فوراً.</p>
+                  </div>
+                </div>
+              );
+            } else if (absences > 3) {
+              return (
+                <div className="attendance-warning warning fade-in">
+                  <AlertCircle size={24} />
+                  <div className="warning-text">
+                    <strong>تنبيه: كثرة الغياب</strong>
+                    <p>لقد غاب الطالب {absences} مرات. يرجى الانتظام في الحضور.</p>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* Student Info Card */}
           <div className="dashboard-card info-card">
             <div className="card-header">
@@ -232,6 +261,50 @@ const ParentFollowUp = ({ onBack }) => {
           flex-direction: column;
           align-items: center;
         }
+
+        .attendance-warning {
+          width: 100%;
+          max-width: 1000px;
+          margin-bottom: 24px;
+          padding: 20px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          border-right: 6px solid;
+        }
+
+        .attendance-warning.warning {
+          background: #fff7ed;
+          color: #9a3412;
+          border-color: #f39c12;
+        }
+
+        .attendance-warning.critical {
+          background: #fef2f2;
+          color: #991b1b;
+          border-color: #ef4444;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+          100% { transform: scale(1); }
+        }
+
+        .warning-text strong {
+          display: block;
+          font-size: 1.2rem;
+          margin-bottom: 4px;
+        }
+
+        .warning-text p {
+          margin: 0;
+          font-size: 1rem;
+          opacity: 0.9;
+        }
+
 
         .container-header {
           text-align: center;

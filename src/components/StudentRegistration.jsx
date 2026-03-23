@@ -58,7 +58,7 @@ const StudentRegistration = ({ onBack }) => {
     <div className="registration-container fade-in" dir="rtl">
       <div className="registration-card">
         <div className="reg-header">
-          <img src="/شعار_الجمعية_الشرعية.png" alt="الجمعية الشرعية" className="reg-logo" />
+          <img src="/تصميم بدون عنوان (3).png" alt="الجمعية الشرعية" className="reg-logo" />
           <h1>طلب التحاق جديد</h1>
           <div className="registration-type-badge">طالب جديد</div>
           <p>يرجى ملء البيانات التالية بدقة للانضمام لمكتب تحفيظ القرآن</p>
@@ -129,14 +129,40 @@ const StudentRegistration = ({ onBack }) => {
           </div>
 
           <div className="input-group">
-            <label><Fingerprint size={18} /> الرقم القومي للطالب</label>
+            <label><Fingerprint size={18} /> الرقم القومي للطالب (14 رقم)</label>
             <input 
               required 
               maxLength="14" 
+              minLength="14"
               placeholder="14 رقم من شهادة الميلاد" 
               value={formData.nationalId} 
-              onChange={e => setFormData({...formData, nationalId: e.target.value})} 
+              onChange={e => setFormData({...formData, nationalId: e.target.value.replace(/\D/g, '')})} 
             />
+          </div>
+
+          <div className="form-row">
+            <div className="input-group">
+              <label><Phone size={18} /> رقم هاتف الطالب (12 رقم)</label>
+              <input 
+                required
+                maxLength="12"
+                minLength="12"
+                placeholder="12 رقم" 
+                value={formData.phone} 
+                onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} 
+              />
+            </div>
+            <div className="input-group">
+              <label><Phone size={18} /> رقم هاتف ولي الأمر (12 رقم)</label>
+              <input 
+                required 
+                maxLength="12"
+                minLength="12"
+                placeholder="12 رقم" 
+                value={formData.parentPhone} 
+                onChange={e => setFormData({...formData, parentPhone: e.target.value.replace(/\D/g, '')})} 
+              />
+            </div>
           </div>
 
           <button type="submit" className="submit-reg-btn" disabled={loading}>

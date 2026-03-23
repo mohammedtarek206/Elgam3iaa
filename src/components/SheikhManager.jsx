@@ -5,9 +5,18 @@ import * as XLSX from 'xlsx';
 const API_URL = '/api';
 
 const SheikhManager = () => {
-  const [sheikhs, setSheikhs] = useState(() => JSON.parse(localStorage.getItem('cache_sheikhs')) || []);
-  const [classes, setClasses] = useState(() => JSON.parse(localStorage.getItem('cache_classes')) || []);
-  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_students')) || []);
+  const [sheikhs, setSheikhs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cache_sheikhs')) || []; }
+    catch(e) { return []; }
+  });
+  const [classes, setClasses] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cache_classes')) || []; }
+    catch(e) { return []; }
+  });
+  const [students, setStudents] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cache_students')) || []; }
+    catch(e) { return []; }
+  });
   const [loading, setLoading] = useState(!sheikhs.length);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
 

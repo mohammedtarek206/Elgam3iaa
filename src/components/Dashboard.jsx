@@ -4,7 +4,10 @@ import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, A
 const API_URL = '/api';
 
 const Dashboard = () => {
-  const [students, setStudents] = useState(() => JSON.parse(localStorage.getItem('cache_recent_students')) || []);
+  const [students, setStudents] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cache_recent_students')) || []; }
+    catch(e) { return []; }
+  });
   const [sheikhs, setSheikhs] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [stats, setStats] = useState(() => {
@@ -119,7 +122,7 @@ const Dashboard = () => {
               <p>جاري التحميل...</p>
             ) : (
               // Show last 5 students as "Recent Activity"
-              [...students].reverse().slice(0, 5).map(s => (
+              (students || []).slice(-5).reverse().map(s => (
                 <div key={s._id} className="activity-item">
                   <div className="activity-bullet green"></div>
                   <div className="activity-info">
@@ -129,10 +132,36 @@ const Dashboard = () => {
                 </div>
               ))
             )}
-            {students.length === 0 && <p style={{textAlign:'center', color:'#888'}}>لا يوجد نشاط مؤخراً</p>}
+            {(students || []).length === 0 && <p style={{textAlign:'center', color:'#888'}}>لا يوجد نشاط مؤخراً</p>}
           </div>
         </div>
+
+        {stats.atRiskStudents && stats.atRiskStudents.length > 0 && (
+          <div className="attendance-alerts main-card full-width">
+            <div className="card-header">
+              <h3 style={{color: '#e74c3c'}}>تنبيهات الحضور والغياب</h3>
+              <Calendar size={20} color="#e74c3c" />
+            </div>
+            <div className="alerts-grid">
+              {stats.atRiskStudents.map(student => (
+                <div key={student._id} className={`alert-card ${student.absenceCount > 6 ? 'critical' : 'warning'}`}>
+                  <div className="alert-info">
+                    <strong>{student.name}</strong>
+                    <span>فصل: {student.className}</span>
+                  </div>
+                  <div className="alert-stats">
+                    <span className="absence-count">{student.absenceCount} غيابات</span>
+                    <span className="absence-status">
+                      {student.absenceCount > 6 ? 'منقطع' : 'تنبيه'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
 
       <style>{`
         .dashboard-container {
@@ -257,9 +286,30 @@ const Dashboard = () => {
         .activity-info strong { font-size: 0.95rem; color: var(--secondary); }
         .activity-info span { font-size: 0.85rem; color: #777; }
 
+        .attendance-alerts { margin-top: 24px; border-top: 4px solid #e74c3c; }
+        .alerts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .alert-card { padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid; }
+        .alert-card.warning { background: #fef9c3; border-color: #f1c40f; color: #854d0e; }
+        .alert-card.critical { background: #fdedec; border-color: #e74c3c; color: #943126; animation: softPulse 2s infinite; }
+        
+        @keyframes softPulse {
+          0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .alert-info { display: flex; flex-direction: column; }
+        .alert-info strong { font-size: 1rem; }
+        .alert-info span { font-size: 0.85rem; opacity: 0.8; }
+        
+        .alert-stats { text-align: left; display: flex; flex-direction: column; align-items: flex-end; }
+        .absence-count { font-weight: 800; font-size: 1.1rem; }
+        .absence-status { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; }
+
         @media (max-width: 900px) {
           .dashboard-main-grid { grid-template-columns: 1fr; }
         }
+
       `}</style>
     </div>
   );

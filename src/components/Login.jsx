@@ -40,7 +40,7 @@ const Login = ({ onLogin }) => {
       <div className="login-card">
         <div className="login-header">
           <div className="logo-icon">
-            <img src="/شعار_الجمعية_الشرعية.png" alt="الجمعية الشرعية" className="login-logo-img" />
+            <img src="/تصميم بدون عنوان (3).png" alt="الجمعية الشرعية" className="login-logo-img" />
           </div>
           <h2>تسجيل الدخول</h2>
           <div className="branding-labels">
