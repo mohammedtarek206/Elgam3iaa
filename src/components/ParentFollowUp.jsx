@@ -69,9 +69,6 @@ const ParentFollowUp = ({ onBack }) => {
         )}
       </div>
 
-        </div>
-      )}
-
       {studentData && (
         <div className="student-dashboard fade-in">
           {(() => {
