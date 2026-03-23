@@ -850,9 +850,3 @@ const ExamsManager = () => {
 };
 
 export default ExamsManager;
-
-    </div>
-  );
-};
-
-export default ExamsManager;
