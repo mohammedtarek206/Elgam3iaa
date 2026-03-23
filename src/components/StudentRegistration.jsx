@@ -58,7 +58,7 @@ const StudentRegistration = ({ onBack }) => {
     <div className="registration-container fade-in" dir="rtl">
       <div className="registration-card">
         <div className="reg-header">
-          <img src="/تصميم بدون عنوان (3).png" alt="الجمعية الشرعية" className="reg-logo" />
+          <img src="/shariaa_logo.png" alt="الجمعية الشرعية" className="reg-logo" />
           <h1>طلب التحاق جديد</h1>
           <div className="registration-type-badge">طالب جديد</div>
           <p>يرجى ملء البيانات التالية بدقة للانضمام لمكتب تحفيظ القرآن</p>

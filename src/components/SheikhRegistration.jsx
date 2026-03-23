@@ -57,7 +57,7 @@ const SheikhRegistration = ({ onBack }) => {
     <div className="registration-container fade-in" dir="rtl">
       <div className="registration-card sheikh-card">
         <div className="reg-header">
-          <img src="/تصميم بدون عنوان (3).png" alt="الجمعية الشرعية" className="reg-logo" />
+          <img src="/shariaa_logo.png" alt="الجمعية الشرعية" className="reg-logo" />
           <h1>طلب التحاق محفظ</h1>
           <div className="registration-type-badge sheikh-badge">محفظ جديد</div>
           <p>يرجى ملء البيانات التالية للالتحاق بهيئة تدريس المكتب</p>
