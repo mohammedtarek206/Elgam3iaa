@@ -20,7 +20,8 @@ const SheikhRequest = require('./models/SheikhRequest');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Diagnostic: Check environment variables
 if (!process.env.MONGODB_URI) {
@@ -216,6 +217,29 @@ app.delete('/api/students/:id', [auth, isAdmin], async (req, res) => {
   }
 });
 
+app.post('/api/admin/bulk-import-students', [auth, isAdmin], async (req, res) => {
+  try {
+    const students = req.body;
+    if (!Array.isArray(students)) {
+      return res.status(400).send({ message: 'Expected an array of students' });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const studentsToInsert = students.map(s => ({
+      ...s,
+      joinDate: s.joinDate || today,
+      isActive: true,
+      monthlyFees: s.monthlyFees || 0,
+      isNewStudent: false
+    }));
+
+    await Student.insertMany(studentsToInsert);
+    res.send({ message: `تم استيراد ${studentsToInsert.length} طالب بنجاح` });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 // --- Student Request Routes (New) ---
 app.post('/api/public/register', async (req, res) => {
   try {
@@ -328,6 +352,7 @@ app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => 
     const student = new Student({
       name: request.name,
       phone: request.phone,
+      parentPhone: request.parentPhone,
       sheikh: sheikh,
       className: className,
       level: request.level,

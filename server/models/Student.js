@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  phone: { type: String, minlength: 11, maxlength: 11 },
+  phone: { type: String },
+  parentPhone: { type: String },
   sheikh: String,
   className: String, // 'class' is a reserved word in some contexts
   level: String,
@@ -11,7 +12,7 @@ const studentSchema = new mongoose.Schema({
   birthDate: String,
   monthlyFees: Number,
   joinDate: String,
-  nationalId: { type: String, unique: true, sparse: true, minlength: 14, maxlength: 14 },
+  nationalId: { type: String, unique: true, sparse: true },
   isNewStudent: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   notes: String,

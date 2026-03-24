@@ -77,26 +77,6 @@ const StudentRegistration = ({ onBack }) => {
 
           <div className="form-row">
             <div className="input-group">
-              <label><Phone size={18} /> رقم هاتف الطالب (إن وجد)</label>
-              <input 
-                placeholder="01xxxxxxxxx" 
-                value={formData.phone} 
-                onChange={e => setFormData({...formData, phone: e.target.value})} 
-              />
-            </div>
-            <div className="input-group">
-              <label><Phone size={18} /> رقم هاتف ولي الأمر</label>
-              <input 
-                required 
-                placeholder="01xxxxxxxxx" 
-                value={formData.parentPhone} 
-                onChange={e => setFormData({...formData, parentPhone: e.target.value})} 
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="input-group">
               <label><BookOpen size={18} /> مستوى الحفظ الحالي</label>
               <select 
                 required 
@@ -147,7 +127,7 @@ const StudentRegistration = ({ onBack }) => {
                 required
                 maxLength="11"
                 minLength="11"
-                placeholder="11 رقم" 
+                placeholder="01xxxxxxxxx" 
                 value={formData.phone} 
                 onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} 
               />
@@ -158,7 +138,7 @@ const StudentRegistration = ({ onBack }) => {
                 required 
                 maxLength="11"
                 minLength="11"
-                placeholder="11 رقم" 
+                placeholder="01xxxxxxxxx" 
                 value={formData.parentPhone} 
                 onChange={e => setFormData({...formData, parentPhone: e.target.value.replace(/\D/g, '')})} 
               />

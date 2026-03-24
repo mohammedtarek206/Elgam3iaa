@@ -81,6 +81,7 @@ const StudentManager = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    parentPhone: '',
     sheikh: '',
     className: '',
     level: '',
@@ -101,6 +102,7 @@ const StudentManager = () => {
       setFormData({
         name: '',
         phone: '',
+        parentPhone: '',
         sheikh: '',
         className: '',
         level: '',
@@ -178,6 +180,88 @@ const StudentManager = () => {
     } catch (err) {
       console.error('Error toggling student status:', err);
     }
+  };
+
+  const handleFileImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        if (!XLSX) {
+          throw new Error('مكتبة XLSX غير محملة بشكل صحيح');
+        }
+        const dataBuffer = evt.target.result;
+        const wb = XLSX.read(dataBuffer, { type: 'array' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        if (data.length === 0) {
+          alert('الملف فارغ أو غير صالح (لم يتم العثور على بيانات)');
+          return;
+        }
+
+        // Map and Validate
+        const formattedStudents = data.map(item => {
+          // Find keys that match expected fields (handling different column names)
+          const allKeys = Object.keys(item);
+          const nameKey = allKeys.find(k => k.includes('اسم') || k.toLowerCase().includes('name')) || allKeys[0];
+          const idKey = allKeys.find(k => k.includes('قومي') || k.toLowerCase().includes('id'));
+          const phoneKey = allKeys.find(k => k.includes('هاتف') || k.includes('تليفون') || k.toLowerCase().includes('phone'));
+
+          let phone = item[phoneKey] ? String(item[phoneKey]).replace(/\D/g, '') : '';
+          // If phone is invalid, set to undefined as per user rule
+          if (phone.length !== 11) phone = undefined; 
+          
+          let nationalId = item[idKey] ? String(item[idKey]).replace(/\D/g, '') : '';
+          // Simple validation for ID if present
+          if (nationalId && nationalId.length < 10) nationalId = undefined; 
+          else if (!nationalId) nationalId = undefined;
+
+          return {
+            name: String(item[nameKey] || '').trim(),
+            nationalId: nationalId,
+            phone: phone,
+            parentPhone: phone,
+            className: 'محطة السكة الحديد', // Default class
+            level: 'جزء عم', // Default level
+            socialStatus: 'عادي',
+            joinDate: new Date().toISOString().split('T')[0],
+            isActive: true,
+            monthlyFees: 0,
+            isNewStudent: false
+          };
+        }).filter(s => s.name && s.name !== 'undefined' && s.name.length > 2);
+
+        if (window.confirm(`تم العثور على ${formattedStudents.length} طالب جاهز للاستيراد. الاستمرار؟`)) {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${API_URL}/admin/bulk-import-students`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formattedStudents)
+          });
+
+          if (res.ok) {
+            alert('✅ تم استيراد الطلاب بنجاح');
+            fetchData();
+          } else {
+            const err = await res.json();
+            alert(`❌ فشل الاستيراد: ${err.message}`);
+          }
+        }
+      } catch (err) {
+        console.error('Import error:', err);
+        alert(`خطأ في قراءة ملف الإكسيل: ${err.message || 'تأكد من الصيغة المدعومة'}`);
+      }
+      // Reset input
+      e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const exportToExcel = () => {
@@ -281,7 +365,8 @@ const StudentManager = () => {
         </div>
 
         <div className="profile-details-list">
-          <div className="detail-row"><span>رقم الهاتف:</span> <strong>{student.phone}</strong></div>
+          <div className="detail-row"><span>رقم هاتف الطالب:</span> <strong>{student.phone}</strong></div>
+          <div className="detail-row"><span>رقم ولي الأمر:</span> <strong>{student.parentPhone || '---'}</strong></div>
           <div className="detail-row"><span>الفصل:</span> <strong>{student.className || student.class}</strong></div>
           <div className="detail-row"><span>المحفظ:</span> <strong>{student.sheikh}</strong></div>
           <div className="detail-row"><span>تاريخ الاشتراك:</span> <strong>{student.joinDate}</strong></div>
@@ -330,6 +415,17 @@ const StudentManager = () => {
             <Plus size={20} />
             إضافة طالب جديد
           </button>
+          <button className="import-btn" onClick={() => document.getElementById('excel-import').click()} title="استيراد من إكسيل">
+            <FileDown size={20} />
+            استيراد
+          </button>
+          <input 
+            type="file" 
+            id="excel-import" 
+            hidden 
+            accept=".xlsx, .xls, .csv" 
+            onChange={handleFileImport} 
+          />
           <button className="export-btn" onClick={exportToExcel} title="تصدير إلى إكسيل">
             <FileDown size={20} />
             تصدير
@@ -434,8 +530,12 @@ const StudentManager = () => {
                   <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div className="form-group">
+                  <label>رقم هاتف الطالب (11 رقم)</label>
+                  <input maxLength="11" minLength="11" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
+                </div>
+                <div className="form-group">
                   <label>رقم هاتف ولي الأمر (11 رقم)</label>
-                  <input required maxLength="11" minLength="11" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
+                  <input required maxLength="11" minLength="11" value={formData.parentPhone} onChange={e => setFormData({...formData, parentPhone: e.target.value.replace(/\D/g, '')})} />
                 </div>
                 <div className="form-group">
                   <label>الفصل</label>
@@ -582,10 +682,11 @@ const StudentManager = () => {
         }
 
         .add-btn { background: var(--accent); color: var(--white); }
+        .import-btn { background: #34495e; color: var(--white); }
         .export-btn { background: #27ae60; color: var(--white); }
         .print-btn { background: #7f8c8d; color: var(--white); }
         
-        .add-btn:hover, .export-btn:hover, .print-btn:hover {
+        .add-btn:hover, .import-btn:hover, .export-btn:hover, .print-btn:hover {
           transform: translateY(-2px);
           filter: brightness(1.1);
         }
