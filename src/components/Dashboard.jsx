@@ -36,11 +36,13 @@ const Dashboard = () => {
       setStudents(data.recentStudents || []); // Used for activity list
       
       const statsData = {
-        totalRevenue: data.totalRevenue,
+        totalRevenue: data.totalRevenue || 0,
         totalStudents: data.totalStudents,
         totalSheikhs: data.totalSheikhs,
         totalClasses: data.totalClasses,
         attendanceRate: data.attendanceRate,
+        atRiskStudents: data.atRiskStudents || [],
+        financeStats: data.financeStats,
         loading: false
       };
 
@@ -64,7 +66,7 @@ const Dashboard = () => {
     { title: 'إجمالي المحفظين', value: stats.totalSheikhs, icon: UserRound, color: '#9b59b6', trend: '+2', isUp: true },
     { title: 'نسبة الحضور اليوم', value: `${stats.attendanceRate}%`, icon: Calendar, color: '#27ae60', trend: 'مباشر', isUp: true },
     { title: 'حلقات التحفيظ', value: stats.totalClasses, icon: School, color: '#e67e22', trend: 'فعال', isUp: true },
-    { title: 'إجمالي الدخل', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
+    { title: 'إجمالي الدخل', value: `${(stats.totalRevenue || 0).toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
   ];
 
   return (
@@ -157,6 +159,39 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {stats.financeStats && (
+          <div className="finance-status-section main-card full-width">
+            <div className="card-header">
+              <h3>حالة السداد (الشهر الحالي)</h3>
+              <Wallet size={20} color="#666" />
+            </div>
+            <div className="finance-status-grid">
+              <div className="finance-stat-card paid">
+                <div className="stat-main">
+                  <span className="label">سددوا الرسوم</span>
+                  <span className="value">{stats.financeStats.paidCount} طالب</span>
+                </div>
+                <div className="mini-list">
+                  {(stats.financeStats.paidStudents || []).slice(0, 3).map((s, i) => (
+                    <div key={i} className="mini-item">✓ {s.name}</div>
+                  ))}
+                  {(stats.financeStats.paidStudents || []).length > 3 && <div className="more">+ {(stats.financeStats.paidStudents || []).length - 3} آخرين</div>}
+                </div>
+              </div>
+              <div className="stat-box unpaid">
+                <span className="label">غير مسددين</span>
+                <span className="value">{(stats.financeStats.unpaidCount || 0)} طالب</span>
+                <div className="mini-list">
+                  {(stats.financeStats.unpaidStudents || []).slice(0, 3).map((s, i) => (
+                    <div key={i} className="mini-item">✗ {s.name}</div>
+                  ))}
+                  {(stats.financeStats.unpaidStudents || []).length > 3 && <div className="more">+ {(stats.financeStats.unpaidStudents || []).length - 3} آخرين</div>}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -305,6 +340,19 @@ const Dashboard = () => {
         .alert-stats { text-align: left; display: flex; flex-direction: column; align-items: flex-end; }
         .absence-count { font-weight: 800; font-size: 1.1rem; }
         .absence-status { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; }
+
+        .finance-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .finance-stat-card { padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 15px; }
+        .finance-stat-card.paid { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .finance-stat-card.unpaid { background: #fef2f2; border: 1px solid #fecaca; }
+        
+        .finance-stat-card .stat-main { display: flex; flex-direction: column; }
+        .finance-stat-card .stat-main .label { font-size: 0.9rem; color: #666; font-weight: 600; }
+        .finance-stat-card .stat-main .value { font-size: 1.5rem; font-weight: 800; color: var(--secondary); }
+        
+        .student-peek-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .peek-item { background: rgba(255,255,255,0.6); padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; color: #444; }
+        .peek-item-more { font-size: 0.8rem; color: #888; font-weight: 600; align-self: center; }
 
         @media (max-width: 900px) {
           .dashboard-main-grid { grid-template-columns: 1fr; }

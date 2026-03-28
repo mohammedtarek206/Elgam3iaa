@@ -131,8 +131,8 @@ const FinanceManager = () => {
     XLSX.writeFile(wb, "المالية.xlsx");
   };
 
-  const filteredTransactions = transactions.filter(t =>
-    (t.notes && t.notes.includes(searchTerm)) || t.category.includes(searchTerm)
+  const filteredTransactions = (transactions || []).filter(t =>
+    t && ((t.notes && t.notes.includes(searchTerm)) || (t.category && t.category.includes(searchTerm)))
   );
   
   const handleDeleteTransaction = async (id) => {
@@ -166,7 +166,7 @@ const FinanceManager = () => {
               onChange={(e) => setSelectedClass(e.target.value)}
             >
               <option value="">كل الفصول</option>
-              {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+              {(classes || []).map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
           <div className="search-mini">
@@ -179,9 +179,10 @@ const FinanceManager = () => {
           </div>
         </div>
         <div className="scroll-list">
-          {list.filter(p => {
+          {(list || []).filter(p => {
+            if (!p) return false;
             const matchesClass = !selectedClass || (type === 'student' ? p.className === selectedClass : (p.assignedClasses || []).includes(selectedClass));
-            const matchesName = p.name.includes(searchTerm);
+            const matchesName = (p.name || '').includes(searchTerm);
             return matchesClass && matchesName;
           }).map(p => (
             <div 
@@ -224,7 +225,7 @@ const FinanceManager = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.filter(t => t.refId === selectedPerson._id).map(t => (
+                  {(transactions || []).filter(t => t && t.refId === selectedPerson._id).map(t => (
                     <tr key={t._id}>
                       <td>{t.date}</td>
                       <td>{t.category}</td>
@@ -238,7 +239,7 @@ const FinanceManager = () => {
                       )}
                     </tr>
                   ))}
-                  {transactions.filter(t => t.refId === selectedPerson._id).length === 0 && (
+                  {(transactions || []).filter(t => t && t.refId === selectedPerson._id).length === 0 && (
                     <tr><td colSpan="3" style={{textAlign:'center'}}>لا توجد سجلات مالية</td></tr>
                   )}
                 </tbody>
@@ -336,22 +337,22 @@ const FinanceManager = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransactions.map((t, index) => (
-                      <tr key={t._id}>
+                    {(filteredTransactions || []).map((t, index) => (
+                      <tr key={t?._id || index}>
                         <td>{index + 1}</td>
-                        <td>{t.date}</td>
-                        <td>{t.notes || t.category}</td>
-                        <td className={t.type === 'دخل' ? 'text-green' : 'text-red'}>
-                          {t.type === 'دخل' ? '+' : '-'}{t.amount} ج.م
+                        <td>{t?.date}</td>
+                        <td>{t?.notes || t?.category}</td>
+                        <td className={t?.type === 'دخل' ? 'text-green' : 'text-red'}>
+                          {t?.type === 'دخل' ? '+' : '-'}{t?.amount} ج.م
                         </td>
                         <td>
-                          <span className={`status-pill ${t.type === 'دخل' ? 'income' : 'expense'}`}>
-                            {t.type === 'دخل' ? 'إيراد' : 'مصروف'}
+                          <span className={`status-pill ${t?.type === 'دخل' ? 'income' : 'expense'}`}>
+                            {t?.type === 'دخل' ? 'إيراد' : 'مصروف'}
                           </span>
                         </td>
                         {JSON.parse(localStorage.getItem('user'))?.role === 'admin' && (
                           <td className="no-print">
-                            <button className="delete-btn-table" onClick={() => handleDeleteTransaction(t._id)} title="حذف">
+                            <button className="delete-btn-table" onClick={() => handleDeleteTransaction(t?._id)} title="حذف">
                               <Trash2 size={16} />
                             </button>
                           </td>

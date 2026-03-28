@@ -592,7 +592,7 @@ app.delete('/api/transactions/:id', [auth, isAdmin], async (req, res) => {
 // --- Grant Routes ---
 app.get('/api/grants', auth, async (req, res) => {
   try {
-    const grants = await Grant.find().sort({ date: -1 });
+    const grants = await Grant.find().sort({ date: -1 }).populate('studentId', 'name className');
     res.send(grants);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -606,6 +606,15 @@ app.post('/api/grants', auth, async (req, res) => {
     res.send(grant);
   } catch (err) {
     res.status(400).send({ message: err.message });
+  }
+});
+
+app.delete('/api/grants/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await Grant.findByIdAndDelete(req.params.id);
+    res.send({ message: 'تم حذف المنحة بنجاح' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
 });
 
@@ -671,15 +680,28 @@ app.get('/api/stats', auth, async (req, res) => {
     // Get last 5 students for "Recent Activity"
     const recentStudents = await Student.find().sort({ createdAt: -1 }).limit(5).select('name className');
 
+    // Paid vs Unpaid Logic
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const paidTxs = await Transaction.find({
+      type: 'دخل',
+      category: 'رسوم طلاب', // Student Fees
+      date: { $regex: `^${currentMonth}` }
+    }, 'refId amount');
+
+    const paidStudentIds = new Set(paidTxs.map(t => t.refId));
+    const allActiveStudents = await Student.find({ isActive: true }, '_id name className monthlyFees');
+    
+    const paidList = allActiveStudents.filter(s => paidStudentIds.has(s._id.toString()));
+    const unpaidList = allActiveStudents.filter(s => !paidStudentIds.has(s._id.toString()) && s.monthlyFees > 0);
+
     // Attendance Warnings
     const allRecentAttendance = await Attendance.find({ attendanceType: 'student' })
       .sort({ date: -1 })
       .limit(30);
 
     const studentsWithAbsences = [];
-    const allStudents = await Student.find({}, '_id name className');
-
-    for (const student of allStudents) {
+    
+    for (const student of allActiveStudents) {
       let absenceCount = 0;
       allRecentAttendance.forEach(att => {
         const record = att.records.find(r => r.personId === student._id.toString());
@@ -704,7 +726,13 @@ app.get('/api/stats', auth, async (req, res) => {
       totalRevenue,
       attendanceRate,
       recentStudents,
-      atRiskStudents: studentsWithAbsences
+      atRiskStudents: studentsWithAbsences,
+      financeStats: {
+        paidCount: paidList.length,
+        unpaidCount: unpaidList.length,
+        paidStudents: paidList.map(s => ({ name: s.name, className: s.className })),
+        unpaidStudents: unpaidList.map(s => ({ name: s.name, className: s.className }))
+      }
     });
   } catch (err) {
     res.status(500).send({ message: err.message });

@@ -43,7 +43,35 @@ import ParentFollowUp from './components/ParentFollowUp';
 import SheikhRegistration from './components/SheikhRegistration';
 
 import Login from './components/Login';
-import { LogOut } from 'lucide-react';
+import { LogOut, AlertTriangle, RefreshCcw } from 'lucide-react';
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, errorInfo) { console.error("Uncaught error:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px', textAlign: 'center', background: '#fff' }}>
+          <AlertTriangle size={64} color="#e74c3c" />
+          <h2>حدث خطأ غير متوقع</h2>
+          <p style={{ color: '#666', margin: '15px 0' }}>{this.state.error?.message || "حدث خطأ أثناء تشغيل هذا الجزء من المنصة"}</p>
+          <button 
+            style={{ padding: '10px 20px', background: '#3498db', color: '#fff', borderRadius: '8px' }}
+            onClick={() => window.location.reload()}
+          >
+            <RefreshCcw size={16} /> إعادة تحميل الصفحة
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -67,7 +95,9 @@ function App() {
   }, []);
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (!savedUser || savedUser === 'undefined') return null;
+    try { return JSON.parse(savedUser); }
+    catch(e) { return null; }
   });
 
   const handleLogout = () => {
@@ -159,28 +189,30 @@ function App() {
       </header>
 
       <main className="content">
-        {currentPage === 'home' ? (
-          <div className="welcome-section">
-            <img src="/shariaa_logo.png" alt="الجمعية الشرعية" className="home-hero-logo" />
-            <h2>الجمعية الشرعية كفر طلا</h2>
-            <p>مكتب تحفيظ القران الكريم</p>
-          </div>
-        ) : (
-          <button className="back-btn" onClick={() => setCurrentPage('home')}>← العودة للرئيسية</button>
-        )}
+        <ErrorBoundary>
+          {currentPage === 'home' ? (
+            <div className="welcome-section">
+              <img src="/shariaa_logo.png" alt="الجمعية الشرعية" className="home-hero-logo" />
+              <h2>الجمعية الشرعية كفر طلا</h2>
+              <p>مكتب تحفيظ القران الكريم</p>
+            </div>
+          ) : (
+            <button className="back-btn" onClick={() => setCurrentPage('home')}>← العودة للرئيسية</button>
+          )}
 
-        {currentPage === 'home' && renderHome()}
-        {currentPage === 'students' && <StudentManager />}
-        {currentPage === 'sheikhs' && <SheikhManager />}
-        {currentPage === 'classes' && <ClassManager />}
-        {currentPage === 'attendance' && <AttendanceManager />}
-        {currentPage === 'finance' && <FinanceManager />}
-        {currentPage === 'grants' && <GrantsManager />}
-        {currentPage === 'exams' && <ExamsManager />}
-        {currentPage === 'reports' && <ReportsManager />}
-        
-        {currentPage === 'dashboard' && <Dashboard />}
-        {currentPage === 'registration' && <RegistrationManager />}
+          {currentPage === 'home' && renderHome()}
+          {currentPage === 'students' && <StudentManager />}
+          {currentPage === 'sheikhs' && <SheikhManager />}
+          {currentPage === 'classes' && <ClassManager />}
+          {currentPage === 'attendance' && <AttendanceManager />}
+          {currentPage === 'finance' && <FinanceManager />}
+          {currentPage === 'grants' && <GrantsManager />}
+          {currentPage === 'exams' && <ExamsManager />}
+          {currentPage === 'reports' && <ReportsManager />}
+          
+          {currentPage === 'dashboard' && <Dashboard />}
+          {currentPage === 'registration' && <RegistrationManager />}
+        </ErrorBoundary>
       </main>
 
       <style>{`

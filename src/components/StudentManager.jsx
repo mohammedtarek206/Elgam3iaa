@@ -301,7 +301,9 @@ const StudentManager = () => {
   };
 
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.phone && s.phone.includes(searchTerm));
+    if (!s) return false;
+    const matchesSearch = (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (s.phone && s.phone.includes(searchTerm));
     const matchesClass = selectedClassFilter === '' || s.className === selectedClassFilter || s.class === selectedClassFilter;
     return matchesSearch && matchesClass;
   });
@@ -477,20 +479,20 @@ const StudentManager = () => {
           </thead>
           <tbody>
             {filteredStudents.length > 0 ? filteredStudents.map((student, index) => (
-              <tr key={student._id}>
+              <tr key={student?._id || index} className={student?.isNewStudent ? 'new-student-row' : ''}>
                 <td>{index + 1}</td>
                 <td className="font-bold stud-link" onClick={() => handleViewProfile(student)}>
-                  {student.name}
-                  {student.isNewStudent && <span className="new-badge-main">جديد</span>}
+                  {student?.name || '---'}
+                  {student?.isNewStudent && <span className="new-badge-main">جديد</span>}
                 </td>
-                <td>{student.phone}</td>
-                <td>{student.sheikh}</td>
-                <td>{student.className || student.class}</td>
-                <td><span className="level-badge">{student.level}</span></td>
-                {user.role === 'admin' && <td>{student.nationalId || '---'}</td>}
+                <td>{student?.phone || '---'}</td>
+                <td>{student?.sheikh || '---'}</td>
+                <td>{student?.className || student?.class || '---'}</td>
+                <td><span className="level-badge">{student?.level || '---'}</span></td>
+                {user.role === 'admin' && <td>{student?.nationalId || '---'}</td>}
                 <td>
                   <span 
-                    className={`status-chip ${student.isActive !== false ? 'active' : 'inactive'}`}
+                    className={`status-chip ${student?.isActive !== false ? 'active' : 'inactive'}`}
                     onClick={() => user.role === 'admin' && handleToggleActive(student)}
                     style={{ cursor: user.role === 'admin' ? 'pointer' : 'default' }}
                   >

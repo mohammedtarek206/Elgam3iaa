@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, Calendar, Star, Users, CheckCircle, X, FileDown, Printer, ArrowRight } from 'lucide-react';
+import { Trophy, Plus, Calendar, Star, Users, CheckCircle, X, FileDown, Printer, ArrowRight, Settings, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
@@ -11,6 +11,18 @@ const ExamsManager = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingResults, setViewingResults] = useState(null);
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'form'
+  const [editingId, setEditingId] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    date: new Date().toISOString().split('T')[0],
+    classNames: [],
+    examiner: '',
+    notes: '',
+    examModel: 'أ',
+    results: []
+  });
 
   useEffect(() => {
     fetchExams();
@@ -28,7 +40,7 @@ const ExamsManager = () => {
       setClasses(data.classes || []);
       setStudents(data.students || []);
     } catch (err) {
-      console.error('Error fetching init data:', err);
+      console.error('Error fetching data:', err);
     }
   };
 
@@ -47,39 +59,45 @@ const ExamsManager = () => {
     }
   };
 
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'form', 'results'
-  const [formData, setFormData] = useState({
-    name: '',
-    date: new Date().toISOString().split('T')[0],
-    className: '',
-    examiner: '',
-    notes: '',
-    examModel: 'أ',
-    results: []
-  });
+  const handleToggleClass = (className) => {
+    const newClassNames = formData.classNames.includes(className)
+      ? formData.classNames.filter(c => c !== className)
+      : [...formData.classNames, className];
+    
+    // Auto-populate students from classes
+    let newResults = [...formData.results];
+    
+    // If adding a class, add its students
+    if (!formData.classNames.includes(className)) {
+      const classStudents = students.filter(s => s.className === className);
+      classStudents.forEach(s => {
+        if (!newResults.find(r => r.studentId === s._id)) {
+          newResults.push({
+            studentName: s.name,
+            studentId: s._id,
+            className: s.className,
+            score: '',
+            grade: '',
+            reward: '',
+            examModel: formData.examModel,
+            examiner: formData.examiner,
+            notes: ''
+          });
+        }
+      });
+    } else {
+      // If removing a class, remove its students
+      newResults = newResults.filter(r => r.className !== className);
+    }
 
-  const handleClassChange = (className) => {
-    const classStudents = students.filter(s => s.className === className);
-    const initialResults = classStudents.map(s => ({
-      studentName: s.name,
-      studentId: s._id,
-      score: '',
-      grade: '',
-      reward: '',
-      examModel: formData.examModel,
-      examiner: formData.examiner,
-      notes: ''
-    }));
-    setFormData({ ...formData, className, results: initialResults });
+    setFormData({ ...formData, classNames: newClassNames, results: newResults });
   };
-
-  const [editingId, setEditingId] = useState(null);
 
   const openEditForm = (exam) => {
     setFormData({
       name: exam.name,
       date: exam.date,
-      className: exam.className,
+      classNames: exam.classNames || [exam.className].filter(Boolean),
       examiner: exam.examiner || '',
       notes: exam.notes || '',
       examModel: exam.examModel || 'أ',
@@ -108,182 +126,153 @@ const ExamsManager = () => {
         fetchExams();
         setCurrentView('list');
         setEditingId(null);
-        setFormData({
-          name: '',
-          date: new Date().toISOString().split('T')[0],
-          className: '',
-          examiner: '',
-          notes: '',
-          examModel: 'أ',
-          results: []
-        });
+        resetForm();
       }
     } catch (err) {
       console.error('Error saving exam:', err);
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      date: new Date().toISOString().split('T')[0],
+      classNames: [],
+      examiner: '',
+      notes: '',
+      examModel: 'أ',
+      results: []
+    });
+  };
+
   const handleDeleteExam = async (id) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا الاختبار نهائياً؟')) return;
+    if (!window.confirm('بعد الحذف لا يمكنك استرجاع البيانات. هل أنت متأكد؟')) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_URL}/exams/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
-        fetchExams();
-      }
+      if (res.ok) fetchExams();
     } catch (err) {
       console.error('Error deleting exam:', err);
     }
   };
 
-  const exportToExcel = () => {
-    const dataToExport = exams.map(e => ({
-      'اسم الاختبار': e.name,
-      'التاريخ': e.date,
-      'الفصل': e.className
+  const exportResults = (exam, specificClass = null) => {
+    let data = exam.results || [];
+    if (specificClass) {
+      data = data.filter(r => r.className === specificClass);
+    }
+
+    const exportData = data.map(r => ({
+      'اسم الطالب': r.studentName,
+      'الفصل': r.className || exam.className,
+      'الدرجة': r.score,
+      'التقدير': r.grade,
+      'النموذج': r.examModel || exam.examModel,
+      'ملاحظات': r.notes
     }));
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Exams");
-    XLSX.writeFile(wb, "الاختبارات.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "نتائج_الاختبار");
+    const filename = specificClass 
+      ? `نتائج_${exam.name}_فصل_${specificClass}.xlsx`
+      : `نتائج_${exam.name}_كل_الفصول.xlsx`;
+    XLSX.writeFile(wb, filename);
   };
 
   if (currentView === 'form') {
     return (
-      <div className="exam-form-page">
-        <div className="form-page-header">
+      <div className="exam-form-page fade-in">
+        <div className="form-page-header no-print">
            <div className="header-title-complex">
               <Trophy size={40} color="#f59e0b" />
               <div>
-                <h2>{editingId ? 'رصد وتعديل درجات الاختبار' : 'إضافة اختبار جديد'}</h2>
-                <p>قم بملء البيانات الأساسية ثم رصد درجات الطلاب</p>
+                <h2>{editingId ? 'تعديل الاختبار والنتائج' : 'إنشاء اختبار/مسابقة جديدة'}</h2>
+                <p>اختر الفصول المستهدفة ثم ابدأ برصد الدرجات والتقديرات</p>
               </div>
            </div>
-           <button className="back-btn-minimal" onClick={() => { setCurrentView('list'); setEditingId(null); }}>
+           <button className="back-btn-minimal" onClick={() => { setCurrentView('list'); setEditingId(null); resetForm(); }}>
              <ArrowRight size={20} />
-             <span>رجوع</span>
+             <span>رجوع للقائمة</span>
            </button>
         </div>
 
         <form onSubmit={handleSubmit} className="premium-exam-form">
           <div className="form-sections-grid">
-             {/* General Info Card */}
              <div className="form-card-section">
-                <h3 className="section-title"><Calendar size={24} /> المعلومات العامة</h3>
+                <h3 className="section-title"><Calendar size={24} /> الإعدادات العامة</h3>
                 <div className="form-row-grid">
                   <div className="form-group-modern">
-                    <label>اسم الاختبار/المسابقة</label>
-                    <input required placeholder="مثلاً: اختبار شهر رمضان" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                    <label>اسم الاختبار / المسابقة</label>
+                    <input required placeholder="مثلاً: مسابقة شهر رمضان" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                   </div>
                   <div className="form-group-modern">
-                    <label>تاريخ الاختبار</label>
+                    <label>تاريخ الانعقاد</label>
                     <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                   </div>
-                </div>
-                <div className="form-row-grid" style={{ marginTop: '25px' }}>
-                   <div className="form-group-modern">
-                    <label>الفصل المستهدف</label>
-                    {!editingId ? (
-                      <select required value={formData.className} onChange={e => handleClassChange(e.target.value)}>
-                        <option value="">اختر الفصل...</option>
-                        {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
-                      </select>
-                    ) : (
-                      <input readOnly value={formData.className} className="readonly-input" />
-                    )}
-                  </div>
                   <div className="form-group-modern">
-                    <label>الشيخ المختبر</label>
-                    <select required value={formData.examiner} onChange={e => setFormData({ ...formData, examiner: e.target.value })}>
-                      <option value="">اختر الشيخ...</option>
-                      {sheikhs.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
+                    <label>النموذج الافتراضي</label>
+                    <select value={formData.examModel} onChange={e => setFormData({ ...formData, examModel: e.target.value })}>
+                      <option value="أ">نموذج أ</option>
+                      <option value="ب">نموذج ب</option>
+                      <option value="ج">نموذج ج</option>
+                      <option value="د">نموذج د</option>
                     </select>
                   </div>
                 </div>
-             </div>
 
-             {/* Results Section */}
-             <div className="form-card-section">
-                <h3 className="section-title"><Users size={24} /> رصد الدرجات</h3>
-                
-                <div className="results-header-actions">
-                   <select
-                     className="premium-search-select"
-                     onChange={(e) => {
-                       const studentId = e.target.value;
-                       if (!studentId) return;
-                       const student = students.find(s => s._id === studentId);
-                       if (student && !formData.results.find(r => r.studentId === studentId)) {
-                         setFormData({
-                           ...formData,
-                           results: [
-                             ...formData.results,
-                             {
-                               studentName: student.name,
-                               studentId: student._id,
-                               score: '',
-                               grade: '',
-                               reward: '',
-                               examModel: formData.examModel,
-                               examiner: formData.examiner,
-                               notes: ''
-                             }
-                           ]
-                         });
-                       }
-                       e.target.value = "";
-                     }}
-                   >
-                     <option value="">بحث وإضافة طالب يدوي...</option>
-                     {students.filter(s => !formData.results.find(r => r.studentId === s._id)).map(s => (
-                       <option key={s._id} value={s._id}>{s.name} ({s.className})</option>
-                     ))}
-                   </select>
-
-                   {editingId && (
-                      <button type="button" className="add-class-students-btn" onClick={() => {
-                        const classStudents = students.filter(s => s.className === formData.className);
-                        const existingIds = (formData.results || []).map(r => r.studentId);
-                        const newOnes = classStudents.filter(s => !existingIds.includes(s._id)).map(s => ({
-                          studentName: s.name,
-                          studentId: s._id,
-                          score: '',
-                          grade: '',
-                          reward: '',
-                          examModel: formData.examModel,
-                          examiner: formData.examiner,
-                          notes: ''
-                        }));
-                        if (newOnes.length > 0) {
-                          setFormData({ ...formData, results: [...formData.results, ...newOnes] });
-                        }
-                      }}>إدراج باقي طلاب الفصل</button>
-                   )}
+                <div className="form-group-modern" style={{ marginTop: '25px' }}>
+                  <label>الفصول المشاركة (يمكنك اختيار أكثر من فصل)</label>
+                  <div className="classes-checkbox-grid">
+                    {(classes || []).map(c => (
+                      <label key={c._id} className={`class-chip ${formData.classNames.includes(c.name) ? 'active' : ''}`}>
+                        <input 
+                          type="checkbox" 
+                          checked={formData.classNames.includes(c.name)}
+                          onChange={() => handleToggleClass(c.name)}
+                        />
+                        <span>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
+                <div className="form-group-modern" style={{ marginTop: '25px' }}>
+                    <label>الممتحن (رئيس اللجنة)</label>
+                    <select required value={formData.examiner} onChange={e => setFormData({ ...formData, examiner: e.target.value })}>
+                      <option value="">اختر الشيخ...</option>
+                      {(sheikhs || []).map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
+                    </select>
+                  </div>
+             </div>
+
+             <div className="form-card-section">
+                <h3 className="section-title"><Users size={24} /> رصد الدرجات لطلاب الفصول المختارة</h3>
                 <div className="modern-table-container">
                   <table className="results-modern-table">
                     <thead>
                       <tr>
-                        <th>الاسم</th>
-                        <th style={{ width: '120px' }}>الدرجة</th>
-                        <th style={{ width: '150px' }}>التقدير</th>
+                        <th>اسم الطالب</th>
+                        <th>الفصل</th>
+                        <th style={{ width: '100px' }}>الدرجة</th>
+                        <th style={{ width: '130px' }}>التقدير</th>
+                        <th style={{ width: '110px' }}>النموذج</th>
                         <th>ملاحظات</th>
-                        <th style={{ width: '60px' }}></th>
+                        <th style={{ width: '50px' }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {formData.results.map((res, idx) => (
                         <tr key={idx} className="result-row-card">
                           <td className="student-name-highlight">{res.studentName}</td>
+                          <td><span className="class-badge-mini">{res.className}</span></td>
                           <td>
                             <input
                               type="number"
                               className="grade-input-mini"
-                              placeholder="0"
                               value={res.score}
                               onChange={e => {
                                 const newRes = [...formData.results];
@@ -302,17 +291,33 @@ const ExamsManager = () => {
                                  setFormData({ ...formData, results: newRes });
                                }}
                             >
-                               <option value="">اختر...</option>
+                               <option value="">--</option>
                                <option value="ممتاز">ممتاز</option>
                                <option value="جيد جدا">جيد جدا</option>
                                <option value="جيد">جيد</option>
                                <option value="مقبول">مقبول</option>
+                               <option value="ضعيف">ضعيف</option>
+                            </select>
+                          </td>
+                          <td>
+                            <select
+                              className="grade-input-mini"
+                              value={res.examModel || formData.examModel}
+                              onChange={e => {
+                                const newRes = [...formData.results];
+                                newRes[idx].examModel = e.target.value;
+                                setFormData({ ...formData, results: newRes });
+                              }}
+                            >
+                              <option value="أ">أ</option>
+                              <option value="ب">ب</option>
+                              <option value="ج">ج</option>
+                              <option value="د">د</option>
                             </select>
                           </td>
                           <td>
                             <input
                               className="grade-input-mini"
-                              placeholder="اختياري..."
                               value={res.notes}
                               onChange={e => {
                                 const newRes = [...formData.results];
@@ -330,13 +335,13 @@ const ExamsManager = () => {
                                 setFormData({ ...formData, results: newRes });
                               }}
                             >
-                              <X size={18} />
+                              <X size={16} />
                             </button>
                           </td>
                         </tr>
                       ))}
                       {formData.results.length === 0 && (
-                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>لا يوجد طلاب مضافين لهذا الاختبار حالياً</td></tr>
+                        <tr><td colSpan="7" style={{textAlign:'center', padding:'40px', color:'#888'}}>يرجى اختيار الفصول لتحميل قائمة الطلاب</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -344,11 +349,10 @@ const ExamsManager = () => {
              </div>
           </div>
 
-          <div className="form-page-footer">
-             <button type="button" className="secondary-btn-modern" onClick={() => { setCurrentView('list'); setEditingId(null); }}>إلغاء وتجاهل</button>
+          <div className="form-page-footer no-print">
+             <button type="button" className="secondary-btn-modern" onClick={() => { setCurrentView('list'); setEditingId(null); resetForm(); }}>إلغاء وتجاهل</button>
              <button type="submit" className="btn-primary-premium">
-                <CheckCircle size={22} />
-                {editingId ? 'حفظ التعديلات' : 'نشر نتائج الاختبار'}
+                <CheckCircle size={22} /> {editingId ? 'حفظ التعديلات' : 'نشر النتائج الآن'}
              </button>
           </div>
         </form>
@@ -359,64 +363,78 @@ const ExamsManager = () => {
   return (
     <div className="exams-manager fade-in">
       <div className="module-header no-print">
-        <h2>الاختبارات والمسابقات</h2>
+        <div className="header-left">
+          <h2>الاختبارات والمسابقات</h2>
+          <span className="count-badge">السجلات: {(exams || []).length}</span>
+        </div>
         <div className="header-actions">
-          <button className="export-btn" onClick={exportToExcel} title="تصدير إلى إكسيل">
-            <FileDown size={20} />
-            تصدير
-          </button>
-          <button className="print-btn" onClick={() => window.print()} title="طباعة">
-            <Printer size={20} />
-            طباعة
-          </button>
           <button className="add-btn" onClick={() => setCurrentView('form')}>
-            <Plus size={20} />
-            إضافة اختبار جديد
+            <Plus size={20} /> إضافة اختبار جديد
           </button>
         </div>
       </div>
 
       <div className="exams-grid">
-        {exams.map(exam => (
+        {(exams || []).map(exam => (
           <div key={exam._id} className="exam-card">
-            <div className="exam-delete-btn" onClick={() => handleDeleteExam(exam._id)} title="حذف الاختبار">
-              <X size={18} />
+            <div className="exam-card-actions no-print">
+               <button onClick={(e) => { e.stopPropagation(); openEditForm(exam); }} title="تعديل"><Settings size={18} /></button>
+               <button onClick={(e) => { e.stopPropagation(); handleDeleteExam(exam._id); }} className="danger" title="حذف"><Trash2 size={18} /></button>
             </div>
-            <div className="exam-icon">
-              <Trophy size={32} color="#f1c40f" />
+            
+            <div className="exam-icon-large">
+              <Trophy size={40} color="#f1c40f" />
             </div>
-            <div className="exam-info">
+            
+            <div className="exam-main-info">
               <h3>{exam.name}</h3>
-              <div className="exam-meta">
-                <div className="meta-item"><Calendar size={16} /> {exam.date}</div>
-                <div className="meta-item"><Users size={16} /> {exam.className}</div>
-              </div>
-              <div className="exam-meta">
-                <div className="meta-item"><CheckCircle size={16} /> ممتحن: {exam.examiner}</div>
+              <div className="meta-info">
+                <span><Calendar size={14} /> {exam.date}</span>
+                <span><Users size={14} /> {exam.classNames?.length || 1} فصول</span>
               </div>
             </div>
-            <div className="exam-actions-btns">
-              <button className="view-results-btn" onClick={() => setViewingResults(exam)}>عرض الدرجات</button>
-              <button className="edit-results-btn" onClick={() => openEditForm(exam)}>رصد الاختبار</button>
+
+            <div className="exam-export-section">
+               <p>تحميل النتائج (Excel):</p>
+               <div className="export-buttons-mini">
+                  <button onClick={() => exportResults(exam)} className="all">كل الفصول</button>
+                  {(exam.classNames || []).map(c => (
+                    <button key={c} onClick={() => exportResults(exam, c)}>{c}</button>
+                  ))}
+               </div>
             </div>
+
+            <button className="view-results-btn-primary" onClick={() => setViewingResults(exam)}>
+              <Star size={18} /> عرض كشف الدرجات
+            </button>
           </div>
         ))}
+        {(exams || []).length === 0 && (
+          <div className="empty-state-exams full-width">
+            <Trophy size={60} color="#ddd" />
+            <p>لا توجد اختبارات مسجلة حالياً. ابدأ بإضافة أول اختبار.</p>
+          </div>
+        )}
       </div>
-
-      {/* Old showForm block removed */}
 
       {viewingResults && (
         <div className="modal-overlay">
-          <div className="modal-content fade-in results-modal">
+          <div className="modal-content fade-in results-modal-large">
             <div className="modal-header">
               <h3>نتائج: {viewingResults.name}</h3>
               <button className="close-btn" onClick={() => setViewingResults(null)}><X size={24} /></button>
             </div>
+            <div className="results-summary-info">
+               <div className="sum-item"><span>التاريخ:</span> <strong>{viewingResults.date}</strong></div>
+               <div className="sum-item"><span>الممتحن:</span> <strong>{viewingResults.examiner}</strong></div>
+               <div className="sum-item"><span>الفصول:</span> <strong>{viewingResults.classNames?.join('، ') || viewingResults.className}</strong></div>
+            </div>
             <div className="table-container">
-              <table>
+              <table className="view-table-minimal">
                 <thead>
                   <tr>
-                    <th>الطالب</th>
+                    <th>اسم الطالب</th>
+                    <th>الفصل</th>
                     <th>الدرجة</th>
                     <th>التقدير</th>
                     <th>النموذج</th>
@@ -427,365 +445,113 @@ const ExamsManager = () => {
                   {viewingResults.results?.map((r, i) => (
                     <tr key={i}>
                       <td className="font-bold">{r.studentName}</td>
-                      <td>{r.score}/100</td>
-                      <td><span className={`grade-pill ${r.grade === 'ممتاز' ? 'excelent' : ''}`}>{r.grade}</span></td>
-                      <td>نموذج {r.examModel}</td>
+                      <td>{r.className}</td>
+                      <td className="score-cell">{r.score}/100</td>
+                      <td><span className={`grade-label ${r.grade}`}>{r.grade}</span></td>
+                      <td>{r.examModel || viewingResults.examModel}</td>
                       <td>{r.notes}</td>
                     </tr>
                   ))}
-                  {(!viewingResults.results || viewingResults.results.length === 0) && (
-                    <tr><td colSpan="5" style={{ textAlign: 'center' }}>لا توجد نتائج مسجلة</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
-            <div className="modal-footer" style={{ marginTop: '20px', textAlign: 'left' }}>
-              <p><strong>ملاحظات عامة:</strong> {viewingResults.notes || 'لا توجد'}</p>
-              <p><strong>الممتحن الرئيسي:</strong> {viewingResults.examiner}</p>
+            <div className="modal-footer no-print">
+               <button className="print-btn-secondary" onClick={() => window.print()}>
+                  <Printer size={18} /> طباعة الكشف
+               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="recent-results">
-        <h3>آخر نتائج الطلاب</h3>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>اسم الطالب</th>
-                <th>الاختبار</th>
-                <th>الدرجة</th>
-                <th>النموذج</th>
-                <th>التاريخ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {exams.slice(0, 10).flatMap(exam =>
-                (exam.results || []).map((res, i) => (
-                  <tr key={`${exam._id}-${i}`}>
-                    <td className="font-bold">{res.studentName}</td>
-                    <td>{exam.name}</td>
-                    <td>{res.score}</td>
-                    <td>{res.examModel}</td>
-                    <td>{exam.date}</td>
-                  </tr>
-                ))
-              ).slice(0, 10)}
-              {exams.length === 0 && (
-                <tr><td colSpan="5" style={{ textAlign: 'center' }}>لا توجد نتائج متاحة</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <style>{`
-        /* --- General Layout --- */
-        .exams-manager {
-          padding: 20px 0;
-        }
+        .exams-manager { padding: 5px; }
+        .exam-form-page { background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 40px; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .form-page-header { padding: 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .header-title-complex h2 { margin: 0; color: #1a1a1a; font-size: 1.5rem; }
+        .header-title-complex p { margin: 5px 0 0; color: #666; font-size: 0.9rem; }
+        
+        .back-btn-minimal { display: flex; align-items: center; gap: 8px; border: none; background: #f8f9fa; color: #666; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .back-btn-minimal:hover { background: #eee; color: #333; }
 
-        /* --- Full Screen Sub-Page --- */
-        .exam-form-page {
-          background: #f8fafc;
-          border-radius: 24px;
-          min-height: 80vh;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.08); /* Premium shadow */
-          display: flex;
-          flex-direction: column;
-          direction: rtl;
-          overflow: hidden;
-          animation: slideUp 0.5s ease-out;
-          border: 1px solid #e2e8f0;
-          margin-bottom: 40px;
-        }
+        .premium-exam-form { padding: 30px; }
+        .form-card-section { margin-bottom: 30px; background: #fff; border: 1px solid #f1f3f5; padding: 25px; border-radius: 20px; }
+        .section-title { font-size: 1.2rem; color: var(--secondary); margin-bottom: 25px; border-bottom: 2px solid #f8f9fa; padding-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+        
+        .form-row-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .form-group-modern { display: flex; flex-direction: column; gap: 8px; }
+        .form-group-modern label { font-size: 0.9rem; font-weight: 700; color: #555; }
+        .form-group-modern input, .form-group-modern select { padding: 12px 15px; border: 1px solid #dee2e6; border-radius: 10px; font-size: 1rem; outline: none; transition: 0.2s; }
+        .form-group-modern input:focus { border-color: var(--primary); }
 
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        .classes-checkbox-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .class-chip { padding: 8px 15px; border-radius: 10px; background: #f1f3f5; cursor: pointer; border: 2px solid transparent; transition: 0.2s; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        .class-chip.active { background: #e7f5ff; border-color: #339af0; color: #1971c2; }
+        .class-chip input { display: none; }
 
-        /* Modern Sub-Header */
-        .form-page-header {
-          background: white;
-          padding: 30px 40px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 2px solid #f1f5f9;
-        }
+        .results-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .search-mini { display: flex; align-items: center; gap: 10px; background: #f1f3f5; padding: 8px 15px; border-radius: 10px; width: 250px; }
+        .search-mini input { border: none; background: transparent; outline: none; font-size: 0.9rem; flex: 1; }
+        
+        .class-badge-mini { background: #e9ecef; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: 700; color: #495057; }
+        
+        .grade-input-mini { width: 100%; border: 1px solid #dee2e6; border-radius: 6px; padding: 4px 8px; }
+        .delete-btn-rounded { border: none; background: #fff5f5; color: #e03131; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .delete-btn-rounded:hover { background: #e03131; color: #fff; }
 
-        .header-title-complex {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }
+        .form-page-footer { display: flex; justify-content: flex-end; gap: 15px; padding: 20px 0; }
+        .secondary-btn-modern { border: none; background: #f1f3f5; color: #666; padding: 12px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        .btn-primary-premium { border: none; background: var(--primary); color: #fff; padding: 12px 35px; border-radius: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 
-        .header-title-complex h2 {
-          margin: 0;
-          font-size: 1.8rem;
-          color: #1e293b;
-          font-weight: 900;
-        }
+        .exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 25px; }
+        .exam-card { position: relative; background: #fff; border-radius: 24px; padding: 25px; border: 1px solid #f1f3f5; transition: 0.3s; display: flex; flex-direction: column; gap: 18px; }
+        .exam-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.05); border-color: var(--primary); }
+        .exam-card-actions { position: absolute; top: 15px; left: 15px; display: flex; gap: 6px; }
+        .exam-card-actions button { background: #f8f9fa; border: none; padding: 8px; border-radius: 10px; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center; }
+        .exam-card-actions button:hover { background: #e9ecef; color: var(--primary); }
+        .exam-card-actions button.danger:hover { color: #e03131; }
 
-        .header-title-complex p {
-          margin: 0;
-          color: #64748b;
-          font-size: 0.95rem;
-          margin-top: 5px;
-        }
+        .exam-icon-large { width: 60px; height: 60px; background: #fffcf0; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
+        .exam-main-info h3 { margin: 0; font-size: 1.3rem; color: #1a1a1a; }
+        .meta-info { display: flex; gap: 15px; margin-top: 8px; color: #777; font-size: 0.85rem; }
+        .meta-info span { display: flex; align-items: center; gap: 5px; }
 
-        .back-btn-minimal {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 24px;
-          background: #f1f5f9;
-          color: #475569;
-          font-weight: 800;
-          border-radius: 14px;
-          transition: all 0.2s ease;
-        }
+        .exam-export-section { background: #f8f9fa; padding: 15px; border-radius: 16px; }
+        .exam-export-section p { margin: 0 0 10px; font-size: 0.8rem; font-weight: 800; color: #666; }
+        .export-buttons-mini { display: flex; flex-wrap: wrap; gap: 6px; }
+        .export-buttons-mini button { border: 1px solid #dee2e6; background: #fff; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .export-buttons-mini button:hover { background: #f1f3f5; border-color: #adb5bd; }
+        .export-buttons-mini button.all { background: #e7f5ff; border-color: #d0ebff; color: #1971c2; }
 
-        .back-btn-minimal:hover {
-          background: #e2e8f0;
-          color: #1e293b;
-          transform: translateX(5px);
-        }
+        .view-results-btn-primary { width: 100%; border: none; background: var(--secondary); color: white; padding: 14px; border-radius: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .view-results-btn-primary:hover { background: #2c3e50; transform: translateY(-2px); }
 
-        /* The Form Content */
-        .premium-exam-form {
-          padding: 40px;
-          display: flex;
-          flex-direction: column;
-          gap: 40px;
-        }
+        .results-modal-large { max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; }
+        .results-summary-info { display: flex; gap: 30px; padding: 18px; background: #f8f9fa; border-radius: 15px; margin-bottom: 20px; font-size: 0.95rem; }
+        .sum-item span { color: #888; margin-left: 6px; }
+        
+        .view-table-minimal { width: 100%; border-collapse: collapse; }
+        .view-table-minimal th { text-align: right; padding: 12px; background: #f1f3f5; color: #495057; font-size: 0.85rem; }
+        .view-table-minimal td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+        .score-cell { font-weight: 800; color: var(--primary); }
+        .grade-label { padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 800; background: #f1f3f5; color: #666; }
+        .grade-label.ممتاز { background: #ebfbee; color: #2b8a3e; }
+        .grade-label.جيد_جدأ { background: #f3f0ff; color: #5f3dc4; }
+        .grade-label.جيد { background: #fff9db; color: #f08c00; }
+        .grade-label.ضعيف { background: #fff5f5; color: #c92a2a; }
 
-        /* Sections */
-        .form-card-section {
-           background: white;
-           border-radius: 20px;
-           padding: 35px;
-           border: 1px solid #f1f5f9;
-           box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-        }
+        .modal-footer { padding-top: 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; }
+        .print-btn-secondary { display: flex; align-items: center; gap: 8px; background: #f8f9fa; color: #333; border: 1px solid #ddd; padding: 8px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
 
-        .section-title {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 1.3rem;
-          font-weight: 800;
-          color: #0f172a;
-          margin-bottom: 30px;
-          padding-bottom: 15px;
-          border-bottom: 2px solid #f8fafc;
-        }
-
-        .form-row-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 25px;
-        }
-
-        .form-group-modern {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .form-group-modern label {
-          font-weight: 700;
-          color: #334155;
-          font-size: 0.9rem;
-        }
-
-        .form-group-modern input, 
-        .form-group-modern select {
-          padding: 14px 18px;
-          border: 2px solid #e2e8f0;
-          border-radius: 14px;
-          font-size: 1rem;
-          transition: all 0.3s ease;
-          background: #fff;
-        }
-
-        .form-group-modern input:focus,
-        .form-group-modern select:focus {
-          border-color: var(--primary);
-          box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.1);
-          outline: none;
-        }
-
-        /* Results Area */
-        .results-header-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 25px;
-          gap: 20px;
-        }
-
-        .premium-search-select {
-          flex: 1;
-          max-width: 400px;
-          padding: 12px 20px;
-          border: 2px solid var(--accent);
-          border-radius: 12px;
-          font-weight: 700;
-          color: var(--primary);
-        }
-
-        .add-class-students-btn {
-          padding: 12px 24px;
-          background: #f0fdf4;
-          color: #166534;
-          font-weight: 800;
-          border-radius: 12px;
-          border: 1px solid #dcfce7;
-          transition: all 0.2s;
-        }
-
-        .add-class-students-btn:hover {
-          background: #dcfce7;
-          transform: translateY(-2px);
-        }
-
-        /* The Grid/Table for results */
-        .results-modern-table {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0 12px;
-        }
-
-        .results-modern-table th {
-          padding: 0 20px 10px 20px;
-          text-align: right;
-          color: #64748b;
-          font-weight: 700;
-          font-size: 0.9rem;
-        }
-
-        .result-row-card td {
-          background: white;
-          padding: 20px;
-          border-bottom: 1px solid #f1f5f9;
-          border-top: 1px solid #f1f5f9;
-        }
-
-        .result-row-card td:first-child {
-          border-right: 1px solid #f1f5f9;
-          border-radius: 0 16px 16px 0;
-        }
-
-        .result-row-card td:last-child {
-          border-left: 1px solid #f1f5f9;
-          border-radius: 16px 0 0 16px;
-        }
-
-        .student-name-highlight {
-          font-weight: 900;
-          color: #1e293b;
-          font-size: 1.05rem;
-        }
-
-        .grade-input-mini {
-          padding: 10px 15px;
-          border: 1.5px solid #e2e8f0;
-          border-radius: 10px;
-          width: 100%;
-          font-weight: 600;
-        }
-
-        .delete-btn-rounded {
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
-          background: #fff1f2;
-          color: #e11d48;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-        }
-
-        .delete-btn-rounded:hover {
-          background: #fb7185;
-          color: white;
-        }
-
-        /* Footer Sticky */
-        .form-page-footer {
-          background: white;
-          padding: 30px 40px;
-          display: flex;
-          justify-content: flex-end;
-          gap: 20px;
-          border-top: 2px solid #f1f5f9;
-        }
-
-        .btn-primary-premium {
-          padding: 16px 45px;
-          background: var(--primary);
-          color: white;
-          border-radius: 16px;
-          font-weight: 800;
-          font-size: 1.1rem;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          box-shadow: 0 10px 15px -3px rgba(39, 174, 96, 0.3);
-        }
-
-        .btn-primary-premium:hover {
-          filter: brightness(1.1);
-          transform: translateY(-2px);
-          box-shadow: 0 20px 25px -5px rgba(39, 174, 96, 0.4);
-        }
-
-        /* List View Cards */
-        .exams-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-          gap: 25px;
-          margin-top: 30px;
-        }
-
-        .exam-card {
-          background: white;
-          border-radius: 24px;
-          padding: 25px;
-          border: 1px solid #f1f5f9;
-          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-          transition: all 0.3s ease;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .exam-card:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-          border-color: var(--accent);
-        }
-
-        .grade-pill {
-          display: inline-block;
-          padding: 6px 16px;
-          border-radius: 12px;
-          font-weight: 800;
-          font-size: 0.85rem;
-          background: #f1f5f9;
-        }
-
-        .grade-pill.excelent { background: #dcfce7; color: #166534; }
-
-        @media (max-width: 768px) {
-           .form-page-header { padding: 20px; flex-direction: column; align-items: flex-start; gap: 20px; }
-           .premium-exam-form { padding: 20px; }
-           .form-page-footer { padding: 20px; flex-direction: column-reverse; }
-           .form-page-footer button { width: 100%; }
+        .empty-state-exams { text-align: center; padding: 60px; color: #aaa; grid-column: 1 / -1; }
+        
+        @media print {
+          .no-print { display: none !important; }
+          .modal-overlay { background: none; position: static; }
+          .modal-content { box-shadow: none; border: none; width: 100%; max-width: none; }
+          .results-summary-info { border: 1px solid #eee; }
         }
       `}</style>
     </div>
