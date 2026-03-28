@@ -207,20 +207,29 @@ const ExamsManager = () => {
                 <div className="form-row-grid">
                   <div className="form-group-modern">
                     <label>اسم الاختبار / المسابقة</label>
-                    <input required placeholder="مثلاً: مسابقة شهر رمضان" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                    <div className="input-with-icon">
+                      <Trophy size={18} className="field-icon" />
+                      <input required placeholder="مثلاً: مسابقة شهر رمضان" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                    </div>
                   </div>
                   <div className="form-group-modern">
                     <label>تاريخ الانعقاد</label>
-                    <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                    <div className="input-with-icon">
+                      <Calendar size={18} className="field-icon" />
+                      <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                    </div>
                   </div>
                   <div className="form-group-modern">
                     <label>النموذج الافتراضي</label>
-                    <select value={formData.examModel} onChange={e => setFormData({ ...formData, examModel: e.target.value })}>
-                      <option value="أ">نموذج أ</option>
-                      <option value="ب">نموذج ب</option>
-                      <option value="ج">نموذج ج</option>
-                      <option value="د">نموذج د</option>
-                    </select>
+                    <div className="input-with-icon">
+                      <Settings size={18} className="field-icon" />
+                      <select value={formData.examModel} onChange={e => setFormData({ ...formData, examModel: e.target.value })}>
+                        <option value="أ">نموذج أ</option>
+                        <option value="ب">نموذج ب</option>
+                        <option value="ج">نموذج ج</option>
+                        <option value="د">نموذج د</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -242,10 +251,13 @@ const ExamsManager = () => {
 
                 <div className="form-group-modern" style={{ marginTop: '25px' }}>
                     <label>الممتحن (رئيس اللجنة)</label>
-                    <select required value={formData.examiner} onChange={e => setFormData({ ...formData, examiner: e.target.value })}>
-                      <option value="">اختر الشيخ...</option>
-                      {(sheikhs || []).map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
-                    </select>
+                    <div className="input-with-icon">
+                      <Users size={18} className="field-icon" />
+                      <select required value={formData.examiner} onChange={e => setFormData({ ...formData, examiner: e.target.value })}>
+                        <option value="">اختر الشيخ...</option>
+                        {(sheikhs || []).map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
+                      </select>
+                    </div>
                   </div>
              </div>
 
@@ -465,69 +477,127 @@ const ExamsManager = () => {
       )}
 
       <style>{`
-        .exams-manager { padding: 5px; }
-        .exam-form-page { background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 40px; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .exams-manager { padding: 10px; }
         
-        .form-page-header { padding: 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .header-title-complex h2 { margin: 0; color: #1a1a1a; font-size: 1.5rem; }
-        .header-title-complex p { margin: 5px 0 0; color: #666; font-size: 0.9rem; }
+        /* Form Styling */
+        .exam-form-page { background: #fff; border-radius: 24px; box-shadow: 0 15px 45px rgba(0,0,0,0.06); margin-bottom: 40px; animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #f1f3f5; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         
-        .back-btn-minimal { display: flex; align-items: center; gap: 8px; border: none; background: #f8f9fa; color: #666; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .back-btn-minimal:hover { background: #eee; color: #333; }
-
-        .premium-exam-form { padding: 30px; }
-        .form-card-section { margin-bottom: 30px; background: #fff; border: 1px solid #f1f3f5; padding: 25px; border-radius: 20px; }
-        .section-title { font-size: 1.2rem; color: var(--secondary); margin-bottom: 25px; border-bottom: 2px solid #f8f9fa; padding-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+        .form-page-header { padding: 35px; border-bottom: 1px solid #f1f3f5; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; border-radius: 24px 24px 0 0; }
+        .header-title-complex h2 { margin: 0; color: #1a1a1a; font-size: 1.6rem; font-weight: 800; }
+        .header-title-complex p { margin: 8px 0 0; color: #7f8c8d; font-size: 0.95rem; }
         
-        .form-row-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .form-group-modern { display: flex; flex-direction: column; gap: 8px; }
+        .premium-exam-form { padding: 35px; }
+        .form-card-section { margin-bottom: 35px; background: #fff; border: 1px solid #f1f3f5; padding: 30px; border-radius: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.01); }
+        .section-title { font-size: 1.25rem; color: var(--secondary); margin-bottom: 30px; border-bottom: 2px solid #f8f9fa; padding-bottom: 15px; display: flex; align-items: center; gap: 14px; font-weight: 800; }
+        
         .form-group-modern label { font-size: 0.9rem; font-weight: 700; color: #555; }
-        .form-group-modern input, .form-group-modern select { padding: 12px 15px; border: 1px solid #dee2e6; border-radius: 10px; font-size: 1rem; outline: none; transition: 0.2s; }
-        .form-group-modern input:focus { border-color: var(--primary); }
+        
+        .input-with-icon {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .input-with-icon .field-icon {
+          position: absolute;
+          right: 12px;
+          color: #adb5bd;
+          pointer-events: none;
+        }
+        .input-with-icon input, .input-with-icon select {
+          width: 100%;
+          padding: 12px 40px 12px 15px;
+          border: 1px solid #dee2e6;
+          border-radius: 12px;
+          font-size: 1rem;
+          outline: none;
+          transition: 0.2s;
+          background: #fafbfc;
+        }
+        .input-with-icon input:focus, .input-with-icon select:focus {
+          border-color: var(--primary);
+          background: #fff;
+          box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.08);
+        }
+        .input-with-icon .field-icon {
+          transition: 0.2s;
+        }
+        .input-with-icon:focus-within .field-icon {
+          color: var(--primary);
+        }
 
-        .classes-checkbox-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .class-chip { padding: 8px 15px; border-radius: 10px; background: #f1f3f5; cursor: pointer; border: 2px solid transparent; transition: 0.2s; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
-        .class-chip.active { background: #e7f5ff; border-color: #339af0; color: #1971c2; }
+        /* Fixed Classes Grid */
+        .classes-checkbox-grid { 
+          display: grid; 
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+          gap: 12px; 
+          margin-top: 10px; 
+        }
+        .class-chip { 
+          padding: 12px 15px; 
+          border-radius: 14px; 
+          background: #f8f9fa; 
+          cursor: pointer; 
+          border: 2px solid transparent; 
+          transition: 0.3s; 
+          font-weight: 700; 
+          font-size: 0.9rem; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          text-align: center;
+          color: #555;
+        }
+        .class-chip:hover { background: #f1f3f5; transform: scale(1.02); }
+        .class-chip.active { background: #f0fdf4; border-color: #2ecc71; color: #27ae60; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.1); }
         .class-chip input { display: none; }
 
-        .results-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .search-mini { display: flex; align-items: center; gap: 10px; background: #f1f3f5; padding: 8px 15px; border-radius: 10px; width: 250px; }
-        .search-mini input { border: none; background: transparent; outline: none; font-size: 0.9rem; flex: 1; }
+        /* Results Table */
+        .results-modern-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        .result-row-card { background: #fff; transition: 0.2s; }
+        .result-row-card td { padding: 15px; background: #fbfcfd; }
+        .result-row-card td:first-child { border-radius: 15px 0 0 15px; }
+        .result-row-card td:last-child { border-radius: 0 15px 15px 0; }
+        .result-row-card:hover td { background: #f1f8ff; }
         
-        .class-badge-mini { background: #e9ecef; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: 700; color: #495057; }
+        .student-name-highlight { font-weight: 800; color: #2c3e50; }
+        .grade-input-mini { width: 100%; border: 1px solid #e0e6ed; border-radius: 10px; padding: 10px; outline: none; transition: 0.2s; font-weight: 600; }
+        .grade-input-mini:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+
+        /* Exam Cards Grid */
+        .exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-top: 35px; }
+        .exam-card { 
+          position: relative; 
+          background: #fff; 
+          border-radius: 26px; 
+          padding: 28px; 
+          border: 1px solid #f1f3f5; 
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+          display: flex; 
+          flex-direction: column; 
+          gap: 22px; 
+          box-shadow: 0 5px 20px rgba(0,0,0,0.02);
+        }
+        .exam-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.06); border-color: var(--primary); }
         
-        .grade-input-mini { width: 100%; border: 1px solid #dee2e6; border-radius: 6px; padding: 4px 8px; }
-        .delete-btn-rounded { border: none; background: #fff5f5; color: #e03131; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-        .delete-btn-rounded:hover { background: #e03131; color: #fff; }
+        .exam-icon-large { 
+          width: 70px; height: 70px; background: #fffcf0; border-radius: 20px; display: flex; align-items: center; justify-content: center; 
+          color: #f1c40f; box-shadow: inset 0 0 0 1px rgba(241, 196, 15, 0.05);
+        }
+        .exam-main-info h3 { margin: 0; font-size: 1.4rem; color: #2c3e50; font-weight: 800; }
+        
+        .meta-info { display: flex; gap: 18px; margin-top: 10px; color: #7f8c8d; font-size: 0.9rem; font-weight: 600; }
+        .meta-info span { display: flex; align-items: center; gap: 7px; background: #f8f9fa; padding: 4px 12px; border-radius: 10px; }
 
-        .form-page-footer { display: flex; justify-content: flex-end; gap: 15px; padding: 20px 0; }
-        .secondary-btn-modern { border: none; background: #f1f3f5; color: #666; padding: 12px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; }
-        .btn-primary-premium { border: none; background: var(--primary); color: #fff; padding: 12px 35px; border-radius: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .exam-export-section { background: #f8fbfc; padding: 18px; border-radius: 18px; border: 1px solid #eff3f6; }
+        .exam-export-section p { margin: 0 0 12px; font-size: 0.85rem; font-weight: 800; color: #5d6d7e; }
+        .export-buttons-mini { display: flex; flex-wrap: wrap; gap: 8px; }
+        .export-buttons-mini button { border: 1px solid #dee2e6; background: #fff; padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .export-buttons-mini button:hover { background: #f8f9fa; border-color: #ccd1d9; color: var(--primary); }
+        .export-buttons-mini button.all { background: #eef2ff; border-color: #d1d9ff; color: #4338ca; }
 
-        .exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 25px; }
-        .exam-card { position: relative; background: #fff; border-radius: 24px; padding: 25px; border: 1px solid #f1f3f5; transition: 0.3s; display: flex; flex-direction: column; gap: 18px; }
-        .exam-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.05); border-color: var(--primary); }
-        .exam-card-actions { position: absolute; top: 15px; left: 15px; display: flex; gap: 6px; }
-        .exam-card-actions button { background: #f8f9fa; border: none; padding: 8px; border-radius: 10px; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center; }
-        .exam-card-actions button:hover { background: #e9ecef; color: var(--primary); }
-        .exam-card-actions button.danger:hover { color: #e03131; }
-
-        .exam-icon-large { width: 60px; height: 60px; background: #fffcf0; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
-        .exam-main-info h3 { margin: 0; font-size: 1.3rem; color: #1a1a1a; }
-        .meta-info { display: flex; gap: 15px; margin-top: 8px; color: #777; font-size: 0.85rem; }
-        .meta-info span { display: flex; align-items: center; gap: 5px; }
-
-        .exam-export-section { background: #f8f9fa; padding: 15px; border-radius: 16px; }
-        .exam-export-section p { margin: 0 0 10px; font-size: 0.8rem; font-weight: 800; color: #666; }
-        .export-buttons-mini { display: flex; flex-wrap: wrap; gap: 6px; }
-        .export-buttons-mini button { border: 1px solid #dee2e6; background: #fff; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .export-buttons-mini button:hover { background: #f1f3f5; border-color: #adb5bd; }
-        .export-buttons-mini button.all { background: #e7f5ff; border-color: #d0ebff; color: #1971c2; }
-
-        .view-results-btn-primary { width: 100%; border: none; background: var(--secondary); color: white; padding: 14px; border-radius: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .view-results-btn-primary:hover { background: #2c3e50; transform: translateY(-2px); }
-
+        .view-results-btn-primary { width: 100%; border: none; background: #2c3e50; color: white; padding: 16px; border-radius: 18px; font-weight: 800; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 12px rgba(44, 62, 80, 0.15); }
+        .view-results-btn-primary:hover { background: #1a252f; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(44, 62, 80, 0.25); }
         .results-modal-large { max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; }
         .results-summary-info { display: flex; gap: 30px; padding: 18px; background: #f8f9fa; border-radius: 15px; margin-bottom: 20px; font-size: 0.95rem; }
         .sum-item span { color: #888; margin-left: 6px; }

@@ -288,10 +288,60 @@ const GrantsManager = () => {
       )}
 
       <style>{`
-        .grant-type-card h3 { margin: 12px 0 8px; color: var(--primary); }
-        .grant-type-card p { font-size: 0.9rem; color: #666; }
+        .grants-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 20px;
+          margin-bottom: 40px;
+        }
 
-        .recent-grants h3 { margin-bottom: 20px; color: var(--secondary); }
+        .grant-type-card {
+          background: #fff;
+          border-radius: 20px;
+          padding: 25px;
+          text-align: center;
+          border: 1px solid #f1f3f5;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 15px;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+
+        .grant-type-card:hover {
+          transform: translateY(-8px);
+          box-shadow: 0 12px 25px rgba(0,0,0,0.06);
+          border-color: var(--primary);
+        }
+
+        .grant-type-card svg {
+          padding: 12px;
+          background: #f8f9fa;
+          border-radius: 16px;
+          transition: 0.3s;
+        }
+
+        .grant-type-card:hover svg {
+          background: #f0fdf4;
+          transform: scale(1.1);
+        }
+
+        .grant-type-card h3 { 
+          margin: 0; 
+          color: var(--secondary); 
+          font-size: 1.15rem;
+          font-weight: 800;
+        }
+        
+        .grant-type-card p { 
+          font-size: 0.85rem; 
+          color: #777; 
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .recent-grants h3 { margin-bottom: 25px; color: var(--secondary); font-weight: 800; }
       `}</style>
     </div>
   );
