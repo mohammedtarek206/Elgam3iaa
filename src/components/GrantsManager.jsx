@@ -477,7 +477,7 @@ const GrantsManager = () => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="submit-btn primary">تأفيذ التوزيع والخصم</button>
+                <button type="submit" className="submit-btn primary">تنفيذ التوزيع والخصم</button>
                 <button type="button" className="cancel-btn" onClick={() => setShowGrantForm(false)}>إلغاء</button>
               </div>
             </form>

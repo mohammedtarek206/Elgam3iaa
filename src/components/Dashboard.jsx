@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, HandCoins } from 'lucide-react';
+import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, HandCoins, Gift, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const API_URL = '/api';
 
@@ -112,6 +112,48 @@ const Dashboard = () => {
                   <span className="bar-label">{['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'][i]}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="finance-status-grid full-width">
+          <div className="finance-card paid main-card">
+            <div className="card-header">
+              <h3 style={{color: '#27ae60'}}>طلاب تم السداد لهم</h3>
+              <CheckCircle2 size={22} color="#27ae60" />
+            </div>
+            <div className="mini-student-list">
+              {stats.financeStats?.paidList?.length > 0 ? (
+                stats.financeStats.paidList.map(s => (
+                  <div key={s._id} className="mini-student-item">
+                    <div className="status-dot green"></div>
+                    <div className="s-info">
+                      <strong>{s.name}</strong>
+                      <span>{s.className}</span>
+                    </div>
+                  </div>
+                ))
+              ) : <p className="empty-msg">لا يوجد طلاب مسددين حالياً</p>}
+            </div>
+          </div>
+
+          <div className="finance-card unpaid main-card">
+            <div className="card-header">
+              <h3 style={{color: '#e74c3c'}}>طلاب لم يتم السداد لهم</h3>
+              <AlertCircle size={22} color="#e74c3c" />
+            </div>
+            <div className="mini-student-list">
+              {stats.financeStats?.unpaidList?.length > 0 ? (
+                stats.financeStats.unpaidList.map(s => (
+                  <div key={s._id} className="mini-student-item">
+                    <div className="status-dot red"></div>
+                    <div className="s-info">
+                      <strong>{s.name}</strong>
+                      <span style={{color: '#e74c3c'}}>المبلغ: {s.monthlyFees} ج.م</span>
+                    </div>
+                  </div>
+                ))
+              ) : <p className="empty-msg">الكل مسدد، أحسنت!</p>}
             </div>
           </div>
         </div>
@@ -360,6 +402,18 @@ const Dashboard = () => {
           .dashboard-main-grid { grid-template-columns: 1fr; }
         }
 
+        .finance-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px; }
+        .finance-card h3 { font-size: 1.1rem; margin-bottom: 0; }
+        .mini-student-list { max-height: 300px; overflow-y: auto; padding-right: 8px; margin-top: 15px; }
+        .mini-student-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f0f0f0; transition: 0.2s; }
+        .mini-student-item:hover { background: #f9f9f9; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .status-dot.green { background: #27ae60; box-shadow: 0 0 8px rgba(39, 174, 96, 0.4); }
+        .status-dot.red { background: #e74c3c; box-shadow: 0 0 8px rgba(231, 76, 60, 0.4); }
+        .s-info { display: flex; flex-direction: column; }
+        .s-info strong { font-size: 0.95rem; color: #333; }
+        .s-info span { font-size: 0.8rem; color: #666; }
+        .empty-msg { text-align: center; color: #999; padding: 20px; font-size: 0.9rem; }
       `}</style>
     </div>
   );
