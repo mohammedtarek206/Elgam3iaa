@@ -823,15 +823,20 @@ app.put('/api/donors/:id', [auth, isAdmin], async (req, res) => {
 
 app.delete('/api/donors/:id', [auth, isAdmin], async (req, res) => {
   try {
-    // Check if donor has active grants or non-zero balance
-    const donor = await Donor.findById(req.params.id);
-    if (donor && donor.balance > 0) {
-      return res.status(400).send({ message: 'لا يمكن حذف متبرع لديه رصيد متبقي. يرجى تصفية الرصيد أولاً.' });
-    }
-    await Donor.findByIdAndDelete(req.params.id);
-    // Note: We keep transactions for financial history
-    res.send({ message: 'تم حذف المتبرع بنجاح' });
+    const donorId = req.params.id;
+    
+    // 1. Delete all associated grants
+    await Grant.deleteMany({ donorId });
+
+    // 2. Delete all associated transactions (This clears income/expense from global stats)
+    await Transaction.deleteMany({ donorId });
+
+    // 3. Delete the donor record
+    await Donor.findByIdAndDelete(donorId);
+
+    res.send({ message: 'تم حذف المتبرع وكافة سجلاته المالية المرتبطة بنجاح، وتم تحديث ميزانية الصندوق.' });
   } catch (err) {
+    console.error('Error deleting donor:', err);
     res.status(500).send({ message: err.message });
   }
 });
