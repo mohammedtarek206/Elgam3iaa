@@ -428,6 +428,16 @@ const GrantsManager = () => {
                     <strong className={(donor.balance || 0) > 0 ? 'pos' : ''}>{donor.balance?.toLocaleString() || 0} ج.م</strong>
                   </div>
                 </div>
+                {donor.inKindHistory?.length > 0 && (
+                  <div className="donor-inkind-list">
+                    <small style={{display: 'block', color: '#888', marginBottom: '5px', borderTop: '1px solid #f0f0f0', paddingTop: '5px'}}>الأصناف العينية المقدمة:</small>
+                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '5px'}}>
+                      {donor.inKindHistory.map((h, i) => (
+                        <span key={i} className="kind-tag-mini" title={`تاريخ: ${h.date}`}>{h.unit}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {donors.length === 0 && <div className="empty-state-full">لا يوجد متبرعين مسجلين حالياً</div>}
@@ -509,9 +519,19 @@ const GrantsManager = () => {
                   </div>
 
                   {grantFormData.type === 'دعم عيني' ? (
-                    <div className="form-group">
+                    <div className="form-group full-width">
                       <label>الوحدة / الكمية</label>
                       <input required placeholder="مثلاً: 2 كرتونة مواد غذائية" value={grantFormData.unit} onChange={e => setGrantFormData({ ...grantFormData, unit: e.target.value })} />
+                      {grantFormData.donorId && donors.find(d => d._id === grantFormData.donorId)?.inKindHistory?.length > 0 && (
+                        <div className="unit-suggestions">
+                          <small style={{display: 'block', margin: '8px 0 4px', color: '#666'}}>أصناف تبرع بها هذا المتبرع سابقاً (اضغط للاختيار):</small>
+                          <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+                            {[...new Set(donors.find(d => d._id === grantFormData.donorId).inKindHistory.map(h => h.unit))].map((u, i) => (
+                              <button key={i} type="button" className="suggestion-pill" onClick={() => setGrantFormData({...grantFormData, unit: u})}>{u}</button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="form-group">

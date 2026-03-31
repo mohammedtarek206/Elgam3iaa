@@ -651,7 +651,19 @@ app.delete('/api/grants/:id', [auth, isAdmin], async (req, res) => {
 app.get('/api/donors', auth, async (req, res) => {
   try {
     const donors = await Donor.find().sort({ name: 1 });
-    res.send(donors);
+    // Fetch in-kind history for each donor to show in their cards
+    const donorsWithInKind = await Promise.all(donors.map(async (d) => {
+      const inKindHistory = await Transaction.find({
+        refId: d._id.toString(),
+        unit: { $exists: true, $ne: '' }
+      }).sort({ date: -1 });
+      
+      return {
+        ...d.toObject(),
+        inKindHistory: inKindHistory.map(h => ({ unit: h.unit, date: h.date, notes: h.notes }))
+      };
+    }));
+    res.send(donorsWithInKind);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -863,6 +875,23 @@ app.get('/api/stats', auth, async (req, res) => {
       }
     }
 
+    // 8. In-Kind Inventory (Unique items and their total recorded frequency/count)
+    const inKindInventoryRaw = await Transaction.find({ 
+      unit: { $exists: true, $ne: '' },
+      type: 'دخل' 
+    });
+    
+    const inventoryMap = {};
+    inKindInventoryRaw.forEach(item => {
+      if (!inventoryMap[item.unit]) inventoryMap[item.unit] = 0;
+      inventoryMap[item.unit]++;
+    });
+    
+    const inKindInventory = Object.keys(inventoryMap).map(unit => ({
+      unit,
+      count: inventoryMap[unit]
+    })).sort((a, b) => b.count - a.count);
+
     res.send({
       totalStudents: studentCount,
       totalSheikhs: sheikhCount,
@@ -874,7 +903,10 @@ app.get('/api/stats', auth, async (req, res) => {
       unpaidList: unpaidList.map(s => ({ _id: s._id, name: s.name, className: s.className, monthlyFees: s.monthlyFees })),
       atRiskStudents: studentsWithAbsences,
       grantFundBalance,
-      inKindCount
+      inKindCount,
+      recentInKind,
+      inKindInventory,
+      targetMonth
     });
   } catch (err) {
     console.error('Error fetching stats:', err);

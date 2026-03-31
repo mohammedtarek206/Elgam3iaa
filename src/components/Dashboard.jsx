@@ -23,6 +23,7 @@ const Dashboard = () => {
     paidList: [],
     unpaidList: [],
     atRiskStudents: [],
+    inKindInventory: [],
     loading: true
   });
 
@@ -50,6 +51,7 @@ const Dashboard = () => {
         unpaidList: data.unpaidList || [],
         grantFundBalance: data.grantFundBalance || 0,
         inKindCount: data.inKindCount || 0,
+        inKindInventory: data.inKindInventory || [],
         loading: false
       };
 
@@ -83,9 +85,9 @@ const Dashboard = () => {
     { title: 'إجمالي المحفظين', value: stats.totalSheikhs, icon: UserRound, color: '#9b59b6', trend: '+2', isUp: true },
     { title: 'نسبة الحضور اليوم', value: `${stats.attendanceRate}%`, icon: Calendar, color: '#27ae60', trend: 'مباشر', isUp: true },
     { title: 'حلقات التحفيظ', value: stats.totalClasses, icon: School, color: '#e67e22', trend: 'فعال', isUp: true },
-    { title: 'إجمالي الدخل', value: `${(stats.totalRevenue || 0).toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
+    { title: 'إجمالي الدخل النقدي', value: `${(stats.totalRevenue || 0).toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
     { title: 'رصيد صندوق المنح', value: `${(stats.grantFundBalance || 0).toLocaleString()} ج.م`, icon: HandCoins, color: '#f1c40f', trend: 'متوفر', isUp: true },
-    { title: 'تبرعات عينية', value: stats.inKindCount || 0, icon: Gift, color: '#e74c3c', trend: 'نشط', isUp: true },
+    { title: 'أنواع التبرعات العينية', value: stats.inKindCount || 0, icon: Gift, color: '#e74c3c', trend: 'نشط', isUp: true },
   ];
 
   return (
@@ -130,6 +132,23 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        <div className="inkind-inventory main-card">
+          <div className="card-header">
+            <h3>مخزون الدعم العيني (الأصناف)</h3>
+            <Gift size={20} color="#e74c3c" />
+          </div>
+          <div className="inventory-grid" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+            {stats.inKindInventory?.length > 0 ? (
+              stats.inKindInventory.map((item, idx) => (
+                <div key={idx} className="inventory-item" style={{background: '#f8f9fa', padding: '10px', borderRadius: '8px', borderRight: '4px solid #e74c3c'}}>
+                  <div style={{fontWeight: 'bold', color: '#333'}}>{item.unit}</div>
+                  <div style={{fontSize: '0.8rem', color: '#666'}}>{item.count} عمليات تبرع</div>
+                </div>
+              ))
+            ) : <p className="empty-msg">لا يوجد سجل أصناف حالياً</p>}
           </div>
         </div>
 
@@ -191,25 +210,37 @@ const Dashboard = () => {
 
         <div className="recent-activity main-card">
           <div className="card-header">
-            <h3>آخر التحديثات</h3>
+            <h3>آخر الإضافات</h3>
             <Calendar size={20} color="#666" />
           </div>
           <div className="activity-list">
-            {stats.loading ? (
-              <p>جاري التحميل...</p>
-            ) : (
-              // Show last 5 students as "Recent Activity"
-              (students || []).slice(-5).reverse().map(s => (
-                <div key={s._id} className="activity-item">
-                  <div className="activity-bullet green"></div>
+            {(students || []).slice(-3).reverse().map(s => (
+              <div key={s._id} className="activity-item">
+                <div className="activity-bullet green"></div>
+                <div className="activity-info">
+                  <strong>طالب جديد</strong>
+                  <span>تم تسجيل {s.name} في {s.className}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card-header" style={{marginTop: '25px'}}>
+            <h3>سجل التبرعات العارضة (عينية)</h3>
+            <Gift size={20} color="#e74c3c" />
+          </div>
+          <div className="activity-list">
+            {stats.recentInKind?.length > 0 ? (
+              stats.recentInKind.slice(0, 5).map((item, idx) => (
+                <div key={idx} className="activity-item">
+                  <div className="activity-bullet" style={{background: '#e74c3c'}}></div>
                   <div className="activity-info">
-                    <strong>إضافة طالب جديد</strong>
-                    <span>تم تسجيل الطالب {s.name} في فصل {s.className}</span>
+                    <strong>{item.refName || 'متبرع'}</strong>
+                    <span>أهدى: {item.unit} | بتاريخ: {item.date}</span>
                   </div>
                 </div>
               ))
-            )}
-            {(students || []).length === 0 && <p style={{textAlign:'center', color:'#888'}}>لا يوجد نشاط مؤخراً</p>}
+            ) : <p className="empty-msg">لا يوجد تبرعات عينية مسجلة مؤخراً</p>}
           </div>
         </div>
 
