@@ -34,6 +34,9 @@ const StudentManager = () => {
   });
   const [loading, setLoading] = useState(!students.length);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [activeProfileTab, setActiveProfileTab] = useState('exams');
 
   const [user] = useState(() => JSON.parse(localStorage.getItem('user')) || { role: 'admin' });
 
@@ -60,6 +63,16 @@ const StudentManager = () => {
       setStudents(data.students);
       setSheikhs(data.sheikhs);
       setClasses(data.classes);
+      
+      // Fetch Exams & Transactions for Profile
+      const [examsRes, txsRes] = await Promise.all([
+        fetch(`${API_URL}/exams`, { headers }),
+        fetch(`${API_URL}/transactions`, { headers })
+      ]);
+      const examsData = await examsRes.json();
+      const txsData = await txsRes.json();
+      setExams(examsData);
+      setTransactions(txsData);
       
       // Update Cache
       localStorage.setItem('cache_students', JSON.stringify(data.students));
@@ -311,99 +324,205 @@ const StudentManager = () => {
   const [viewingStudent, setViewingStudent] = useState(null);
 
   const handleViewProfile = (student) => {
+    setActiveProfileTab('exams');
     setViewingStudent(student);
     fetchStudentAttendance(student._id);
   };
 
-  const renderProfile = (student) => (
-    <div className="modal-overlay">
-      <div className="modal-content profile-content fade-in">
-        <div className="modal-header">
-          <h3>ملف الطالب: {student.name}</h3>
-          <button className="close-btn" onClick={() => setViewingStudent(null)}><X size={24} /></button>
-        </div>
-        
-        <div className="profile-grid">
-          <div className="profile-stat-card">
-            <Check size={32} color="#2ecc71" />
-            <div className="stat-info">
-              <span>نسبة الحضور</span>
-              <strong>{(() => {
-                const totalDays = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => r.personId === student._id)).length;
-                if (totalDays === 0) return '0%';
-                const presentDays = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => r.personId === student._id && (r.status === 'present' || r.status === 'late'))).length;
-                return Math.round((presentDays / totalDays) * 100) + '%';
-              })()}</strong>
-            </div>
-          </div>
-          <div className="profile-stat-card">
-            <Star size={32} color="#f1c40f" />
-            <div className="stat-info">
-              <span>المستوى الحالي</span>
-              <strong>{student.level}</strong>
-            </div>
-          </div>
-          <div className="profile-stat-card">
-            <Clock size={32} color="#e67e22" />
-            <div className="stat-info">
-              <span>آخر سورة</span>
-              <strong>{student.currentSurah || 'غير محدد'}</strong>
-            </div>
-          </div>
-          <div className="profile-stat-card">
-            <Fingerprint size={32} color="#9b59b6" />
-            <div className="stat-info">
-              <span>الرقم القومي</span>
-              <strong>{student.nationalId || '---'}</strong>
-            </div>
-          </div>
-          <div className="profile-stat-card">
-            <Heart size={32} color="#e74c3c" />
-            <div className="stat-info">
-              <span>الحالة</span>
-              <strong>{student.socialStatus || 'عادي'}</strong>
-            </div>
-          </div>
-        </div>
+  const renderProfile = (student) => {
+    // 1. Filter Exams
+    const studentExams = exams.filter(ex => 
+      ex.results && ex.results.some(r => r.studentId === student._id)
+    ).map(ex => {
+      const res = ex.results.find(r => r.studentId === student._id);
+      return { 
+        name: ex.name, 
+        date: ex.date, 
+        score: res.score, 
+        grade: res.grade, 
+        reward: res.reward 
+      };
+    });
 
-        <div className="profile-details-list">
-          <div className="detail-row"><span>رقم هاتف الطالب:</span> <strong>{student.phone}</strong></div>
-          <div className="detail-row"><span>رقم ولي الأمر:</span> <strong>{student.parentPhone || '---'}</strong></div>
-          <div className="detail-row"><span>الفصل:</span> <strong>{student.className || student.class}</strong></div>
-          <div className="detail-row"><span>المحفظ:</span> <strong>{student.sheikh}</strong></div>
-          <div className="detail-row"><span>تاريخ الاشتراك:</span> <strong>{student.joinDate}</strong></div>
-        </div>
+    // 2. Filter Attendance (Extract dates and status for this student)
+    const studentAttendance = attendanceHistory
+      .filter(h => h.attendanceType === 'student' && h.records.some(r => r.personId === student._id))
+      .map(h => {
+        const record = h.records.find(r => r.personId === student._id);
+        return { date: h.date, status: record.status };
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        <div className="profile-tabs">
-          <div className="tab-header">
-            <button className="active">النتائج والاختبارات</button>
-            <button>سجل الحضور</button>
-            <button>الأقساط والمدفوعات</button>
+    // 3. Filter Transactions (Payments)
+    const studentPayments = transactions
+      .filter(t => t.refId === student._id)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content profile-content fade-in">
+          <div className="modal-header">
+            <h3>ملف الطالب: {student.name}</h3>
+            <button className="close-btn" onClick={() => setViewingStudent(null)}><X size={24} /></button>
           </div>
-          <div className="tab-content">
-            <div className="mini-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>الاختبار</th>
-                    <th>التاريخ</th>
-                    <th>الدرجة</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>جزء عم</td>
-                    <td>2026-02-10</td>
-                    <td>98/100</td>
-                  </tr>
-                </tbody>
-              </table>
+          
+          <div className="profile-grid">
+            <div className="profile-stat-card">
+              <Check size={32} color="#2ecc71" />
+              <div className="stat-info">
+                <span>نسبة الحضور</span>
+                <strong>{(() => {
+                  const totalDays = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => r.personId === student._id)).length;
+                  if (totalDays === 0) return '0%';
+                  const presentDays = attendanceHistory.filter(h => h.attendanceType === 'student' && h.records.some(r => r.personId === student._id && (r.status === 'present' || r.status === 'late'))).length;
+                  return Math.round((presentDays / totalDays) * 100) + '%';
+                })()}</strong>
+              </div>
+            </div>
+            <div className="profile-stat-card">
+              <Star size={32} color="#f1c40f" />
+              <div className="stat-info">
+                <span>المستوى الحالي</span>
+                <strong>{student.level}</strong>
+              </div>
+            </div>
+            <div className="profile-stat-card">
+              <Clock size={32} color="#e67e22" />
+              <div className="stat-info">
+                <span>آخر سورة</span>
+                <strong>{student.currentSurah || 'غير محدد'}</strong>
+              </div>
+            </div>
+            <div className="profile-stat-card">
+              <Fingerprint size={32} color="#9b59b6" />
+              <div className="stat-info">
+                <span>الرقم القومي</span>
+                <strong>{student.nationalId || '---'}</strong>
+              </div>
+            </div>
+            <div className="profile-stat-card">
+              <Heart size={32} color="#e74c3c" />
+              <div className="stat-info">
+                <span>الحالة</span>
+                <strong>{student.socialStatus || 'عادي'}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="profile-details-list">
+            <div className="detail-row"><span>رقم هاتف الطالب:</span> <strong>{student.phone}</strong></div>
+            <div className="detail-row"><span>رقم ولي الأمر:</span> <strong>{student.parentPhone || '---'}</strong></div>
+            <div className="detail-row"><span>الفصل:</span> <strong>{student.className || student.class}</strong></div>
+            <div className="detail-row"><span>المحفظ:</span> <strong>{student.sheikh}</strong></div>
+            <div className="detail-row"><span>تاريخ الاشتراك:</span> <strong>{student.joinDate}</strong></div>
+          </div>
+
+          <div className="profile-tabs">
+            <div className="tab-header">
+              <button 
+                className={activeProfileTab === 'exams' ? 'active' : ''} 
+                onClick={() => setActiveProfileTab('exams')}
+              >
+                النتائج والاختبارات
+              </button>
+              <button 
+                className={activeProfileTab === 'attendance' ? 'active' : ''} 
+                onClick={() => setActiveProfileTab('attendance')}
+              >
+                سجل الحضور
+              </button>
+              <button 
+                className={activeProfileTab === 'payments' ? 'active' : ''} 
+                onClick={() => setActiveProfileTab('payments')}
+              >
+                الأقساط والمدفوعات
+              </button>
+            </div>
+            <div className="tab-content">
+              {activeProfileTab === 'exams' && (
+                <div className="mini-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>الاختبار</th>
+                        <th>التاريخ</th>
+                        <th>الدرجة</th>
+                        <th>التقدير</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentExams.length > 0 ? studentExams.map((ex, i) => (
+                        <tr key={i}>
+                          <td>{ex.name}</td>
+                          <td>{ex.date}</td>
+                          <td className="font-bold">{ex.score}</td>
+                          <td><span className="level-badge">{ex.grade || '---'}</span></td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="4" style={{textAlign: 'center', padding: '20px'}}>لا توجد نتائج اختبارات مسجلة</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {activeProfileTab === 'attendance' && (
+                <div className="mini-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>التاريخ</th>
+                        <th>الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentAttendance.length > 0 ? studentAttendance.map((att, i) => (
+                        <tr key={i}>
+                          <td>{att.date}</td>
+                          <td>
+                            <span className={`status-chip ${att.status === 'present' || att.status === 'late' ? 'active' : 'inactive'}`}>
+                              {att.status === 'present' ? 'حاضر' : att.status === 'late' ? 'متأخر' : 'غائب'}
+                            </span>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="2" style={{textAlign: 'center', padding: '20px'}}>لا يوجد سجل حضور مسجل</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {activeProfileTab === 'payments' && (
+                <div className="mini-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>التاريخ</th>
+                        <th>المبلغ</th>
+                        <th>البيان</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentPayments.length > 0 ? studentPayments.map((p, i) => (
+                        <tr key={i}>
+                          <td>{p.date}</td>
+                          <td className="font-bold">{p.amount} ج.م</td>
+                          <td>{p.notes || p.category || 'رسوم شهرية'}</td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="3" style={{textAlign: 'center', padding: '20px'}}>لا توجد مدفوعات مسجلة</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="student-manager">
