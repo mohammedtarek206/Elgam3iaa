@@ -137,18 +137,18 @@ const Dashboard = () => {
 
         <div className="inkind-inventory main-card">
           <div className="card-header">
-            <h3>مخزون الدعم العيني (الأصناف)</h3>
+            <h3>المخزون العيني المتوفر (جرد حي)</h3>
             <Gift size={20} color="#e74c3c" />
           </div>
-          <div className="inventory-grid" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
+          <div className="inventory-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px'}}>
             {stats.inKindInventory?.length > 0 ? (
               stats.inKindInventory.map((item, idx) => (
                 <div key={idx} className="inventory-item" style={{background: '#f8f9fa', padding: '10px', borderRadius: '8px', borderRight: '4px solid #e74c3c'}}>
                   <div style={{fontWeight: 'bold', color: '#333'}}>{item.unit}</div>
-                  <div style={{fontSize: '0.8rem', color: '#666'}}>{item.count} عمليات تبرع</div>
+                  <div style={{fontSize: '0.9rem', color: item.count > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold'}}>{item.count} <small>وحدة</small></div>
                 </div>
               ))
-            ) : <p className="empty-msg">لا يوجد سجل أصناف حالياً</p>}
+            ) : <p className="empty-msg">لا يوجد مخزون عيني حالياً</p>}
           </div>
         </div>
 

@@ -608,7 +608,7 @@ app.post('/api/grants', auth, async (req, res) => {
     const grant = new Grant(req.body);
     await grant.save();
 
-    // If it's a monetary grant, record an expense transaction
+    // 1. If it's a monetary grant, record an expense transaction and decrement financial balance
     if (grant.type !== 'دعم عيني' && grant.amount > 0) {
       const transaction = new Transaction({
         type: 'مصروف',
@@ -621,9 +621,37 @@ app.post('/api/grants', auth, async (req, res) => {
       });
       await transaction.save();
 
-      // Update Donor balance/total if donorId exists
       if (grant.donorId) {
         await Donor.findByIdAndUpdate(grant.donorId, { $inc: { balance: -grant.amount } });
+      }
+    }
+
+    // 2. If it's an In-Kind grant, decrement the donor's specific item stock
+    if (grant.type === 'دعم عيني' && grant.itemName && grant.quantityPerStudent > 0) {
+      const totalQuantity = grant.quantityPerStudent * (grant.studentIds?.length || 1);
+      
+      const transaction = new Transaction({
+        type: 'مصروف',
+        category: 'منح وعطاءات',
+        amount: 0,
+        quantity: totalQuantity,
+        itemName: grant.itemName,
+        unit: `${grant.quantityPerStudent} لكل طالب (الإجمالي: ${totalQuantity})`,
+        date: grant.date,
+        notes: `توزيع دعم عيني: ${grant.itemName} | المتبرع: ${grant.donorName || '---'}`,
+        refId: grant._id,
+        refName: grant.studentNames
+      });
+      await transaction.save();
+
+      if (grant.donorId) {
+        // Update the Map in Donor: decrease quantity for this specific item
+        const donor = await Donor.findById(grant.donorId);
+        if (donor) {
+          const currentStock = donor.inKindStock.get(grant.itemName) || 0;
+          donor.inKindStock.set(grant.itemName, currentStock - totalQuantity);
+          await donor.save();
+        }
       }
     }
 
@@ -651,19 +679,46 @@ app.delete('/api/grants/:id', [auth, isAdmin], async (req, res) => {
 app.get('/api/donors', auth, async (req, res) => {
   try {
     const donors = await Donor.find().sort({ name: 1 });
-    // Fetch in-kind history for each donor to show in their cards
-    const donorsWithInKind = await Promise.all(donors.map(async (d) => {
-      const inKindHistory = await Transaction.find({
+    // Fetch in-kind history and formatted stock for each donor
+    const donorsProcessed = await Promise.all(donors.map(async (d) => {
+      const inKindTxs = await Transaction.find({
         refId: d._id.toString(),
-        unit: { $exists: true, $ne: '' }
+        itemName: { $exists: true, $ne: '' }
       }).sort({ date: -1 });
       
+      const donorObj = d.toObject();
+      const stockObj = {};
+      const totalsObj = {}; // To store total received/distributed per item
+      
+      if (d.inKindStock) {
+        for (let [key, value] of d.inKindStock) {
+          stockObj[key] = value;
+          totalsObj[key] = { received: 0, distributed: 0 };
+        }
+      }
+
+      // Calculate totals from history
+      inKindTxs.forEach(tx => {
+        if (!totalsObj[tx.itemName]) totalsObj[tx.itemName] = { received: 0, distributed: 0 };
+        if (tx.type === 'دخل') totalsObj[tx.itemName].received += (tx.quantity || 0);
+        else totalsObj[tx.itemName].distributed += (tx.quantity || 0);
+      });
+
       return {
-        ...d.toObject(),
-        inKindHistory: inKindHistory.map(h => ({ unit: h.unit, date: h.date, notes: h.notes }))
+        ...donorObj,
+        inKindStock: stockObj,
+        inKindTotals: totalsObj,
+        inKindHistory: inKindTxs.map(h => ({ 
+          unit: h.unit, 
+          itemName: h.itemName, 
+          quantity: h.quantity, 
+          date: h.date, 
+          type: h.type,
+          notes: h.notes 
+        }))
       };
     }));
-    res.send(donorsWithInKind);
+    res.send(donorsProcessed);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -725,7 +780,7 @@ app.delete('/api/donors/:id', [auth, isAdmin], async (req, res) => {
 });
 
 app.post('/api/donations', auth, async (req, res) => {
-  const { donorId, amount, unit, date, notes } = req.body;
+  const { donorId, amount, unit, itemName, quantity, date, notes } = req.body;
   try {
     const donor = await Donor.findById(donorId);
     if (!donor) return res.status(404).send({ message: 'المتبرع غير موجود' });
@@ -735,7 +790,9 @@ app.post('/api/donations', auth, async (req, res) => {
       type: 'دخل',
       category: 'تبرعات',
       amount: Number(amount) || 0,
-      unit: unit || '',
+      quantity: Number(quantity) || 0,
+      itemName: itemName || '',
+      unit: unit || (itemName ? `${quantity} ${itemName}` : ''),
       date,
       notes,
       refId: donor._id,
@@ -743,13 +800,19 @@ app.post('/api/donations', auth, async (req, res) => {
     });
     await transaction.save();
 
-    // 2. Update Donor stats (only if monetary)
+    // 2. Update Donor stats (monetary)
     if (Number(amount) > 0) {
       donor.totalDonated += Number(amount);
       donor.balance += Number(amount);
-      await donor.save();
     }
 
+    // 3. Update Donor stock (In-Kind)
+    if (itemName && Number(quantity) > 0) {
+      const currentStock = donor.inKindStock.get(itemName) || 0;
+      donor.inKindStock.set(itemName, currentStock + Number(quantity));
+    }
+
+    await donor.save();
     res.send(transaction);
   } catch (err) {
     console.error('Error recording donation:', err);
@@ -875,21 +938,22 @@ app.get('/api/stats', auth, async (req, res) => {
       }
     }
 
-    // 8. In-Kind Inventory (Unique items and their total recorded frequency/count)
-    const inKindInventoryRaw = await Transaction.find({ 
-      unit: { $exists: true, $ne: '' },
-      type: 'دخل' 
-    });
+    // 8. In-Kind Inventory (Actual current stock from across all donors)
+    const allDonorsWithStock = await Donor.find({ inKindStock: { $exists: true } });
+    const liveInventoryObj = {};
     
-    const inventoryMap = {};
-    inKindInventoryRaw.forEach(item => {
-      if (!inventoryMap[item.unit]) inventoryMap[item.unit] = 0;
-      inventoryMap[item.unit]++;
+    allDonorsWithStock.forEach(d => {
+      if (d.inKindStock) {
+        for (let [item, qty] of d.inKindStock) {
+          if (!liveInventoryObj[item]) liveInventoryObj[item] = 0;
+          liveInventoryObj[item] += qty;
+        }
+      }
     });
-    
-    const inKindInventory = Object.keys(inventoryMap).map(unit => ({
+
+    const inKindInventory = Object.keys(liveInventoryObj).map(unit => ({
       unit,
-      count: inventoryMap[unit]
+      count: liveInventoryObj[unit]
     })).sort((a, b) => b.count - a.count);
 
     res.send({

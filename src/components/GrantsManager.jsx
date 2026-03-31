@@ -52,6 +52,8 @@ const GrantsManager = () => {
     donorId: '',
     type: 'نقدي',
     amount: '',
+    itemName: '',
+    quantity: '',
     unit: '',
     date: new Date().toISOString().split('T')[0],
     notes: ''
@@ -132,6 +134,8 @@ const GrantsManager = () => {
           studentNames: '',
           type: 'السداد لغير القادرين',
           amount: '',
+          quantityPerStudent: '',
+          itemName: '',
           unit: '',
           donorId: '',
           donorName: '',
@@ -217,7 +221,7 @@ const GrantsManager = () => {
       if (res.ok) {
         fetchData();
         setShowDonationForm(false);
-        setDonationFormData({ donorId: '', type: 'نقدي', amount: '', unit: '', date: new Date().toISOString().split('T')[0], notes: '' });
+        setDonationFormData({ donorId: '', type: 'نقدي', amount: '', itemName: '', quantity: '', unit: '', date: new Date().toISOString().split('T')[0], notes: '' });
       }
     } catch (err) {
       console.error('Error recording donation:', err);
@@ -428,12 +432,14 @@ const GrantsManager = () => {
                     <strong className={(donor.balance || 0) > 0 ? 'pos' : ''}>{donor.balance?.toLocaleString() || 0} ج.م</strong>
                   </div>
                 </div>
-                {donor.inKindHistory?.length > 0 && (
-                  <div className="donor-inkind-list">
-                    <small style={{display: 'block', color: '#888', marginBottom: '5px', borderTop: '1px solid #f0f0f0', paddingTop: '5px'}}>الأصناف العينية المقدمة:</small>
-                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '5px'}}>
-                      {donor.inKindHistory.map((h, i) => (
-                        <span key={i} className="kind-tag-mini" title={`تاريخ: ${h.date}`}>{h.unit}</span>
+                {donor.inKindStock && Object.keys(donor.inKindStock).length > 0 && (
+                  <div className="donor-stock-details">
+                    <small style={{display: 'block', color: '#888', marginBottom: '5px', borderTop: '1px solid #f0f0f0', paddingTop: '5px'}}>المخزون العيني الموفر:</small>
+                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+                      {Object.entries(donor.inKindStock).map(([item, qty], i) => (
+                        <div key={i} className={`stock-pill ${qty <= 0 ? 'empty' : ''}`} style={{background: qty > 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${qty > 0 ? '#bbf7d0' : '#fecaca'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem'}}>
+                          <strong style={{color: '#333'}}>{item}:</strong> <span style={{color: qty > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold'}}>{qty}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -519,20 +525,33 @@ const GrantsManager = () => {
                   </div>
 
                   {grantFormData.type === 'دعم عيني' ? (
-                    <div className="form-group full-width">
-                      <label>الوحدة / الكمية</label>
-                      <input required placeholder="مثلاً: 2 كرتونة مواد غذائية" value={grantFormData.unit} onChange={e => setGrantFormData({ ...grantFormData, unit: e.target.value })} />
-                      {grantFormData.donorId && donors.find(d => d._id === grantFormData.donorId)?.inKindHistory?.length > 0 && (
-                        <div className="unit-suggestions">
-                          <small style={{display: 'block', margin: '8px 0 4px', color: '#666'}}>أصناف تبرع بها هذا المتبرع سابقاً (اضغط للاختيار):</small>
+                    <>
+                      <div className="form-group">
+                        <label>الصنف المطلوب توزيعه</label>
+                        <input required placeholder="مثلاً: شنط رمضان" value={grantFormData.itemName} onChange={e => setGrantFormData({ ...grantFormData, itemName: e.target.value })} />
+                      </div>
+                      <div className="form-group">
+                        <label>الكمية لكل طالب</label>
+                        <input type="number" required placeholder="مثلاً: 2" value={grantFormData.quantityPerStudent} onChange={e => setGrantFormData({ ...grantFormData, quantityPerStudent: e.target.value })} />
+                      </div>
+                      {grantFormData.donorId && Object.keys(donors.find(d => d._id === grantFormData.donorId)?.inKindStock || {}).length > 0 && (
+                        <div className="form-group full-width">
+                          <small style={{display: 'block', marginBottom: '8px', color: '#666'}}>الأصناف المتوفرة عند هذا المتبرع (اضغط للاختيار):</small>
                           <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
-                            {[...new Set(donors.find(d => d._id === grantFormData.donorId).inKindHistory.map(h => h.unit))].map((u, i) => (
-                              <button key={i} type="button" className="suggestion-pill" onClick={() => setGrantFormData({...grantFormData, unit: u})}>{u}</button>
+                            {Object.entries(donors.find(d => d._id === grantFormData.donorId).inKindStock).map(([item, qty], i) => (
+                              <button key={i} type="button" className="suggestion-pill" style={{opacity: qty <= 0 ? 0.5 : 1}} onClick={() => setGrantFormData({...grantFormData, itemName: item})}>
+                                {item} ({qty})
+                              </button>
                             ))}
                           </div>
                         </div>
                       )}
-                    </div>
+                      {selectedStudents.length > 0 && grantFormData.quantityPerStudent > 0 && (
+                        <div className="form-group full-width" style={{background: '#f8f9fa', padding: '10px', borderRadius: '8px'}}>
+                          <p style={{margin: 0, color: '#2c3e50', fontSize: '0.9rem'}}>إجمالي الكمية التي سيتم خصمها: <strong>{grantFormData.quantityPerStudent * selectedStudents.length} وحدات</strong> ({selectedStudents.length} طلاب × {grantFormData.quantityPerStudent})</p>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="form-group">
                       <label>إجمالي المبلغ (يخصم من الداش بورد)</label>
@@ -646,10 +665,16 @@ const GrantsManager = () => {
                     <input type="number" required value={donationFormData.amount} onChange={e => setDonationFormData({ ...donationFormData, amount: e.target.value })} />
                   </div>
                 ) : (
-                  <div className="form-group">
-                    <label>الوصف والكمية العينية</label>
-                    <input required placeholder="مثلاً: 50 شنطة رمضان" value={donationFormData.unit} onChange={e => setDonationFormData({ ...donationFormData, unit: e.target.value })} />
-                  </div>
+                  <>
+                    <div className="form-group">
+                      <label>اسم الصنف</label>
+                      <input required placeholder="مثلاً: شنط رمضان" value={donationFormData.itemName} onChange={e => setDonationFormData({ ...donationFormData, itemName: e.target.value })} />
+                    </div>
+                    <div className="form-group">
+                      <label>الكمية الواردة</label>
+                      <input type="number" required placeholder="مثلاً: 500" value={donationFormData.quantity} onChange={e => setDonationFormData({ ...donationFormData, quantity: e.target.value })} />
+                    </div>
+                  </>
                 )}
                 <div className="form-group">
                   <label>التاريخ</label>

@@ -3,8 +3,10 @@ const mongoose = require('mongoose');
 const transactionSchema = new mongoose.Schema({
   type: { type: String, enum: ['دخل', 'مصروف'], required: true },
   category: String,
-  amount: { type: Number, default: 0 }, // Optional for in-kind
-  unit: String, // Description or quantity for in-kind (e.g. "50 شنطة رمضان")
+  amount: { type: Number, default: 0 }, // Monetary
+  quantity: { type: Number, default: 0 }, // For In-Kind (e.g. 500)
+  itemName: String, // Item name for In-Kind (e.g. 'شنط رمضان')
+  unit: String, // Full description (e.g. "500 شنطة رمضان")
   date: { type: String, required: true },
   notes: String,
   refId: String,
