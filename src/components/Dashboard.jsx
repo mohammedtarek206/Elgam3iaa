@@ -232,12 +232,29 @@ const Dashboard = () => {
           <div className="activity-list">
             {stats.recentInKind?.length > 0 ? (
               stats.recentInKind.slice(0, 5).map((item, idx) => (
-                <div key={idx} className="activity-item">
-                  <div className="activity-bullet" style={{background: '#e74c3c'}}></div>
-                  <div className="activity-info">
-                    <strong>{item.refName || 'متبرع'}</strong>
-                    <span>أهدى: {item.unit} | بتاريخ: {item.date}</span>
+                <div key={idx} className="activity-item" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                    <div className="activity-bullet" style={{background: '#e74c3c'}}></div>
+                    <div className="activity-info">
+                      <strong>{item.refName || 'متبرع'}</strong>
+                      <span>أهدى: {item.unit} | بتاريخ: {item.date}</span>
+                    </div>
                   </div>
+                  {/* Reuse the logic to revert balance on backend */}
+                  <button 
+                    onClick={async () => {
+                      if(!window.confirm('هل تريد حذف هذا التبرع واسترداد الكمية للمتبرع؟')) return;
+                      const res = await fetch(`/api/transactions/${item._id}`, { 
+                        method: 'DELETE', 
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } 
+                      });
+                      if(res.ok) window.location.reload(); // Quick refresh for stats
+                    }}
+                    style={{background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '5px'}}
+                    title="حذف واسترداد"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))
             ) : <p className="empty-msg">لا يوجد تبرعات عينية مسجلة مؤخراً</p>}

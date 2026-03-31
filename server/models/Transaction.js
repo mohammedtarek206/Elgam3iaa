@@ -9,6 +9,7 @@ const transactionSchema = new mongoose.Schema({
   unit: String, // Full description (e.g. "500 شنطة رمضان")
   date: { type: String, required: true },
   notes: String,
+  donorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Donor' },
   refId: String,
   refName: String
 }, { timestamps: true });

@@ -479,13 +479,28 @@ const GrantsManager = () => {
           <div className="in-kind-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px'}}>
             {fundStats.recentInKind.map((item, idx) => (
               <div key={idx} className="in-kind-item" style={{background: '#fcfcfc', border: '1px solid #eee', padding: '15px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <div>
+                <div style={{flex: 1}}>
                   <strong style={{display: 'block', color: '#333'}}>{item.refName || 'متبرع'}</strong>
-                  <span style={{fontSize: '0.85rem', color: '#e74c3c', fontWeight: 'bold'}}>{item.unit}</span>
+                  <span style={{fontSize: '0.85rem', color: '#e74c3c', fontWeight: 'bold'}}>{item.unit || item.itemName}</span>
                   <small style={{display: 'block', color: '#888', marginTop: '4px'}}>{item.date}</small>
                 </div>
-                <div style={{color: '#999'}} title={item.notes}>
-                  <Building2 size={20} />
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                  <button 
+                    onClick={async () => {
+                      if(!window.confirm('هل تريد حذف هذا التبرع وتعديل رصيد المتبرع؟')) return;
+                      const res = await fetch(`${API_URL}/transactions/${item._id}`, { 
+                        method: 'DELETE', 
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } 
+                      });
+                      if(res.ok) fetchData();
+                    }}
+                    className="delete-btn-mini"
+                    style={{color: '#e74c3c', padding: 5, borderRadius: 5, cursor: 'pointer', background: 'none', border: 'none'}}
+                    title="حذف واسترداد الرصيد"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <Building2 size={20} color="#999" />
                 </div>
               </div>
             ))}

@@ -583,9 +583,42 @@ app.post('/api/transactions', auth, async (req, res) => {
 
 app.delete('/api/transactions/:id', [auth, isAdmin], async (req, res) => {
   try {
+    const tx = await Transaction.findById(req.params.id);
+    if (!tx) return res.status(404).send({ message: 'Transaction not found' });
+
+    // REVERSION LOGIC: If transaction had a donor, revert their balance/stock
+    if (tx.donorId) {
+      const donor = await Donor.findById(tx.donorId);
+      if (donor) {
+        // If it was income (donation), subtract from balance/stock
+        if (tx.type === 'دخل') {
+          if (tx.amount > 0) {
+            donor.balance -= tx.amount;
+            donor.totalDonated -= tx.amount;
+          }
+          if (tx.itemName && tx.quantity > 0) {
+            const current = donor.inKindStock.get(tx.itemName) || 0;
+            donor.inKindStock.set(tx.itemName, Math.max(0, current - tx.quantity));
+          }
+        } 
+        // If it was expense (grant reversal), add back to balance/stock
+        else {
+          if (tx.amount > 0) {
+            donor.balance += tx.amount;
+          }
+          if (tx.itemName && tx.quantity > 0) {
+            const current = donor.inKindStock.get(tx.itemName) || 0;
+            donor.inKindStock.set(tx.itemName, current + tx.quantity);
+          }
+        }
+        await donor.save();
+      }
+    }
+
     await Transaction.findByIdAndDelete(req.params.id);
-    res.send({ message: 'Transaction deleted' });
+    res.send({ message: 'تم حذف المعاملة وتحديث رصيد المتبرع' });
   } catch (err) {
+    console.error('Deletion error:', err);
     res.status(500).send({ message: err.message });
   }
 });
@@ -614,6 +647,7 @@ app.post('/api/grants', auth, async (req, res) => {
         type: 'مصروف',
         category: 'منح وعطاءات',
         amount: grant.amount,
+        donorId: grant.donorId,
         date: grant.date,
         notes: `منحة لـ: ${grant.studentNames || 'مجموعة طلاب'} | المتبرع: ${grant.donorName || '---'}`,
         refId: grant._id,
@@ -622,6 +656,7 @@ app.post('/api/grants', auth, async (req, res) => {
       await transaction.save();
 
       if (grant.donorId) {
+        // Double check: subtract amount from specific donor balance
         await Donor.findByIdAndUpdate(grant.donorId, { $inc: { balance: -grant.amount } });
       }
     }
@@ -637,6 +672,7 @@ app.post('/api/grants', auth, async (req, res) => {
         quantity: totalQuantity,
         itemName: grant.itemName,
         unit: `${grant.quantityPerStudent} لكل طالب (الإجمالي: ${totalQuantity})`,
+        donorId: grant.donorId,
         date: grant.date,
         notes: `توزيع دعم عيني: ${grant.itemName} | المتبرع: ${grant.donorName || '---'}`,
         refId: grant._id,
@@ -664,13 +700,33 @@ app.post('/api/grants', auth, async (req, res) => {
 
 app.delete('/api/grants/:id', [auth, isAdmin], async (req, res) => {
   try {
-    const grant = await Grant.findByIdAndDelete(req.params.id);
-    // Also delete associated transaction if exists
-    if (grant && grant.amount > 0) {
-      await Transaction.findOneAndDelete({ refId: grant._id });
+    const grant = await Grant.findById(req.params.id);
+    if (!grant) return res.status(404).send({ message: 'Grant not found' });
+
+    // 1. Revert Donor Balance/Stock
+    if (grant.donorId) {
+      if (grant.type === 'دعم عيني' && grant.itemName) {
+        const totalQty = grant.quantityPerStudent * (grant.studentIds?.length || 1);
+        const donor = await Donor.findById(grant.donorId);
+        if (donor) {
+          const current = donor.inKindStock.get(grant.itemName) || 0;
+          donor.inKindStock.set(grant.itemName, current + totalQty);
+          await donor.save();
+        }
+      } else if (grant.amount > 0) {
+        await Donor.findByIdAndUpdate(grant.donorId, { $inc: { balance: grant.amount } });
+      }
     }
-    res.send({ message: 'تم حذف المنحة بنجاح' });
+
+    // 2. Delete linked transactions
+    await Transaction.deleteMany({ refId: grant._id });
+    
+    // 3. Delete the grant
+    await Grant.findByIdAndDelete(req.params.id);
+    
+    res.send({ message: 'تم حذف المنحة وتعديل الرصيد بنجاح' });
   } catch (err) {
+    console.error('Error deleting grant:', err);
     res.status(500).send({ message: err.message });
   }
 });
@@ -679,10 +735,10 @@ app.delete('/api/grants/:id', [auth, isAdmin], async (req, res) => {
 app.get('/api/donors', auth, async (req, res) => {
   try {
     const donors = await Donor.find().sort({ name: 1 });
-    // Fetch in-kind history and formatted stock for each donor
+    // Fetch in-kind history and formatted stock for each donor using explicitly linked donorId
     const donorsProcessed = await Promise.all(donors.map(async (d) => {
       const inKindTxs = await Transaction.find({
-        refId: d._id.toString(),
+        donorId: d._id,
         itemName: { $exists: true, $ne: '' }
       }).sort({ date: -1 });
       
@@ -741,6 +797,7 @@ app.post('/api/donors', auth, async (req, res) => {
         unit: initialUnit || '',
         date: new Date().toISOString().split('T')[0],
         notes: `تبرع افتتاحي عند التسجيل: ${donor.name}`,
+        donorId: donor._id,
         refId: donor._id,
         refName: donor.name
       });
@@ -795,6 +852,7 @@ app.post('/api/donations', auth, async (req, res) => {
       unit: unit || (itemName ? `${quantity} ${itemName}` : ''),
       date,
       notes,
+      donorId: donor._id,
       refId: donor._id,
       refName: donor.name
     });
