@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, HandCoins } from 'lucide-react';
 
 const API_URL = '/api';
 
@@ -67,6 +67,7 @@ const Dashboard = () => {
     { title: 'نسبة الحضور اليوم', value: `${stats.attendanceRate}%`, icon: Calendar, color: '#27ae60', trend: 'مباشر', isUp: true },
     { title: 'حلقات التحفيظ', value: stats.totalClasses, icon: School, color: '#e67e22', trend: 'فعال', isUp: true },
     { title: 'إجمالي الدخل', value: `${(stats.totalRevenue || 0).toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
+    { title: 'رصيد صندوق المنح', value: `${(stats.grantFundBalance || 0).toLocaleString()} ج.م`, icon: HandCoins, color: '#f1c40f', trend: 'متوفر', isUp: true },
   ];
 
   return (

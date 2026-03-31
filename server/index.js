@@ -17,6 +17,7 @@ const Grant = require('./models/Grant');
 const Exam = require('./models/Exam');
 const StudentRequest = require('./models/StudentRequest');
 const SheikhRequest = require('./models/SheikhRequest');
+const Donor = require('./models/Donor');
 
 const app = express();
 app.use(cors());
@@ -73,8 +74,8 @@ app.use(async (req, res, next) => {
 });
 
 app.get('/api/test', (req, res) => {
-  res.send({ 
-    status: 'ok', 
+  res.send({
+    status: 'ok',
     message: 'Backend is working!',
     dbStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting/Disconnected',
     env: {
@@ -101,22 +102,22 @@ app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     console.log(`Login attempt for username: ${username}`);
     const user = await User.findOne({ username });
-    
+
     if (!user) {
       console.log(`User not found: ${username}`);
       return res.status(401).send({ message: 'بيانات الدخول غير صحيحة' });
     }
-    
+
     const isMatch = await user.comparePassword(password);
     console.log(`Password match for ${username}: ${isMatch}`);
-    
+
     if (!isMatch) {
       return res.status(401).send({ message: 'بيانات الدخول غير صحيحة' });
     }
-    
+
     const token = jwt.sign(
-      { id: user._id, role: user.role, username: user.username }, 
-      process.env.JWT_SECRET || 'secret_key', 
+      { id: user._id, role: user.role, username: user.username },
+      process.env.JWT_SECRET || 'secret_key',
       { expiresIn: '1d' }
     );
     res.send({ token, user: { username: user.username, role: user.role } });
@@ -269,7 +270,7 @@ app.post('/api/public/register', async (req, res) => {
 app.get('/api/public/student-followup/:nationalId', async (req, res) => {
   try {
     const { nationalId } = req.params;
-    
+
     // 1. Find the student
     const student = await Student.findOne({ nationalId });
     if (!student) {
@@ -281,10 +282,10 @@ app.get('/api/public/student-followup/:nationalId', async (req, res) => {
     }
 
     // 2. Fetch Attendance (only extracting this student's status)
-    const attendances = await Attendance.find({ 
-      'records.personId': student._id.toString() 
+    const attendances = await Attendance.find({
+      'records.personId': student._id.toString()
     }).sort({ date: -1 }).limit(30); // Last 30 records
-    
+
     const studentAttendance = attendances.map(att => {
       const record = att.records.find(r => r.personId === student._id.toString());
       return {
@@ -363,10 +364,10 @@ app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => 
     });
 
     await student.save();
-    
+
     // Delete Request after approval
     await StudentRequest.findByIdAndDelete(req.params.id);
-    
+
     res.send({ message: 'تم قبول الطالب وتوجيهه لقسم الطلاب', student });
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -422,10 +423,10 @@ app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
     });
 
     await sheikh.save();
-    
+
     // Delete Request after approval
     await SheikhRequest.findByIdAndDelete(req.params.id);
-    
+
     res.send({ message: 'تم قبول المحفظ وتعيينه للفصل بنجاح', sheikh });
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -535,10 +536,10 @@ app.post('/api/attendance', auth, async (req, res) => {
   const { date, attendanceType, records } = req.body;
   try {
     console.log(`📥 Upserting Attendance for ${date} (${attendanceType})`);
-    
+
     // Find existing document for this date and type
     const existing = await Attendance.findOne({ date, attendanceType });
-    
+
     if (existing) {
       // Merge records: update existing ones, add new ones
       const recordMap = new Map(existing.records.map(r => [r.personId, r]));
@@ -592,7 +593,10 @@ app.delete('/api/transactions/:id', [auth, isAdmin], async (req, res) => {
 // --- Grant Routes ---
 app.get('/api/grants', auth, async (req, res) => {
   try {
-    const grants = await Grant.find().sort({ date: -1 }).populate('studentId', 'name className');
+    const grants = await Grant.find()
+      .sort({ createdAt: -1 })
+      .populate('studentIds', 'name className')
+      .populate('donorId', 'name type');
     res.send(grants);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -603,16 +607,119 @@ app.post('/api/grants', auth, async (req, res) => {
   try {
     const grant = new Grant(req.body);
     await grant.save();
+
+    // If it's a monetary grant, record an expense transaction
+    if (grant.type !== 'دعم عيني' && grant.amount > 0) {
+      const transaction = new Transaction({
+        type: 'مصروف',
+        category: 'منح وعطاءات',
+        amount: grant.amount,
+        date: grant.date,
+        notes: `منحة لـ: ${grant.studentNames || 'مجموعة طلاب'} | المتبرع: ${grant.donorName || '---'}`,
+        refId: grant._id,
+        refName: grant.studentNames
+      });
+      await transaction.save();
+
+      // Update Donor balance/total if donorId exists
+      if (grant.donorId) {
+        await Donor.findByIdAndUpdate(grant.donorId, { $inc: { balance: -grant.amount } });
+      }
+    }
+
     res.send(grant);
   } catch (err) {
+    console.error('Error creating grant:', err);
     res.status(400).send({ message: err.message });
   }
 });
 
 app.delete('/api/grants/:id', [auth, isAdmin], async (req, res) => {
   try {
-    await Grant.findByIdAndDelete(req.params.id);
+    const grant = await Grant.findByIdAndDelete(req.params.id);
+    // Also delete associated transaction if exists
+    if (grant && grant.amount > 0) {
+      await Transaction.findOneAndDelete({ refId: grant._id });
+    }
     res.send({ message: 'تم حذف المنحة بنجاح' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// --- Donor & Donation Routes ---
+app.get('/api/donors', auth, async (req, res) => {
+  try {
+    const donors = await Donor.find().sort({ name: 1 });
+    res.send(donors);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/donors', auth, async (req, res) => {
+  const { name, type, phone, notes, initialAmount } = req.body;
+  try {
+    const donor = new Donor({ name, type, phone, notes });
+    
+    if (Number(initialAmount) > 0) {
+      donor.totalDonated = Number(initialAmount);
+      donor.balance = Number(initialAmount);
+      await donor.save();
+
+      const transaction = new Transaction({
+        type: 'دخل',
+        category: 'تبرعات',
+        amount: initialAmount,
+        date: new Date().toISOString().split('T')[0],
+        notes: `تبرع افتتاحي عند التسجيل: ${donor.name}`,
+        refId: donor._id,
+        refName: donor.name
+      });
+      await transaction.save();
+    } else {
+      await donor.save();
+    }
+    res.send(donor);
+  } catch (err) {
+    console.error('Error creating donor:', err);
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.post('/api/donations', auth, async (req, res) => {
+  const { donorId, amount, date, notes } = req.body;
+  try {
+    const donor = await Donor.findById(donorId);
+    if (!donor) return res.status(404).send({ message: 'المتبرع غير موجود' });
+
+    // 1. Create Income Transaction
+    const transaction = new Transaction({
+      type: 'دخل',
+      category: 'تبرعات',
+      amount,
+      date,
+      notes: `تبرع من: ${donor.name} | ${notes || ''}`,
+      refId: donor._id,
+      refName: donor.name
+    });
+    await transaction.save();
+
+    // 2. Update Donor stats
+    donor.totalDonated += Number(amount);
+    donor.balance += Number(amount);
+    await donor.save();
+
+    res.send({ message: 'تم تسجيل التبرع بنجاح', transaction });
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.delete('/api/donors/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await Donor.findByIdAndDelete(req.params.id);
+    res.send({ message: 'تم حذف المتبرع' });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -660,7 +767,7 @@ app.delete('/api/exams/:id', [auth, isAdmin], async (req, res) => {
 app.get('/api/stats', auth, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    
+
     const [studentCount, sheikhCount, classCount, transactions, todayAtt] = await Promise.all([
       Student.countDocuments(),
       Sheikh.countDocuments(),
@@ -670,7 +777,15 @@ app.get('/api/stats', auth, async (req, res) => {
     ]);
 
     const totalRevenue = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    
+
+    // Calculate Grant Fund Balance
+    const donationTxs = await Transaction.find({ category: 'تبرعات', type: 'دخل' }, 'amount');
+    const grantTxs = await Transaction.find({ category: 'منح وعطاءات', type: 'مصروف' }, 'amount');
+
+    const totalDonations = donationTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalGrantsPaid = grantTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const grantFundBalance = totalDonations - totalGrantsPaid;
+
     let attendanceRate = 0;
     if (todayAtt && todayAtt.records.length > 0) {
       const present = todayAtt.records.filter(r => r.status === 'present' || r.status === 'late').length;
@@ -690,7 +805,7 @@ app.get('/api/stats', auth, async (req, res) => {
 
     const paidStudentIds = new Set(paidTxs.map(t => t.refId));
     const allActiveStudents = await Student.find({ isActive: true }, '_id name className monthlyFees');
-    
+
     const paidList = allActiveStudents.filter(s => paidStudentIds.has(s._id.toString()));
     const unpaidList = allActiveStudents.filter(s => !paidStudentIds.has(s._id.toString()) && s.monthlyFees > 0);
 
@@ -700,7 +815,7 @@ app.get('/api/stats', auth, async (req, res) => {
       .limit(30);
 
     const studentsWithAbsences = [];
-    
+
     for (const student of allActiveStudents) {
       let absenceCount = 0;
       allRecentAttendance.forEach(att => {
@@ -727,6 +842,7 @@ app.get('/api/stats', auth, async (req, res) => {
       attendanceRate,
       recentStudents,
       atRiskStudents: studentsWithAbsences,
+      grantFundBalance,
       financeStats: {
         paidCount: paidList.length,
         unpaidCount: unpaidList.length,
