@@ -428,17 +428,36 @@ const GrantsManager = () => {
                     <strong>{donor.totalDonated?.toLocaleString() || 0} ج.م</strong>
                   </div>
                   <div className="stat-item">
-                    <small>الرصيد المخصص</small>
+                    <small>الرصيد المادي المتبقي</small>
                     <strong className={(donor.balance || 0) > 0 ? 'pos' : ''}>{donor.balance?.toLocaleString() || 0} ج.م</strong>
                   </div>
                 </div>
-                {donor.inKindStock && Object.keys(donor.inKindStock).length > 0 && (
-                  <div className="donor-stock-details">
-                    <small style={{display: 'block', color: '#888', marginBottom: '5px', borderTop: '1px solid #f0f0f0', paddingTop: '5px'}}>المخزون العيني الموفر:</small>
-                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
-                      {Object.entries(donor.inKindStock).map(([item, qty], i) => (
-                        <div key={i} className={`stock-pill ${qty <= 0 ? 'empty' : ''}`} style={{background: qty > 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${qty > 0 ? '#bbf7d0' : '#fecaca'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem'}}>
-                          <strong style={{color: '#333'}}>{item}:</strong> <span style={{color: qty > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold'}}>{qty}</span>
+
+                {donor.inKindTotals && Object.keys(donor.inKindTotals).length > 0 && (
+                  <div className="donor-stock-detailed-view" style={{marginTop: '12px', borderTop: '1px solid #eee', paddingTop: '10px'}}>
+                    <small style={{display: 'block', color: '#666', marginBottom: '8px', fontWeight: 'bold'}}>تفاصيل حركة المخزون العيني:</small>
+                    <div className="stock-table" style={{fontSize: '0.8rem', width: '100%'}}>
+                      <div className="stock-header" style={{display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr', gap: '5px', paddingBottom: '5px', borderBottom: '1px dashed #ddd', fontWeight: 'bold', color: '#888'}}>
+                        <span>الصنف</span>
+                        <span>الوارد</span>
+                        <span>المنصرف</span>
+                        <span>المتبقي</span>
+                      </div>
+                      {Object.entries(donor.inKindTotals).map(([item, stats], idx) => (
+                        <div key={idx} className="stock-row" style={{display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr', gap: '5px', padding: '6px 0', borderBottom: '1px solid #f9f9f9', alignItems: 'center'}}>
+                          <span style={{fontWeight: 'bold', color: '#444'}}>{item}</span>
+                          <span style={{color: '#27ae60'}} title="إجمالي ما تم التبرع به">{stats.received || 0}</span>
+                          <span style={{color: '#e67e22'}} title="إجمالي ما تم توزيعه">{stats.distributed || 0}</span>
+                          <span style={{
+                            background: (donor.inKindStock?.[item] || 0) > 0 ? '#e8f5e9' : '#ffebee', 
+                            color: (donor.inKindStock?.[item] || 0) > 0 ? '#2e7d32' : '#c62828',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            textAlign: 'center',
+                            fontWeight: 'bold'
+                          }} title="الرصيد الحالي المتوفر">
+                            {donor.inKindStock?.[item] || 0}
+                          </span>
                         </div>
                       ))}
                     </div>
