@@ -13,6 +13,12 @@ const GrantsManager = () => {
   const [showDonorForm, setShowDonorForm] = useState(false);
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [activeTab, setActiveTab] = useState('distributions');
+  const [editingDonor, setEditingDonor] = useState(null);
+  
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('user')); }
+    catch(e) { return null; }
+  });
 
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [studentSearch, setStudentSearch] = useState('');
@@ -33,12 +39,15 @@ const GrantsManager = () => {
     type: 'فرد',
     phone: '',
     notes: '',
-    initialAmount: ''
+    initialAmount: '',
+    initialUnit: ''
   });
 
   const [donationFormData, setDonationFormData] = useState({
     donorId: '',
+    type: 'نقدي',
     amount: '',
+    unit: '',
     date: new Date().toISOString().split('T')[0],
     notes: ''
   });
@@ -124,10 +133,13 @@ const GrantsManager = () => {
   const handleDonorSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
+    const url = editingDonor ? `${API_URL}/donors/${editingDonor._id}` : `${API_URL}/donors`;
+    const method = editingDonor ? 'PUT' : 'POST';
+
     try {
-      const res = await fetch(`${API_URL}/donors`, {
-        method: 'POST',
-        headers: {
+      const res = await fetch(url, {
+        method,
+        headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -136,11 +148,44 @@ const GrantsManager = () => {
       if (res.ok) {
         fetchData();
         setShowDonorForm(false);
-        setDonorFormData({ name: '', type: 'فرد', phone: '', notes: '', initialAmount: '' });
+        setEditingDonor(null);
+        setDonorFormData({ name: '', type: 'فرد', phone: '', notes: '', initialAmount: '', initialUnit: '' });
       }
     } catch (err) {
       console.error('Error saving donor:', err);
     }
+  };
+
+  const handleDeleteDonor = async (id) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا المتبرع؟ سيتم منع الحذف إذا كان هناك رصيد متبقي.')) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_URL}/donors/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchData();
+      } else {
+        alert(data.message || 'خطأ في الحذف');
+      }
+    } catch (err) {
+      console.error('Error deleting donor:', err);
+    }
+  };
+
+  const handleEditDonor = (donor) => {
+    setEditingDonor(donor);
+    setDonorFormData({
+      name: donor.name,
+      type: donor.type,
+      phone: donor.phone || '',
+      notes: donor.notes || '',
+      initialAmount: '',
+      initialUnit: ''
+    });
+    setShowDonorForm(true);
   };
 
   const handleDonationSubmit = async (e) => {
@@ -158,7 +203,7 @@ const GrantsManager = () => {
       if (res.ok) {
         fetchData();
         setShowDonationForm(false);
-        setDonationFormData({ donorId: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
+        setDonationFormData({ donorId: '', type: 'نقدي', amount: '', unit: '', date: new Date().toISOString().split('T')[0], notes: '' });
       }
     } catch (err) {
       console.error('Error recording donation:', err);
@@ -328,6 +373,12 @@ const GrantsManager = () => {
                     <h4>{donor.name}</h4>
                     <span>{donor.type} | {donor.phone || 'بدون هاتف'}</span>
                   </div>
+                  {user?.role === 'admin' && (
+                    <div className="donor-actions no-print">
+                      <button className="edit-btn-mini" onClick={() => handleEditDonor(donor)} title="تعديل"><Search size={16} /></button>
+                      <button className="delete-btn-mini" onClick={() => handleDeleteDonor(donor._id)} title="حذف"><Trash2 size={16} /></button>
+                    </div>
+                  )}
                 </div>
                 <div className="donor-stats">
                   <div className="stat-item">
@@ -438,8 +489,8 @@ const GrantsManager = () => {
         <div className="modal-overlay">
           <div className="modal-content fade-in donor-modal">
             <div className="modal-header">
-              <h3>إضافة متبرع أو جهة مانحة</h3>
-              <button className="close-btn" onClick={() => setShowDonorForm(false)}><X size={24} /></button>
+              <h3>{editingDonor ? 'تعديل بيانات المتبرع' : 'إضافة متبرع أو جهة مانحة'}</h3>
+              <button className="close-btn" onClick={() => { setShowDonorForm(false); setEditingDonor(null); }}><X size={24} /></button>
             </div>
             <form onSubmit={handleDonorSubmit}>
               <div className="form-grid">
@@ -459,10 +510,18 @@ const GrantsManager = () => {
                   <label>رقم الهاتف</label>
                   <input placeholder="01xxxxxxxxx" value={donorFormData.phone} onChange={e => setDonorFormData({...donorFormData, phone: e.target.value})} />
                 </div>
-                <div className="form-group">
-                  <label>المبلغ المتبرع به (اختياري)</label>
-                  <input type="number" placeholder="ادخال المبلغ سيحدث الخزنة فوراً" value={donorFormData.initialAmount} onChange={e => setDonorFormData({...donorFormData, initialAmount: e.target.value})} />
-                </div>
+                {!editingDonor && (
+                  <>
+                    <div className="form-group">
+                      <label>مبلغ التبرع النقدي (اختياري)</label>
+                      <input type="number" placeholder="سيحدث رصيد الخزنة" value={donorFormData.initialAmount} onChange={e => setDonorFormData({...donorFormData, initialAmount: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label>تبرع عيني افتتاحي (اختياري)</label>
+                      <input placeholder="مثلاً: 10 شنط رمضان" value={donorFormData.initialUnit} onChange={e => setDonorFormData({...donorFormData, initialUnit: e.target.value})} />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="form-group full-width" style={{ marginTop: '15px' }}>
                 <label>ملاحظات</label>
@@ -470,7 +529,7 @@ const GrantsManager = () => {
               </div>
               <div className="form-actions">
                 <button type="submit" className="submit-btn primary">حفظ المتبرع</button>
-                <button type="button" className="cancel-btn" onClick={() => setShowDonorForm(false)}>إلغاء</button>
+                <button type="button" className="cancel-btn" onClick={() => { setShowDonorForm(false); setEditingDonor(null); }}>إلغاء</button>
               </div>
             </form>
           </div>
@@ -494,9 +553,23 @@ const GrantsManager = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>المبلغ المتبرع به (ج.م)</label>
-                  <input type="number" required value={donationFormData.amount} onChange={e => setDonationFormData({ ...donationFormData, amount: e.target.value })} />
+                  <label>نوع التبرع</label>
+                  <select value={donationFormData.type} onChange={e => setDonationFormData({...donationFormData, type: e.target.value})}>
+                    <option value="نقدي">نقدي (مبلغ مالي)</option>
+                    <option value="عيني">عيني (سلع/شنط رمضان/ألخ)</option>
+                  </select>
                 </div>
+                {donationFormData.type === 'نقدي' ? (
+                  <div className="form-group">
+                    <label>المبلغ المتبرع به (ج.م)</label>
+                    <input type="number" required value={donationFormData.amount} onChange={e => setDonationFormData({ ...donationFormData, amount: e.target.value })} />
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label>الوصف والكمية العينية</label>
+                    <input required placeholder="مثلاً: 50 شنطة رمضان" value={donationFormData.unit} onChange={e => setDonationFormData({ ...donationFormData, unit: e.target.value })} />
+                  </div>
+                )}
                 <div className="form-group">
                   <label>التاريخ</label>
                   <input type="date" required value={donationFormData.date} onChange={e => setDonationFormData({ ...donationFormData, date: e.target.value })} />
@@ -583,6 +656,12 @@ const GrantsManager = () => {
         .stat-item small { font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
         .stat-item strong { font-size: 1rem; color: var(--secondary); font-weight: 800; }
         .stat-item strong.pos { color: #16a34a; }
+
+        .donor-actions { display: flex; gap: 8px; margin-right: auto; }
+        .edit-btn-mini { color: #3498db; padding: 4px; border-radius: 6px; transition: 0.2s; }
+        .edit-btn-mini:hover { background: #ebf5fb; }
+        .delete-btn-mini { color: #e74c3c; padding: 4px; border-radius: 6px; transition: 0.2s; }
+        .delete-btn-mini:hover { background: #fdedec; }
 
         .student-selector-box { 
           border: 2px solid #f1f5f9; border-radius: 20px; overflow: hidden; margin-bottom: 25px; 

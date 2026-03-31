@@ -658,19 +658,20 @@ app.get('/api/donors', auth, async (req, res) => {
 });
 
 app.post('/api/donors', auth, async (req, res) => {
-  const { name, type, phone, notes, initialAmount } = req.body;
+  const { name, type, phone, notes, initialAmount, initialUnit } = req.body;
   try {
     const donor = new Donor({ name, type, phone, notes });
     
-    if (Number(initialAmount) > 0) {
-      donor.totalDonated = Number(initialAmount);
-      donor.balance = Number(initialAmount);
+    if (Number(initialAmount) > 0 || initialUnit) {
+      donor.totalDonated = Number(initialAmount) || 0;
+      donor.balance = Number(initialAmount) || 0;
       await donor.save();
 
       const transaction = new Transaction({
         type: 'دخل',
         category: 'تبرعات',
-        amount: initialAmount,
+        amount: Number(initialAmount) || 0,
+        unit: initialUnit || '',
         date: new Date().toISOString().split('T')[0],
         notes: `تبرع افتتاحي عند التسجيل: ${donor.name}`,
         refId: donor._id,
@@ -687,8 +688,32 @@ app.post('/api/donors', auth, async (req, res) => {
   }
 });
 
+app.put('/api/donors/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const donor = await Donor.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.send(donor);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.delete('/api/donors/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    // Check if donor has active grants or non-zero balance
+    const donor = await Donor.findById(req.params.id);
+    if (donor && donor.balance > 0) {
+      return res.status(400).send({ message: 'لا يمكن حذف متبرع لديه رصيد متبقي. يرجى تصفية الرصيد أولاً.' });
+    }
+    await Donor.findByIdAndDelete(req.params.id);
+    // Note: We keep transactions for financial history
+    res.send({ message: 'تم حذف المتبرع بنجاح' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
 app.post('/api/donations', auth, async (req, res) => {
-  const { donorId, amount, date, notes } = req.body;
+  const { donorId, amount, unit, date, notes } = req.body;
   try {
     const donor = await Donor.findById(donorId);
     if (!donor) return res.status(404).send({ message: 'المتبرع غير موجود' });
@@ -697,31 +722,26 @@ app.post('/api/donations', auth, async (req, res) => {
     const transaction = new Transaction({
       type: 'دخل',
       category: 'تبرعات',
-      amount,
+      amount: Number(amount) || 0,
+      unit: unit || '',
       date,
-      notes: `تبرع من: ${donor.name} | ${notes || ''}`,
+      notes,
       refId: donor._id,
       refName: donor.name
     });
     await transaction.save();
 
-    // 2. Update Donor stats
-    donor.totalDonated += Number(amount);
-    donor.balance += Number(amount);
-    await donor.save();
+    // 2. Update Donor stats (only if monetary)
+    if (Number(amount) > 0) {
+      donor.totalDonated += Number(amount);
+      donor.balance += Number(amount);
+      await donor.save();
+    }
 
-    res.send({ message: 'تم تسجيل التبرع بنجاح', transaction });
+    res.send(transaction);
   } catch (err) {
+    console.error('Error recording donation:', err);
     res.status(400).send({ message: err.message });
-  }
-});
-
-app.delete('/api/donors/:id', [auth, isAdmin], async (req, res) => {
-  try {
-    await Donor.findByIdAndDelete(req.params.id);
-    res.send({ message: 'تم حذف المتبرع' });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
   }
 });
 
@@ -786,6 +806,12 @@ app.get('/api/stats', auth, async (req, res) => {
     const totalGrantsPaid = grantTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
     const grantFundBalance = totalDonations - totalGrantsPaid;
 
+    // Count In-kind Donations (Transactions with unit but no amount)
+    const inKindCount = await Transaction.countDocuments({ 
+      category: 'تبرعات', 
+      unit: { $exists: true, $ne: '' } 
+    });
+
     let attendanceRate = 0;
     if (todayAtt && todayAtt.records.length > 0) {
       const present = todayAtt.records.filter(r => r.status === 'present' || r.status === 'late').length;
@@ -843,6 +869,7 @@ app.get('/api/stats', auth, async (req, res) => {
       recentStudents,
       atRiskStudents: studentsWithAbsences,
       grantFundBalance,
+      inKindCount,
       financeStats: {
         paidCount: paidList.length,
         unpaidCount: unpaidList.length,

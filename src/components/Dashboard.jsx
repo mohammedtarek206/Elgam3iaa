@@ -68,6 +68,7 @@ const Dashboard = () => {
     { title: 'حلقات التحفيظ', value: stats.totalClasses, icon: School, color: '#e67e22', trend: 'فعال', isUp: true },
     { title: 'إجمالي الدخل', value: `${(stats.totalRevenue || 0).toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
     { title: 'رصيد صندوق المنح', value: `${(stats.grantFundBalance || 0).toLocaleString()} ج.م`, icon: HandCoins, color: '#f1c40f', trend: 'متوفر', isUp: true },
+    { title: 'تبرعات عينية', value: stats.inKindCount || 0, icon: Gift, color: '#e74c3c', trend: 'نشط', isUp: true },
   ];
 
   return (
