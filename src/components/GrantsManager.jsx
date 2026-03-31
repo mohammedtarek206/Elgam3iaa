@@ -629,18 +629,6 @@ const GrantsManager = () => {
                   <label>رقم الهاتف</label>
                   <input placeholder="01xxxxxxxxx" value={donorFormData.phone} onChange={e => setDonorFormData({...donorFormData, phone: e.target.value})} />
                 </div>
-                {!editingDonor && (
-                  <>
-                    <div className="form-group">
-                      <label>مبلغ التبرع النقدي (اختياري)</label>
-                      <input type="number" placeholder="سيحدث رصيد الخزنة" value={donorFormData.initialAmount} onChange={e => setDonorFormData({...donorFormData, initialAmount: e.target.value})} />
-                    </div>
-                    <div className="form-group">
-                      <label>تبرع عيني افتتاحي (اختياري)</label>
-                      <input placeholder="مثلاً: 10 شنط رمضان" value={donorFormData.initialUnit} onChange={e => setDonorFormData({...donorFormData, initialUnit: e.target.value})} />
-                    </div>
-                  </>
-                )}
               </div>
               <div className="form-group full-width" style={{ marginTop: '15px' }}>
                 <label>ملاحظات</label>
