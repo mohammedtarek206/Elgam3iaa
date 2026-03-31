@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, HandCoins, Gift, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, HandCoins, Gift, CheckCircle2, AlertCircle, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
 
@@ -10,30 +11,33 @@ const Dashboard = () => {
   });
   const [sheikhs, setSheikhs] = useState([]);
   const [attendance, setAttendance] = useState([]);
-  const [stats, setStats] = useState(() => {
-    const cached = JSON.parse(localStorage.getItem('cache_stats'));
-    return cached || {
-      totalRevenue: 0,
-      totalStudents: 0,
-      totalSheikhs: 0,
-      totalClasses: 0,
-      attendanceRate: 0,
-      loading: true
-    };
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalStudents: 0,
+    totalSheikhs: 0,
+    totalClasses: 0,
+    attendanceRate: 0,
+    grantFundBalance: 0,
+    inKindCount: 0,
+    paidList: [],
+    unpaidList: [],
+    atRiskStudents: [],
+    loading: true
   });
 
   useEffect(() => {
-    fetchDashboardStats();
-  }, []);
+    fetchDashboardStats(selectedMonth);
+  }, [selectedMonth]);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = async (month) => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const res = await fetch(`${API_URL}/stats`, { headers });
+      const res = await fetch(`${API_URL}/stats?month=${month}`, { headers });
       const data = await res.json();
       
-      setStudents(data.recentStudents || []); // Used for activity list
+      setStudents(data.recentStudents || []);
       
       const statsData = {
         totalRevenue: data.totalRevenue || 0,
@@ -42,19 +46,32 @@ const Dashboard = () => {
         totalClasses: data.totalClasses,
         attendanceRate: data.attendanceRate,
         atRiskStudents: data.atRiskStudents || [],
-        financeStats: data.financeStats,
+        paidList: data.paidList || [],
+        unpaidList: data.unpaidList || [],
+        grantFundBalance: data.grantFundBalance || 0,
+        inKindCount: data.inKindCount || 0,
         loading: false
       };
 
       setStats(statsData);
-      
-      // Update Cache
-      localStorage.setItem('cache_stats', JSON.stringify(statsData));
-      localStorage.setItem('cache_recent_students', JSON.stringify(data.recentStudents));
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
       setStats(prev => ({ ...prev, loading: false }));
     }
+  };
+
+  const exportFinance = (list, type) => {
+    const dataToExport = list.map(s => ({
+      'اسم الطالب': s.name,
+      'الفصل': s.className,
+      'المقدار الشهري': s.monthlyFees || '---',
+      'الحالة': type === 'paid' ? 'تم السداد' : 'لم يسدد',
+      'الشهر': selectedMonth
+    }));
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Finance");
+    XLSX.writeFile(wb, `تقرير_${type}_${selectedMonth}.xlsx`);
   };
 
   if (stats.loading) {
@@ -116,15 +133,26 @@ const Dashboard = () => {
           </div>
         </div>
 
+        <div className="section-header-row full-width" style={{marginTop: '30px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <h3 className="section-title">حالة التحصيل المالي للسداد</h3>
+          <div className="month-picker" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+            <label style={{fontWeight: '700'}}>عرض شهر:</label>
+            <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} style={{padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd'}} />
+          </div>
+        </div>
+
         <div className="finance-status-grid full-width">
           <div className="finance-card paid main-card">
             <div className="card-header">
-              <h3 style={{color: '#27ae60'}}>طلاب تم السداد لهم</h3>
-              <CheckCircle2 size={22} color="#27ae60" />
+              <h3 style={{color: '#27ae60'}}>طلاب تم السداد لهم ({stats.paidList.length})</h3>
+              <div style={{display: 'flex', gap: '8px'}}>
+                {stats.paidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(stats.paidList, 'paid')} title="تصدير Excel"><FileDown size={18} /></button>}
+                <CheckCircle2 size={22} color="#27ae60" />
+              </div>
             </div>
             <div className="mini-student-list">
-              {stats.financeStats?.paidList?.length > 0 ? (
-                stats.financeStats.paidList.map(s => (
+              {stats.paidList.length > 0 ? (
+                stats.paidList.map(s => (
                   <div key={s._id} className="mini-student-item">
                     <div className="status-dot green"></div>
                     <div className="s-info">
@@ -133,18 +161,21 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ))
-              ) : <p className="empty-msg">لا يوجد طلاب مسددين حالياً</p>}
+              ) : <p className="empty-msg">لا يوجد طلاب مسددين لهذا الشهر</p>}
             </div>
           </div>
 
           <div className="finance-card unpaid main-card">
             <div className="card-header">
-              <h3 style={{color: '#e74c3c'}}>طلاب لم يتم السداد لهم</h3>
-              <AlertCircle size={22} color="#e74c3c" />
+              <h3 style={{color: '#e74c3c'}}>طلاب لم يتم السداد لهم ({stats.unpaidList.length})</h3>
+              <div style={{display: 'flex', gap: '8px'}}>
+                {stats.unpaidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(stats.unpaidList, 'unpaid')} title="تصدير Excel"><FileDown size={18} /></button>}
+                <AlertCircle size={22} color="#e74c3c" />
+              </div>
             </div>
             <div className="mini-student-list">
-              {stats.financeStats?.unpaidList?.length > 0 ? (
-                stats.financeStats.unpaidList.map(s => (
+              {stats.unpaidList.length > 0 ? (
+                stats.unpaidList.map(s => (
                   <div key={s._id} className="mini-student-item">
                     <div className="status-dot red"></div>
                     <div className="s-info">
@@ -153,7 +184,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ))
-              ) : <p className="empty-msg">الكل مسدد، أحسنت!</p>}
+              ) : <p className="empty-msg">الكل مسدد لهذا الشهر، استمروا!</p>}
             </div>
           </div>
         </div>

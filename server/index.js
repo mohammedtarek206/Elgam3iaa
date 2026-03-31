@@ -787,46 +787,52 @@ app.delete('/api/exams/:id', [auth, isAdmin], async (req, res) => {
 app.get('/api/stats', auth, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
+    const targetMonth = req.query.month || today.slice(0, 7);
 
     const [studentCount, sheikhCount, classCount, transactions, todayAtt] = await Promise.all([
       Student.countDocuments(),
       Sheikh.countDocuments(),
       Class.countDocuments(),
-      Transaction.find({ type: 'دخل' }, 'amount'),
+      Transaction.find({ type: 'دخل' }),
       Attendance.findOne({ date: today, attendanceType: 'student' })
     ]);
 
-    const totalRevenue = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    // 1. Total monetary revenue
+    const totalRevenue = transactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-    // Calculate Grant Fund Balance
-    const donationTxs = await Transaction.find({ category: 'تبرعات', type: 'دخل' }, 'amount');
-    const grantTxs = await Transaction.find({ category: 'منح وعطاءات', type: 'مصروف' }, 'amount');
+    // 2. Grant Fund Balance (Monetary)
+    const donationTxs = await Transaction.find({ category: 'تبرعات', type: 'دخل' });
+    const grantTxs = await Transaction.find({ category: 'منح وعطاءات', type: 'مصروف' });
 
-    const totalDonations = donationTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const totalGrantsPaid = grantTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalDonations = donationTxs.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const totalGrantsPaid = grantTxs.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
     const grantFundBalance = totalDonations - totalGrantsPaid;
 
-    // Count In-kind Donations (Transactions with unit but no amount)
+    // 3. In-kind Stats
     const inKindCount = await Transaction.countDocuments({ 
       category: 'تبرعات', 
       unit: { $exists: true, $ne: '' } 
     });
+    const recentInKind = await Transaction.find({ 
+      category: 'تبرعات', 
+      unit: { $exists: true, $ne: '' } 
+    }).sort({ date: -1 }).limit(10);
 
+    // 4. Attendance Rate
     let attendanceRate = 0;
     if (todayAtt && todayAtt.records.length > 0) {
       const present = todayAtt.records.filter(r => r.status === 'present' || r.status === 'late').length;
       attendanceRate = Math.round((present / todayAtt.records.length) * 100);
     }
 
-    // Get last 5 students for "Recent Activity"
+    // 5. Recent student additions
     const recentStudents = await Student.find().sort({ createdAt: -1 }).limit(5).select('name className');
 
-    // Paid vs Unpaid Logic
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    // 6. Paid vs Unpaid for targetMonth
     const paidTxs = await Transaction.find({
       type: 'دخل',
-      category: 'رسوم طلاب', // Student Fees
-      date: { $regex: `^${currentMonth}` }
+      category: 'رسوم طلاب',
+      date: { $regex: `^${targetMonth}` }
     }, 'refId amount');
 
     const paidStudentIds = new Set(paidTxs.map(t => t.refId));
@@ -835,20 +841,17 @@ app.get('/api/stats', auth, async (req, res) => {
     const paidList = allActiveStudents.filter(s => paidStudentIds.has(s._id.toString()));
     const unpaidList = allActiveStudents.filter(s => !paidStudentIds.has(s._id.toString()) && s.monthlyFees > 0);
 
-    // Attendance Warnings
+    // 7. Attendance Warnings (Risk Analysis - last 30 records)
     const allRecentAttendance = await Attendance.find({ attendanceType: 'student' })
       .sort({ date: -1 })
       .limit(30);
 
     const studentsWithAbsences = [];
-
     for (const student of allActiveStudents) {
       let absenceCount = 0;
       allRecentAttendance.forEach(att => {
         const record = att.records.find(r => r.personId === student._id.toString());
-        if (record && record.status === 'absent') {
-          absenceCount++;
-        }
+        if (record && record.status === 'absent') absenceCount++;
       });
       if (absenceCount > 3) {
         studentsWithAbsences.push({
@@ -867,17 +870,14 @@ app.get('/api/stats', auth, async (req, res) => {
       totalRevenue,
       attendanceRate,
       recentStudents,
+      paidList: paidList.map(s => ({ _id: s._id, name: s.name, className: s.className })),
+      unpaidList: unpaidList.map(s => ({ _id: s._id, name: s.name, className: s.className, monthlyFees: s.monthlyFees })),
       atRiskStudents: studentsWithAbsences,
       grantFundBalance,
-      inKindCount,
-      financeStats: {
-        paidCount: paidList.length,
-        unpaidCount: unpaidList.length,
-        paidStudents: paidList.map(s => ({ name: s.name, className: s.className })),
-        unpaidStudents: unpaidList.map(s => ({ name: s.name, className: s.className }))
-      }
+      inKindCount
     });
   } catch (err) {
+    console.error('Error fetching stats:', err);
     res.status(500).send({ message: err.message });
   }
 });

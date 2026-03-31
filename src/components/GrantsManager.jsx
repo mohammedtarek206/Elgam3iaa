@@ -14,6 +14,11 @@ const GrantsManager = () => {
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [activeTab, setActiveTab] = useState('distributions');
   const [editingDonor, setEditingDonor] = useState(null);
+  const [fundStats, setFundStats] = useState({
+    grantFundBalance: 0,
+    inKindCount: 0,
+    recentInKind: []
+  });
   
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('user')); }
@@ -62,18 +67,27 @@ const GrantsManager = () => {
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      const [grantsRes, donorsRes, initRes] = await Promise.all([
+      const [grantsRes, donorsRes, initRes, statsRes] = await Promise.all([
         fetch(`${API_URL}/grants`, { headers }),
         fetch(`${API_URL}/donors`, { headers }),
-        fetch(`${API_URL}/init-data`, { headers })
+        fetch(`${API_URL}/init-data`, { headers }),
+        fetch(`${API_URL}/stats`, { headers })
       ]);
       const grantsData = await grantsRes.json();
       const donorsData = await donorsRes.json();
       const initData = await initRes.json();
+      const statsData = await statsRes.json();
 
       if (Array.isArray(grantsData)) setGrants(grantsData);
       if (Array.isArray(donorsData)) setDonors(donorsData);
       if (initData && initData.students) setStudents(initData.students);
+      if (statsData) {
+        setFundStats({
+          grantFundBalance: statsData.grantFundBalance || 0,
+          inKindCount: statsData.inKindCount || 0,
+          recentInKind: statsData.recentInKind || []
+        });
+      }
 
       setLoading(false);
     } catch (err) {
@@ -278,6 +292,30 @@ const GrantsManager = () => {
         </div>
       </div>
 
+      <div className="grants-summary-cards" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', margin: '20px 0'}}>
+        <div className="summary-card balance" style={{background: 'linear-gradient(135deg, #f1c40f 0%, #f39c12 100%)', color: 'white', padding: '24px', borderRadius: '15px', boxShadow: '0 8px 16px rgba(241, 196, 15, 0.2)'}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>
+              <span style={{fontSize: '0.9rem', opacity: '0.9'}}>رصيد صندوق المنح</span>
+              <h2 style={{fontSize: '2rem', margin: '10px 0'}}>{fundStats.grantFundBalance.toLocaleString()} <small style={{fontSize: '0.8rem'}}>ج.م</small></h2>
+            </div>
+            <HandCoins size={48} opacity={0.5} />
+          </div>
+          <p style={{fontSize: '0.8rem', margin: '0', opacity: '0.8'}}>المتاح حالياً للتوزيع النقدي</p>
+        </div>
+
+        <div className="summary-card in-kind" style={{background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)', color: 'white', padding: '24px', borderRadius: '15px', boxShadow: '0 8px 16px rgba(231, 76, 60, 0.2)'}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>
+              <span style={{fontSize: '0.9rem', opacity: '0.9'}}>إجمالي التبرعات العينية</span>
+              <h2 style={{fontSize: '2rem', margin: '10px 0'}}>{fundStats.inKindCount} <small style={{fontSize: '0.8rem'}}>وحدة/عملية</small></h2>
+            </div>
+            <Gift size={48} opacity={0.5} />
+          </div>
+          <p style={{fontSize: '0.8rem', margin: '0', opacity: '0.8'}}>شنط رمضان ودعم سلعي</p>
+        </div>
+      </div>
+
       {activeTab === 'distributions' ? (
         <>
           <div className="grants-grid">
@@ -393,6 +431,29 @@ const GrantsManager = () => {
               </div>
             ))}
             {donors.length === 0 && <div className="empty-state-full">لا يوجد متبرعين مسجلين حالياً</div>}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'donors' && user?.role === 'admin' && fundStats.recentInKind.length > 0 && (
+        <div className="recent-in-kind-history main-card fade-in" style={{marginTop: '30px', padding: '20px'}}>
+          <div className="card-header" style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px'}}>
+            <Gift size={24} color="#e74c3c" />
+            <h3 style={{fontSize: '1.2rem', margin: 0}}>سجل التبرعات العينية الأخيرة (للأدمن)</h3>
+          </div>
+          <div className="in-kind-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px'}}>
+            {fundStats.recentInKind.map((item, idx) => (
+              <div key={idx} className="in-kind-item" style={{background: '#fcfcfc', border: '1px solid #eee', padding: '15px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                  <strong style={{display: 'block', color: '#333'}}>{item.refName || 'متبرع'}</strong>
+                  <span style={{fontSize: '0.85rem', color: '#e74c3c', fontWeight: 'bold'}}>{item.unit}</span>
+                  <small style={{display: 'block', color: '#888', marginTop: '4px'}}>{item.date}</small>
+                </div>
+                <div style={{color: '#999'}} title={item.notes}>
+                  <Building2 size={20} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
