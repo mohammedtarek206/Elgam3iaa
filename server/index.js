@@ -746,19 +746,21 @@ app.get('/api/donors', auth, async (req, res) => {
         donorId: d._id
       }).sort({ date: -1 });
       
-      const donorObj = d.toObject();
-      const stockObj = {};
-      const totalsObj = {}; 
+      // Calculate dynamic balance from history to ensure 100% accuracy
+      let dynamicBalance = 0;
+      let dynamicTotalDonated = 0;
       
-      if (d.inKindStock) {
-        for (let [key, value] of d.inKindStock) {
-          stockObj[key] = value;
-          totalsObj[key] = { received: 0, distributed: 0 };
-        }
-      }
-
-      // Calculate in-kind totals from history
       allTxs.forEach(tx => {
+        if (tx.amount > 0) {
+          if (tx.type === 'دخل') {
+            dynamicBalance += tx.amount;
+            dynamicTotalDonated += tx.amount;
+          } else {
+            dynamicBalance -= tx.amount;
+          }
+        }
+        
+        // In-kind totals calculation
         if (tx.itemName) {
           if (!totalsObj[tx.itemName]) totalsObj[tx.itemName] = { received: 0, distributed: 0 };
           if (tx.type === 'دخل') totalsObj[tx.itemName].received += (tx.quantity || 0);
@@ -768,6 +770,8 @@ app.get('/api/donors', auth, async (req, res) => {
 
       return {
         ...donorObj,
+        balance: dynamicBalance, // Use calculated balance
+        totalDonated: dynamicTotalDonated, // Use calculated total
         inKindStock: stockObj,
         inKindTotals: totalsObj,
         fullHistory: allTxs.map(h => ({ 
