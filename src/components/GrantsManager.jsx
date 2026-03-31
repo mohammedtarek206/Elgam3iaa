@@ -435,7 +435,7 @@ const GrantsManager = () => {
 
                 {donor.inKindTotals && Object.keys(donor.inKindTotals).length > 0 && (
                   <div className="donor-stock-detailed-view" style={{marginTop: '12px', borderTop: '1px solid #eee', paddingTop: '10px'}}>
-                    <small style={{display: 'block', color: '#666', marginBottom: '8px', fontWeight: 'bold'}}>تفاصيل حركة المخزون العيني:</small>
+                    <small style={{display: 'block', color: '#666', marginBottom: '8px', fontWeight: 'bold'}}>المخزون العيني المتوفر:</small>
                     <div className="stock-table" style={{fontSize: '0.8rem', width: '100%'}}>
                       <div className="stock-header" style={{display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr', gap: '5px', paddingBottom: '5px', borderBottom: '1px dashed #ddd', fontWeight: 'bold', color: '#888'}}>
                         <span>الصنف</span>
@@ -446,8 +446,8 @@ const GrantsManager = () => {
                       {Object.entries(donor.inKindTotals).map(([item, stats], idx) => (
                         <div key={idx} className="stock-row" style={{display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr', gap: '5px', padding: '6px 0', borderBottom: '1px solid #f9f9f9', alignItems: 'center'}}>
                           <span style={{fontWeight: 'bold', color: '#444'}}>{item}</span>
-                          <span style={{color: '#27ae60'}} title="إجمالي ما تم التبرع به">{stats.received || 0}</span>
-                          <span style={{color: '#e67e22'}} title="إجمالي ما تم توزيعه">{stats.distributed || 0}</span>
+                          <span style={{color: '#27ae60'}}>{stats.received || 0}</span>
+                          <span style={{color: '#e67e22'}}>{stats.distributed || 0}</span>
                           <span style={{
                             background: (donor.inKindStock?.[item] || 0) > 0 ? '#e8f5e9' : '#ffebee', 
                             color: (donor.inKindStock?.[item] || 0) > 0 ? '#2e7d32' : '#c62828',
@@ -455,8 +455,32 @@ const GrantsManager = () => {
                             borderRadius: '4px',
                             textAlign: 'center',
                             fontWeight: 'bold'
-                          }} title="الرصيد الحالي المتوفر">
+                          }}>
                             {donor.inKindStock?.[item] || 0}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {donor.fullHistory && donor.fullHistory.length > 0 && (
+                  <div className="donor-full-history" style={{marginTop: '15px', background: '#fcfcfc', padding: '10px', borderRadius: '8px', border: '1px solid #eee'}}>
+                    <small style={{display: 'block', color: '#666', marginBottom: '8px', fontWeight: 'bold'}}>سجل الحركة الكامل (مالي وعيني):</small>
+                    <div className="history-scroll-list" style={{maxHeight: '120px', overflowY: 'auto', fontSize: '0.75rem'}}>
+                      {donor.fullHistory.map((h, i) => (
+                        <div key={i} className="history-row" style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 80px',
+                          padding: '4px 0', 
+                          borderBottom: '1px solid #f0f0f0',
+                          color: h.type === 'دخل' ? '#27ae60' : '#e67300'
+                        }}>
+                          <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={h.notes}>
+                            {h.type === 'دخل' ? '📥' : '📤'} {h.itemName || h.category || 'عام'}
+                          </span>
+                          <span style={{fontWeight: 'bold', textAlign: 'left'}}>
+                            {h.amount > 0 ? `${h.amount} ج.م` : `${h.quantity} ق`}
                           </span>
                         </div>
                       ))}

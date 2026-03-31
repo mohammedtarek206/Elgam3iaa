@@ -642,11 +642,11 @@ app.post('/api/grants', auth, async (req, res) => {
     await grant.save();
 
     // 1. If it's a monetary grant, record an expense transaction and decrement financial balance
-    if (grant.type !== 'دعم عيني' && grant.amount > 0) {
+    if (grant.type !== 'دعم عيني' && Number(grant.amount) > 0) {
       const transaction = new Transaction({
         type: 'مصروف',
         category: 'منح وعطاءات',
-        amount: grant.amount,
+        amount: Number(grant.amount),
         donorId: grant.donorId,
         date: grant.date,
         notes: `منحة لـ: ${grant.studentNames || 'مجموعة طلاب'} | المتبرع: ${grant.donorName || '---'}`,
@@ -656,8 +656,12 @@ app.post('/api/grants', auth, async (req, res) => {
       await transaction.save();
 
       if (grant.donorId) {
-        // Double check: subtract amount from specific donor balance
-        await Donor.findByIdAndUpdate(grant.donorId, { $inc: { balance: -grant.amount } });
+        // Explicitly decrement donor balance with forced number type
+        const donor = await Donor.findById(grant.donorId);
+        if (donor) {
+          donor.balance = (Number(donor.balance) || 0) - Number(grant.amount);
+          await donor.save();
+        }
       }
     }
 
@@ -737,14 +741,14 @@ app.get('/api/donors', auth, async (req, res) => {
     const donors = await Donor.find().sort({ name: 1 });
     // Fetch in-kind history and formatted stock for each donor using explicitly linked donorId
     const donorsProcessed = await Promise.all(donors.map(async (d) => {
-      const inKindTxs = await Transaction.find({
-        donorId: d._id,
-        itemName: { $exists: true, $ne: '' }
+      // Fetch ALL transactions for this donor (Monetary and In-Kind)
+      const allTxs = await Transaction.find({
+        donorId: d._id
       }).sort({ date: -1 });
       
       const donorObj = d.toObject();
       const stockObj = {};
-      const totalsObj = {}; // To store total received/distributed per item
+      const totalsObj = {}; 
       
       if (d.inKindStock) {
         for (let [key, value] of d.inKindStock) {
@@ -753,23 +757,26 @@ app.get('/api/donors', auth, async (req, res) => {
         }
       }
 
-      // Calculate totals from history
-      inKindTxs.forEach(tx => {
-        if (!totalsObj[tx.itemName]) totalsObj[tx.itemName] = { received: 0, distributed: 0 };
-        if (tx.type === 'دخل') totalsObj[tx.itemName].received += (tx.quantity || 0);
-        else totalsObj[tx.itemName].distributed += (tx.quantity || 0);
+      // Calculate in-kind totals from history
+      allTxs.forEach(tx => {
+        if (tx.itemName) {
+          if (!totalsObj[tx.itemName]) totalsObj[tx.itemName] = { received: 0, distributed: 0 };
+          if (tx.type === 'دخل') totalsObj[tx.itemName].received += (tx.quantity || 0);
+          else totalsObj[tx.itemName].distributed += (tx.quantity || 0);
+        }
       });
 
       return {
         ...donorObj,
         inKindStock: stockObj,
         inKindTotals: totalsObj,
-        inKindHistory: inKindTxs.map(h => ({ 
-          unit: h.unit, 
+        fullHistory: allTxs.map(h => ({ 
           itemName: h.itemName, 
+          amount: h.amount,
           quantity: h.quantity, 
           date: h.date, 
           type: h.type,
+          category: h.category,
           notes: h.notes 
         }))
       };
