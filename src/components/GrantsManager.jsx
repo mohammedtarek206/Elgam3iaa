@@ -167,10 +167,14 @@ const GrantsManager = () => {
         fetchData();
         setShowDonorForm(false);
         setEditingDonor(null);
-        setDonorFormData({ name: '', type: 'فرد', phone: '', notes: '', initialAmount: '', initialUnit: '' });
+        setDonorFormData({ name: '', type: 'فرد', phone: '', notes: '' });
+      } else {
+        const errorData = await res.json();
+        alert(`فشل الحفظ: ${errorData.message || 'يرجى مراجعة البيانات (قد يكون الاسم مكرراً)'}`);
       }
     } catch (err) {
       console.error('Error saving donor:', err);
+      alert('حدث خطأ في الاتصال بالسيرفر');
     }
   };
 

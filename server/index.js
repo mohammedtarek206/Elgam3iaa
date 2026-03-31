@@ -741,12 +741,19 @@ app.get('/api/donors', auth, async (req, res) => {
     const donors = await Donor.find().sort({ name: 1 });
     // Fetch in-kind history and formatted stock for each donor using explicitly linked donorId
     const donorsProcessed = await Promise.all(donors.map(async (d) => {
-      // Fetch ALL transactions for this donor (Monetary and In-Kind)
-      const allTxs = await Transaction.find({
-        donorId: d._id
-      }).sort({ date: -1 });
+      const allTxs = await Transaction.find({ donorId: d._id }).sort({ date: -1 });
       
-      // Calculate dynamic balance from history to ensure 100% accuracy
+      const donorObj = d.toObject();
+      const stockObj = {};
+      const totalsObj = {}; 
+      
+      if (d.inKindStock) {
+        for (let [key, value] of d.inKindStock) {
+          stockObj[key] = value;
+          totalsObj[key] = { received: 0, distributed: 0 };
+        }
+      }
+
       let dynamicBalance = 0;
       let dynamicTotalDonated = 0;
       
@@ -760,7 +767,6 @@ app.get('/api/donors', auth, async (req, res) => {
           }
         }
         
-        // In-kind totals calculation
         if (tx.itemName) {
           if (!totalsObj[tx.itemName]) totalsObj[tx.itemName] = { received: 0, distributed: 0 };
           if (tx.type === 'دخل') totalsObj[tx.itemName].received += (tx.quantity || 0);
@@ -770,8 +776,8 @@ app.get('/api/donors', auth, async (req, res) => {
 
       return {
         ...donorObj,
-        balance: dynamicBalance, // Use calculated balance
-        totalDonated: dynamicTotalDonated, // Use calculated total
+        balance: dynamicBalance,
+        totalDonated: dynamicTotalDonated,
         inKindStock: stockObj,
         inKindTotals: totalsObj,
         fullHistory: allTxs.map(h => ({ 

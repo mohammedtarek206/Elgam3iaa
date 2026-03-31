@@ -5,6 +5,7 @@ const donorSchema = new mongoose.Schema({
   type: { type: String, enum: ['فرد', 'جهة', 'فاعل خير'], default: 'فرد' },
   phone: String,
   totalDonated: { type: Number, default: 0 },
+  balance: { type: Number, default: 0 },
   inKindStock: { type: Map, of: Number, default: {} }, // Example: { 'شنط رمضان': 500, 'ملابس': 40 }
   notes: String
 }, { timestamps: true });
