@@ -119,7 +119,7 @@ const RegistrationManager = () => {
       <div className="module-header">
         <div className="header-left">
           <h2>طلبات الالتحاق الجديدة</h2>
-          <span className="count-badge">{(activeTab === 'students' ? studentRequests : sheikhRequests).length} طلب معلق</span>
+          <span className="count-badge">{(activeTab === 'students' ? (studentRequests || []) : (sheikhRequests || [])).length} طلب معلق</span>
         </div>
       </div>
 

@@ -154,7 +154,7 @@ const isAdmin = (req, res, next) => {
 // --- Bulk Data Route for Optimization ---
 app.get('/api/init-data', auth, async (req, res) => {
   try {
-    const [students, sheikhs, classes] = await Promise.all([
+    const [students, sheikhs, classes, employees] = await Promise.all([
       Student.find().sort({ createdAt: -1 }),
       Sheikh.find().sort({ createdAt: -1 }),
       Class.find().sort({ createdAt: -1 }),
@@ -1103,9 +1103,10 @@ app.get('/api/stats', auth, async (req, res) => {
 
     // 4. Attendance Rate
     let attendanceRate = 0;
-    if (todayAtt && todayAtt.records.length > 0) {
-      const present = todayAtt.records.filter(r => r.status === 'present' || r.status === 'late').length;
-      attendanceRate = Math.round((present / todayAtt.records.length) * 100);
+    const records = todayAtt?.records || [];
+    if (records.length > 0) {
+      const present = records.filter(r => r.status === 'present' || r.status === 'late').length;
+      attendanceRate = Math.round((present / records.length) * 100);
     }
 
     // 5. Recent student additions

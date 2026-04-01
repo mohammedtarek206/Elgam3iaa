@@ -1,93 +1,142 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, HandCoins, Gift, CheckCircle2, AlertCircle, FileDown } from 'lucide-react';
+import { Users, UserRound, School, Wallet, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight, HandCoins, Gift, CheckCircle2, AlertCircle, FileDown, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const API_URL = '/api';
 
+// Safe getter helpers - prevent ANY undefined.length crash
+const safeArr = (val) => (Array.isArray(val) ? val : []);
+const safeNum = (val) => (isNaN(Number(val)) ? 0 : Number(val) || 0);
+
+const EMPTY_STATS = {
+  totalRevenue: 0,
+  totalStudents: 0,
+  totalSheikhs: 0,
+  totalClasses: 0,
+  attendanceRate: 0,
+  grantFundBalance: 0,
+  inKindCount: 0,
+  paidList: [],
+  unpaidList: [],
+  atRiskStudents: [],
+  inKindInventory: [],
+  recentInKind: [],
+  financeStats: null,
+  loading: true,
+  error: null,
+};
+
 const Dashboard = () => {
-  const [students, setStudents] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('cache_recent_students')) || []; }
-    catch (e) { return []; }
-  });
-  const [sheikhs, setSheikhs] = useState([]);
-  const [attendance, setAttendance] = useState([]);
+  const [students, setStudents] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalStudents: 0,
-    totalSheikhs: 0,
-    totalClasses: 0,
-    attendanceRate: 0,
-    grantFundBalance: 0,
-    inKindCount: 0,
-    paidList: [],
-    unpaidList: [],
-    atRiskStudents: [],
-    inKindInventory: [],
-    loading: true
-  });
+  const [stats, setStats] = useState(EMPTY_STATS);
 
   useEffect(() => {
     fetchDashboardStats(selectedMonth);
   }, [selectedMonth]);
 
   const fetchDashboardStats = async (month) => {
-    const token = localStorage.getItem('token');
-    const headers = { 'Authorization': `Bearer ${token}` };
+    setStats(prev => ({ ...prev, loading: true, error: null }));
     try {
-      const res = await fetch(`${API_URL}/stats?month=${month}`, { headers });
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setStats({ ...EMPTY_STATS, loading: false, error: 'لم يتم تسجيل الدخول' });
+        return;
+      }
+      const res = await fetch(`${API_URL}/stats?month=${month}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `خطأ من السيرفر: ${res.status}`);
+      }
+
       const data = await res.json();
 
-      setStudents(data.recentStudents || []);
+      // تأكيد أن data كائن حقيقي
+      if (!data || typeof data !== 'object') throw new Error('بيانات غير صالحة من السيرفر');
 
-      const statsData = {
-        totalRevenue: data.totalRevenue || 0,
-        totalStudents: data.totalStudents,
-        totalSheikhs: data.totalSheikhs,
-        totalClasses: data.totalClasses,
-        attendanceRate: data.attendanceRate,
-        atRiskStudents: data.atRiskStudents || [],
-        paidList: data.paidList || [],
-        unpaidList: data.unpaidList || [],
-        grantFundBalance: data.grantFundBalance || 0,
-        inKindCount: data.inKindCount || 0,
-        inKindInventory: data.inKindInventory || [],
-        loading: false
-      };
+      setStudents(safeArr(data.recentStudents));
 
-      setStats(statsData);
+      setStats({
+        totalRevenue: safeNum(data.totalRevenue),
+        totalStudents: safeNum(data.totalStudents),
+        totalSheikhs: safeNum(data.totalSheikhs),
+        totalClasses: safeNum(data.totalClasses),
+        attendanceRate: safeNum(data.attendanceRate),
+        atRiskStudents: safeArr(data.atRiskStudents),
+        paidList: safeArr(data.paidList),
+        unpaidList: safeArr(data.unpaidList),
+        grantFundBalance: safeNum(data.grantFundBalance),
+        inKindCount: safeNum(data.inKindCount),
+        inKindInventory: safeArr(data.inKindInventory),
+        recentInKind: safeArr(data.recentInKind),
+        financeStats: data.financeStats || null,
+        loading: false,
+        error: null,
+      });
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
-      setStats(prev => ({ ...prev, loading: false }));
+      setStats({ ...EMPTY_STATS, loading: false, error: err.message || 'خطأ في الاتصال بالسيرفر' });
     }
   };
 
   const exportFinance = (list, type) => {
-    const dataToExport = list.map(s => ({
-      'اسم الطالب': s.name,
-      'الفصل': s.className,
+    const arr = safeArr(list);
+    if (!arr.length) return;
+    const dataToExport = arr.map(s => ({
+      'اسم الطالب': s.name || '',
+      'الفصل': s.className || '',
       'المقدار الشهري': s.monthlyFees || '---',
       'الحالة': type === 'paid' ? 'تم السداد' : 'لم يسدد',
       'الشهر': selectedMonth
     }));
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Finance");
+    XLSX.utils.book_append_sheet(wb, ws, 'Finance');
     XLSX.writeFile(wb, `تقرير_${type}_${selectedMonth}.xlsx`);
   };
 
   if (stats.loading) {
-    return <div className="loading-state">جاري تحميل البيانات...</div>;
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#666' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>⏳</div>
+        <p style={{ fontSize: '1.2rem', fontWeight: '600' }}>جاري تحميل البيانات...</p>
+      </div>
+    );
   }
 
+  if (stats.error) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center' }}>
+        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>⚠️</div>
+        <h3 style={{ color: '#e74c3c', marginBottom: '10px' }}>تعذّر تحميل لوحة التحكم</h3>
+        <p style={{ color: '#666', marginBottom: '20px' }}>{stats.error}</p>
+        <button
+          onClick={() => fetchDashboardStats(selectedMonth)}
+          style={{ padding: '10px 24px', background: '#3498db', color: '#fff', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '1rem', fontWeight: '700' }}
+        >
+          🔄 إعادة المحاولة
+        </button>
+      </div>
+    );
+  }
+
+  const paidList = safeArr(stats.paidList);
+  const unpaidList = safeArr(stats.unpaidList);
+  const atRiskStudents = safeArr(stats.atRiskStudents);
+  const inKindInventory = safeArr(stats.inKindInventory);
+  const recentInKind = safeArr(stats.recentInKind);
+
   const statCards = [
-    { title: 'إجمالي الطلاب', value: stats.totalStudents, icon: Users, color: '#3498db', trend: '+12%', isUp: true },
-    { title: 'إجمالي المحفظين', value: stats.totalSheikhs, icon: UserRound, color: '#9b59b6', trend: '+2', isUp: true },
+    { title: 'إجمالي الطلاب', value: stats.totalStudents, icon: Users, color: '#3498db', trend: 'نشط', isUp: true },
+    { title: 'إجمالي المحفظين', value: stats.totalSheikhs, icon: UserRound, color: '#9b59b6', trend: 'نشط', isUp: true },
     { title: 'نسبة الحضور اليوم', value: `${stats.attendanceRate}%`, icon: Calendar, color: '#27ae60', trend: 'مباشر', isUp: true },
     { title: 'حلقات التحفيظ', value: stats.totalClasses, icon: School, color: '#e67e22', trend: 'فعال', isUp: true },
-    { title: 'إجمالي الدخل النقدي', value: `${(stats.totalRevenue || 0).toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
-    { title: 'رصيد صندوق المنح', value: `${(stats.grantFundBalance || 0).toLocaleString()} ج.م`, icon: HandCoins, color: '#f1c40f', trend: 'متوفر', isUp: true },
-    { title: 'أنواع التبرعات العينية', value: stats.inKindCount || 0, icon: Gift, color: '#e74c3c', trend: 'نشط', isUp: true },
+    { title: 'إجمالي الدخل النقدي', value: `${stats.totalRevenue.toLocaleString()} ج.م`, icon: Wallet, color: '#2ecc71', trend: '+8%', isUp: true },
+    { title: 'رصيد صندوق المنح', value: `${stats.grantFundBalance.toLocaleString()} ج.م`, icon: HandCoins, color: '#f1c40f', trend: 'متوفر', isUp: true },
+    { title: 'أنواع التبرعات العينية', value: stats.inKindCount, icon: Gift, color: '#e74c3c', trend: 'نشط', isUp: true },
   ];
 
   return (
@@ -141,8 +190,8 @@ const Dashboard = () => {
             <Gift size={20} color="#e74c3c" />
           </div>
           <div className="inventory-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-            {stats.inKindInventory?.length > 0 ? (
-              stats.inKindInventory.map((item, idx) => (
+            {inKindInventory.length > 0 ? (
+              inKindInventory.map((item, idx) => (
                 <div key={idx} className="inventory-item" style={{ background: '#f8f9fa', padding: '10px', borderRadius: '8px', borderRight: '4px solid #e74c3c' }}>
                   <div style={{ fontWeight: 'bold', color: '#333' }}>{item.unit}</div>
                   <div style={{ fontSize: '0.9rem', color: item.count > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold' }}>{item.count} <small>وحدة</small></div>
@@ -163,15 +212,15 @@ const Dashboard = () => {
         <div className="finance-status-grid full-width">
           <div className="finance-card paid main-card">
             <div className="card-header">
-              <h3 style={{ color: '#27ae60' }}>طلاب تم السداد لهم ({stats.paidList.length})</h3>
+              <h3 style={{ color: '#27ae60' }}>طلاب تم السداد لهم ({paidList.length})</h3>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {stats.paidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(stats.paidList, 'paid')} title="تصدير Excel"><FileDown size={18} /></button>}
+                {paidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(paidList, 'paid')} title="تصدير Excel"><FileDown size={18} /></button>}
                 <CheckCircle2 size={22} color="#27ae60" />
               </div>
             </div>
             <div className="mini-student-list">
-              {stats.paidList.length > 0 ? (
-                stats.paidList.map(s => (
+              {paidList.length > 0 ? (
+                paidList.map(s => (
                   <div key={s._id} className="mini-student-item">
                     <div className="status-dot green"></div>
                     <div className="s-info">
@@ -186,15 +235,15 @@ const Dashboard = () => {
 
           <div className="finance-card unpaid main-card">
             <div className="card-header">
-              <h3 style={{ color: '#e74c3c' }}>طلاب لم يتم السداد لهم ({stats.unpaidList.length})</h3>
+              <h3 style={{ color: '#e74c3c' }}>طلاب لم يتم السداد لهم ({unpaidList.length})</h3>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {stats.unpaidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(stats.unpaidList, 'unpaid')} title="تصدير Excel"><FileDown size={18} /></button>}
+                {unpaidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(unpaidList, 'unpaid')} title="تصدير Excel"><FileDown size={18} /></button>}
                 <AlertCircle size={22} color="#e74c3c" />
               </div>
             </div>
             <div className="mini-student-list">
-              {stats.unpaidList.length > 0 ? (
-                stats.unpaidList.map(s => (
+              {unpaidList.length > 0 ? (
+                unpaidList.map(s => (
                   <div key={s._id} className="mini-student-item">
                     <div className="status-dot red"></div>
                     <div className="s-info">
@@ -214,8 +263,8 @@ const Dashboard = () => {
             <Calendar size={20} color="#666" />
           </div>
           <div className="activity-list">
-            {(students || []).slice(-3).reverse().map(s => (
-              <div key={s._id} className="activity-item">
+            {safeArr(students).slice(-3).reverse().map((s, idx) => (
+              <div key={s._id || idx} className="activity-item">
                 <div className="activity-bullet green"></div>
                 <div className="activity-info">
                   <strong>طالب جديد</strong>
@@ -223,6 +272,7 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
+            {!safeArr(students).length && <p className="empty-msg">لا توجد إضافات حديثة</p>}
           </div>
 
           <div className="card-header" style={{ marginTop: '25px' }}>
@@ -230,9 +280,9 @@ const Dashboard = () => {
             <Gift size={20} color="#e74c3c" />
           </div>
           <div className="activity-list">
-            {stats.recentInKind?.length > 0 ? (
-              stats.recentInKind.slice(0, 5).map((item, idx) => (
-                <div key={idx} className="activity-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {recentInKind.length > 0 ? (
+              recentInKind.slice(0, 5).map((item, idx) => (
+                <div key={item._id || idx} className="activity-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div className="activity-bullet" style={{ background: '#e74c3c' }}></div>
                     <div className="activity-info">
@@ -240,7 +290,6 @@ const Dashboard = () => {
                       <span>أهدى: {item.unit} | بتاريخ: {item.date}</span>
                     </div>
                   </div>
-                  {/* Reuse the logic to revert balance on backend */}
                   <button
                     onClick={async () => {
                       if (!window.confirm('هل تريد حذف هذا التبرع واسترداد الكمية للمتبرع؟')) return;
@@ -248,7 +297,7 @@ const Dashboard = () => {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                       });
-                      if (res.ok) window.location.reload(); // Quick refresh for stats
+                      if (res.ok) fetchDashboardStats(selectedMonth);
                     }}
                     style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '5px' }}
                     title="حذف واسترداد"
@@ -261,15 +310,15 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {stats.atRiskStudents && stats.atRiskStudents.length > 0 && (
+        {atRiskStudents.length > 0 && (
           <div className="attendance-alerts main-card full-width">
             <div className="card-header">
               <h3 style={{ color: '#e74c3c' }}>تنبيهات الحضور والغياب</h3>
               <Calendar size={20} color="#e74c3c" />
             </div>
             <div className="alerts-grid">
-              {stats.atRiskStudents.map(student => (
-                <div key={student._id} className={`alert-card ${student.absenceCount > 6 ? 'critical' : 'warning'}`}>
+              {atRiskStudents.map((student, idx) => (
+                <div key={student._id || idx} className={`alert-card ${student.absenceCount > 6 ? 'critical' : 'warning'}`}>
                   <div className="alert-info">
                     <strong>{student.name}</strong>
                     <span>فصل: {student.className}</span>
@@ -285,41 +334,7 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-
-        {stats.financeStats && (
-          <div className="finance-status-section main-card full-width">
-            <div className="card-header">
-              <h3>حالة السداد (الشهر الحالي)</h3>
-              <Wallet size={20} color="#666" />
-            </div>
-            <div className="finance-status-grid">
-              <div className="finance-stat-card paid">
-                <div className="stat-main">
-                  <span className="label">سددوا الرسوم</span>
-                  <span className="value">{stats.financeStats.paidCount} طالب</span>
-                </div>
-                <div className="mini-list">
-                  {(stats.financeStats.paidStudents || []).slice(0, 3).map((s, i) => (
-                    <div key={i} className="mini-item">✓ {s.name}</div>
-                  ))}
-                  {(stats.financeStats.paidStudents || []).length > 3 && <div className="more">+ {(stats.financeStats.paidStudents || []).length - 3} آخرين</div>}
-                </div>
-              </div>
-              <div className="stat-box unpaid">
-                <span className="label">غير مسددين</span>
-                <span className="value">{(stats.financeStats.unpaidCount || 0)} طالب</span>
-                <div className="mini-list">
-                  {(stats.financeStats.unpaidStudents || []).slice(0, 3).map((s, i) => (
-                    <div key={i} className="mini-item">✗ {s.name}</div>
-                  ))}
-                  {(stats.financeStats.unpaidStudents || []).length > 3 && <div className="more">+ {(stats.financeStats.unpaidStudents || []).length - 3} آخرين</div>}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
 
       <style>{`
         .dashboard-container {
@@ -464,23 +479,6 @@ const Dashboard = () => {
         .absence-count { font-weight: 800; font-size: 1.1rem; }
         .absence-status { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; }
 
-        .finance-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .finance-stat-card { padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 15px; }
-        .finance-stat-card.paid { background: #f0fdf4; border: 1px solid #bbf7d0; }
-        .finance-stat-card.unpaid { background: #fef2f2; border: 1px solid #fecaca; }
-        
-        .finance-stat-card .stat-main { display: flex; flex-direction: column; }
-        .finance-stat-card .stat-main .label { font-size: 0.9rem; color: #666; font-weight: 600; }
-        .finance-stat-card .stat-main .value { font-size: 1.5rem; font-weight: 800; color: var(--secondary); }
-        
-        .student-peek-list { display: flex; flex-wrap: wrap; gap: 6px; }
-        .peek-item { background: rgba(255,255,255,0.6); padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; color: #444; }
-        .peek-item-more { font-size: 0.8rem; color: #888; font-weight: 600; align-self: center; }
-
-        @media (max-width: 900px) {
-          .dashboard-main-grid { grid-template-columns: 1fr; }
-        }
-
         .finance-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px; }
         .finance-card h3 { font-size: 1.1rem; margin-bottom: 0; }
         .mini-student-list { max-height: 300px; overflow-y: auto; padding-right: 8px; margin-top: 15px; }
@@ -493,6 +491,23 @@ const Dashboard = () => {
         .s-info strong { font-size: 0.95rem; color: #333; }
         .s-info span { font-size: 0.8rem; color: #666; }
         .empty-msg { text-align: center; color: #999; padding: 20px; font-size: 0.9rem; }
+
+        .export-mini-btn {
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          color: #27ae60;
+          border-radius: 6px;
+          padding: 4px 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        @media (max-width: 900px) {
+          .dashboard-main-grid { grid-template-columns: 1fr; }
+        }
       `}</style>
     </div>
   );

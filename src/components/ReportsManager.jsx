@@ -30,13 +30,20 @@ const ReportsManager = () => {
         fetch(`${API_URL}/attendance`, { headers })
       ]);
       
-      const [students, classes, sheikhs, transactions, attendance] = await Promise.all([
+      const [studData, classData, sheikhData, transData, attData] = await Promise.all([
         studRes.json(),
         classRes.json(),
         sheikhRes.json(),
         transRes.json(),
         attRes.json()
       ]);
+
+      // Ensure all are arrays before using .length
+      const students = Array.isArray(studData) ? studData : [];
+      const classes = Array.isArray(classData) ? classData : [];
+      const sheikhs = Array.isArray(sheikhData) ? sheikhData : [];
+      const transactions = Array.isArray(transData) ? transData : [];
+      const attendance = Array.isArray(attData) ? attData : [];
 
       const income = transactions
         .filter(t => t.type === 'income')

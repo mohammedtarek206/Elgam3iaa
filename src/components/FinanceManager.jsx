@@ -7,20 +7,28 @@ const API_URL = '/api';
 const FinanceManager = () => {
   const [activeTab, setActiveTab] = useState('summary');
   const [transactions, setTransactions] = useState(() => {
-    const cached = JSON.parse(localStorage.getItem('cache_transactions'));
-    return Array.isArray(cached) ? cached : [];
+    try {
+      const cached = JSON.parse(localStorage.getItem('cache_transactions'));
+      return Array.isArray(cached) ? cached : [];
+    } catch(e) { return []; }
   });
   const [students, setStudents] = useState(() => {
-    const cached = JSON.parse(localStorage.getItem('cache_students'));
-    return Array.isArray(cached) ? cached : [];
+    try {
+      const cached = JSON.parse(localStorage.getItem('cache_students'));
+      return Array.isArray(cached) ? cached : [];
+    } catch(e) { return []; }
   });
   const [sheikhs, setSheikhs] = useState(() => {
-    const cached = JSON.parse(localStorage.getItem('cache_sheikhs'));
-    return Array.isArray(cached) ? cached : [];
+    try {
+      const cached = JSON.parse(localStorage.getItem('cache_sheikhs'));
+      return Array.isArray(cached) ? cached : [];
+    } catch(e) { return []; }
   });
   const [classes, setClasses] = useState(() => {
-    const cached = JSON.parse(localStorage.getItem('cache_classes'));
-    return Array.isArray(cached) ? cached : [];
+    try {
+      const cached = JSON.parse(localStorage.getItem('cache_classes'));
+      return Array.isArray(cached) ? cached : [];
+    } catch(e) { return []; }
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
