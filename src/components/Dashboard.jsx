@@ -7,7 +7,7 @@ const API_URL = '/api';
 const Dashboard = () => {
   const [students, setStudents] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cache_recent_students')) || []; }
-    catch(e) { return []; }
+    catch (e) { return []; }
   });
   const [sheikhs, setSheikhs] = useState([]);
   const [attendance, setAttendance] = useState([]);
@@ -37,9 +37,9 @@ const Dashboard = () => {
     try {
       const res = await fetch(`${API_URL}/stats?month=${month}`, { headers });
       const data = await res.json();
-      
+
       setStudents(data.recentStudents || []);
-      
+
       const statsData = {
         totalRevenue: data.totalRevenue || 0,
         totalStudents: data.totalStudents,
@@ -140,31 +140,31 @@ const Dashboard = () => {
             <h3>المخزون العيني المتوفر (جرد حي)</h3>
             <Gift size={20} color="#e74c3c" />
           </div>
-          <div className="inventory-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px'}}>
+          <div className="inventory-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
             {stats.inKindInventory?.length > 0 ? (
               stats.inKindInventory.map((item, idx) => (
-                <div key={idx} className="inventory-item" style={{background: '#f8f9fa', padding: '10px', borderRadius: '8px', borderRight: '4px solid #e74c3c'}}>
-                  <div style={{fontWeight: 'bold', color: '#333'}}>{item.unit}</div>
-                  <div style={{fontSize: '0.9rem', color: item.count > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold'}}>{item.count} <small>وحدة</small></div>
+                <div key={idx} className="inventory-item" style={{ background: '#f8f9fa', padding: '10px', borderRadius: '8px', borderRight: '4px solid #e74c3c' }}>
+                  <div style={{ fontWeight: 'bold', color: '#333' }}>{item.unit}</div>
+                  <div style={{ fontSize: '0.9rem', color: item.count > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold' }}>{item.count} <small>وحدة</small></div>
                 </div>
               ))
             ) : <p className="empty-msg">لا يوجد مخزون عيني حالياً</p>}
           </div>
         </div>
 
-        <div className="section-header-row full-width" style={{marginTop: '30px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <div className="section-header-row full-width" style={{ marginTop: '30px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 className="section-title">حالة التحصيل المالي للسداد</h3>
-          <div className="month-picker" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-            <label style={{fontWeight: '700'}}>عرض شهر:</label>
-            <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} style={{padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd'}} />
+          <div className="month-picker" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontWeight: '700' }}>عرض شهر:</label>
+            <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd' }} />
           </div>
         </div>
 
         <div className="finance-status-grid full-width">
           <div className="finance-card paid main-card">
             <div className="card-header">
-              <h3 style={{color: '#27ae60'}}>طلاب تم السداد لهم ({stats.paidList.length})</h3>
-              <div style={{display: 'flex', gap: '8px'}}>
+              <h3 style={{ color: '#27ae60' }}>طلاب تم السداد لهم ({stats.paidList.length})</h3>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 {stats.paidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(stats.paidList, 'paid')} title="تصدير Excel"><FileDown size={18} /></button>}
                 <CheckCircle2 size={22} color="#27ae60" />
               </div>
@@ -186,8 +186,8 @@ const Dashboard = () => {
 
           <div className="finance-card unpaid main-card">
             <div className="card-header">
-              <h3 style={{color: '#e74c3c'}}>طلاب لم يتم السداد لهم ({stats.unpaidList.length})</h3>
-              <div style={{display: 'flex', gap: '8px'}}>
+              <h3 style={{ color: '#e74c3c' }}>طلاب لم يتم السداد لهم ({stats.unpaidList.length})</h3>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 {stats.unpaidList.length > 0 && <button className="export-mini-btn" onClick={() => exportFinance(stats.unpaidList, 'unpaid')} title="تصدير Excel"><FileDown size={18} /></button>}
                 <AlertCircle size={22} color="#e74c3c" />
               </div>
@@ -199,7 +199,7 @@ const Dashboard = () => {
                     <div className="status-dot red"></div>
                     <div className="s-info">
                       <strong>{s.name}</strong>
-                      <span style={{color: '#e74c3c'}}>المبلغ: {s.monthlyFees} ج.م</span>
+                      <span style={{ color: '#e74c3c' }}>المبلغ: {s.monthlyFees} ج.م</span>
                     </div>
                   </div>
                 ))
@@ -225,32 +225,32 @@ const Dashboard = () => {
             ))}
           </div>
 
-          <div className="card-header" style={{marginTop: '25px'}}>
+          <div className="card-header" style={{ marginTop: '25px' }}>
             <h3>سجل التبرعات العارضة (عينية)</h3>
             <Gift size={20} color="#e74c3c" />
           </div>
           <div className="activity-list">
             {stats.recentInKind?.length > 0 ? (
               stats.recentInKind.slice(0, 5).map((item, idx) => (
-                <div key={idx} className="activity-item" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                    <div className="activity-bullet" style={{background: '#e74c3c'}}></div>
+                <div key={idx} className="activity-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="activity-bullet" style={{ background: '#e74c3c' }}></div>
                     <div className="activity-info">
                       <strong>{item.refName || 'متبرع'}</strong>
                       <span>أهدى: {item.unit} | بتاريخ: {item.date}</span>
                     </div>
                   </div>
                   {/* Reuse the logic to revert balance on backend */}
-                  <button 
+                  <button
                     onClick={async () => {
-                      if(!window.confirm('هل تريد حذف هذا التبرع واسترداد الكمية للمتبرع؟')) return;
-                      const res = await fetch(`/api/transactions/${item._id}`, { 
-                        method: 'DELETE', 
-                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } 
+                      if (!window.confirm('هل تريد حذف هذا التبرع واسترداد الكمية للمتبرع؟')) return;
+                      const res = await fetch(`/api/transactions/${item._id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                       });
-                      if(res.ok) window.location.reload(); // Quick refresh for stats
+                      if (res.ok) window.location.reload(); // Quick refresh for stats
                     }}
-                    style={{background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '5px'}}
+                    style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '5px' }}
                     title="حذف واسترداد"
                   >
                     <Trash2 size={16} />
@@ -264,7 +264,7 @@ const Dashboard = () => {
         {stats.atRiskStudents && stats.atRiskStudents.length > 0 && (
           <div className="attendance-alerts main-card full-width">
             <div className="card-header">
-              <h3 style={{color: '#e74c3c'}}>تنبيهات الحضور والغياب</h3>
+              <h3 style={{ color: '#e74c3c' }}>تنبيهات الحضور والغياب</h3>
               <Calendar size={20} color="#e74c3c" />
             </div>
             <div className="alerts-grid">

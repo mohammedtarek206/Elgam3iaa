@@ -18,6 +18,8 @@ const Exam = require('./models/Exam');
 const StudentRequest = require('./models/StudentRequest');
 const SheikhRequest = require('./models/SheikhRequest');
 const Donor = require('./models/Donor');
+const JobApplication = require('./models/JobApplication');
+const Employee = require('./models/Employee');
 
 const app = express();
 app.use(cors());
@@ -155,9 +157,10 @@ app.get('/api/init-data', auth, async (req, res) => {
     const [students, sheikhs, classes] = await Promise.all([
       Student.find().sort({ createdAt: -1 }),
       Sheikh.find().sort({ createdAt: -1 }),
-      Class.find().sort({ createdAt: -1 })
+      Class.find().sort({ createdAt: -1 }),
+      Employee.find().sort({ createdAt: -1 })
     ]);
-    res.send({ students, sheikhs, classes });
+    res.send({ students, sheikhs, classes, employees });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -437,6 +440,131 @@ app.post('/api/admin/reject-sheikh/:id', [auth, isAdmin], async (req, res) => {
   try {
     await SheikhRequest.findByIdAndDelete(req.params.id);
     res.send({ message: 'تم رفض الطلب وحذفه' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// --- Job Application Routes (New) ---
+app.post('/api/public/job-application', async (req, res) => {
+  try {
+    const { nationalId, phone } = req.body;
+    if (nationalId && nationalId.length !== 14) {
+      return res.status(400).send({ message: 'الرقم القومي يجب أن يكون 14 رقم' });
+    }
+    if (phone && phone.length !== 11) {
+      return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 11 رقم' });
+    }
+    
+    // Optional: check if they already applied
+    const existing = await JobApplication.findOne({ nationalId, status: 'pending' });
+    if (existing) {
+      return res.status(400).send({ message: 'لديك طلب قيد المراجعة بالفعل' });
+    }
+
+    const application = new JobApplication(req.body);
+    await application.save();
+    res.status(201).send({ message: 'تم استلام طلب الوظيفة بنجاح، سيتم مراجعته والتواصل معك قريباً' });
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.get('/api/admin/job-applications', [auth, isAdmin], async (req, res) => {
+  try {
+    const applications = await JobApplication.find({ status: 'pending' }).sort({ createdAt: -1 });
+    res.send(applications);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/admin/approve-job-application/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const { salary, joinDate } = req.body;
+    const application = await JobApplication.findById(req.params.id);
+    if (!application) return res.status(404).send({ message: 'الطلب غير موجود' });
+
+    // Create Employee from Application
+    const employee = new Employee({
+      name: application.name,
+      nationalId: application.nationalId,
+      phone: application.phone,
+      jobType: application.jobType,
+      salary: salary || 0,
+      joinDate: joinDate || new Date().toISOString().split('T')[0],
+      isActive: true,
+      notes: application.notes
+    });
+
+    await employee.save();
+
+    // Mark application as accepted
+    application.status = 'accepted';
+    await application.save();
+    
+    res.send({ message: 'تم الموافقة على الطلب وتعيين الموظف بنجاح', employee });
+  } catch (err) {
+    console.error('Approval Error:', err);
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/admin/reject-job-application/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const application = await JobApplication.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+    // Or we could just delete it: await JobApplication.findByIdAndDelete(req.params.id);
+    if (!application) return res.status(404).send({ message: 'الطلب غير موجود' });
+    
+    res.send({ message: 'تم رفض الطلب' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.delete('/api/admin/job-applications/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await JobApplication.findByIdAndDelete(req.params.id);
+    res.send({ message: 'تم حذف الطلب' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// --- Employee Routes (New) ---
+app.get('/api/employees', auth, async (req, res) => {
+  try {
+    const employees = await Employee.find().sort({ createdAt: -1 });
+    res.send(employees);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.post('/api/employees', [auth, isAdmin], async (req, res) => {
+  try {
+    const employee = new Employee(req.body);
+    await employee.save();
+    res.status(201).send(employee);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.put('/api/employees/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!employee) return res.status(404).send({ message: 'الموظف غير موجود' });
+    res.send(employee);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.delete('/api/employees/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    await Employee.findByIdAndDelete(req.params.id);
+    res.send({ message: 'تم حذف الموظف بنجاح' });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }

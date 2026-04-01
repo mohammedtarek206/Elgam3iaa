@@ -12,7 +12,8 @@ import {
   Search,
   Plus,
   Printer,
-  UserPlus
+  UserPlus,
+  Briefcase
 } from 'lucide-react';
 
 const menuItems = [
@@ -24,7 +25,9 @@ const menuItems = [
   { id: 'finance', label: 'إدارة النقدية', icon: Wallet, color: '#1abc9c' },
   { id: 'grants', label: 'المنح والعطاءات', icon: Gift, color: '#f1c40f' },
   { id: 'exams', label: 'الاختبارات والمسابقات', icon: Trophy, color: '#d35400' },
+  { id: 'employees', label: 'إدارة الموظفين', icon: UserRound, color: '#16a085' },
   { id: 'registration', label: 'طلبات الالتحاق', icon: UserPlus, color: '#f39c12' },
+  { id: 'job-applications', label: 'طلبات التوظيف', icon: Briefcase, color: '#34495e' },
   { id: 'reports', label: 'التقارير', icon: FileText, color: '#7f8c8d' },
 ];
 
@@ -41,6 +44,9 @@ import RegistrationManager from './components/RegistrationManager';
 import StudentRegistration from './components/StudentRegistration';
 import ParentFollowUp from './components/ParentFollowUp';
 import SheikhRegistration from './components/SheikhRegistration';
+import JobApplicationForm from './components/JobApplicationForm';
+import JobApplicationsManager from './components/JobApplicationsManager';
+import EmployeeManager from './components/EmployeeManager';
 
 import Login from './components/Login';
 import { LogOut, AlertTriangle, RefreshCcw } from 'lucide-react';
@@ -78,19 +84,23 @@ function App() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isParentFollowup, setIsParentFollowup] = useState(false);
   const [isSheikhRegistering, setIsSheikhRegistering] = useState(false);
+  const [isJobApplying, setIsJobApplying] = useState(false);
   
   // Listen for registration event from Login
   React.useEffect(() => {
     const handleOpenReg = () => setIsRegistering(true);
     const handleOpenParent = () => setIsParentFollowup(true);
     const handleOpenSheikh = () => setIsSheikhRegistering(true);
+    const handleOpenJob = () => setIsJobApplying(true);
     window.addEventListener('open-registration', handleOpenReg);
     window.addEventListener('open-parent-followup', handleOpenParent);
     window.addEventListener('open-sheikh-registration', handleOpenSheikh);
+    window.addEventListener('open-job-application', handleOpenJob);
     return () => {
       window.removeEventListener('open-registration', handleOpenReg);
       window.removeEventListener('open-parent-followup', handleOpenParent);
       window.removeEventListener('open-sheikh-registration', handleOpenSheikh);
+      window.removeEventListener('open-job-application', handleOpenJob);
     };
   }, []);
   const [user, setUser] = useState(() => {
@@ -117,6 +127,9 @@ function App() {
     if (isSheikhRegistering) {
       return <SheikhRegistration onBack={() => setIsSheikhRegistering(false)} />;
     }
+    if (isJobApplying) {
+      return <JobApplicationForm onBack={() => setIsJobApplying(false)} />;
+    }
     return (
       <div className="login-page-wrapper" dir="rtl">
         <main className="content">
@@ -138,8 +151,8 @@ function App() {
     const rows = [];
     if (user.role === 'admin') {
       rows.push(filteredItems.slice(0, 4));
-      rows.push(filteredItems.slice(4, 7));
-      rows.push(filteredItems.slice(7, 10)); // Adjusted for extra item
+      rows.push(filteredItems.slice(4, 8));
+      rows.push(filteredItems.slice(8, 12)); 
     } else {
       // For manager, simpler 3-2 layout
       rows.push(filteredItems.slice(0, 3));
@@ -212,6 +225,8 @@ function App() {
           
           {currentPage === 'dashboard' && <Dashboard />}
           {currentPage === 'registration' && <RegistrationManager />}
+          {currentPage === 'job-applications' && <JobApplicationsManager />}
+          {currentPage === 'employees' && <EmployeeManager />}
         </ErrorBoundary>
       </main>
 

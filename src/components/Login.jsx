@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, User, LogIn, AlertCircle, UserPlus, Users, GraduationCap } from 'lucide-react';
+import { Lock, User, LogIn, AlertCircle, UserPlus, Users, GraduationCap, Briefcase } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -121,6 +121,16 @@ const Login = ({ onLogin }) => {
                 <div className="ql-text">
                   <span className="ql-title">محفظ جديد</span>
                   <span className="ql-desc">طلب تدريس</span>
+                </div>
+              </button>
+
+              <button type="button" className="quick-link-card job-link" onClick={() => window.dispatchEvent(new CustomEvent('open-job-application'))}>
+                <div className="ql-icon-wrapper">
+                  <Briefcase className="ql-icon" size={24} />
+                </div>
+                <div className="ql-text">
+                  <span className="ql-title">طلب وظيفة</span>
+                  <span className="ql-desc">فرصة عمل</span>
                 </div>
               </button>
             </div>
@@ -315,7 +325,7 @@ const Login = ({ onLogin }) => {
 
         .quick-links-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 12px;
         }
 
@@ -396,6 +406,15 @@ const Login = ({ onLogin }) => {
         .sheikh-link:hover {
           background: #fffbeb;
           border-color: #fed7aa;
+        }
+
+        .job-link .ql-icon-wrapper {
+          background: #f0f9ff;
+          color: #0284c7; /* or maybe a bluish/grayish tone: #3b82f6 */
+        }
+        .job-link:hover {
+          background: #eff6ff;
+          border-color: #bfdbfe;
         }
 
         @media (max-width: 600px) {
