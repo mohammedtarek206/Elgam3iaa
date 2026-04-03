@@ -10,7 +10,7 @@ const RegistrationManager = () => {
   const [classes, setClasses] = useState([]);
   const [sheikhs, setSheikhs] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modals
   const [selectedStudentRequest, setSelectedStudentRequest] = useState(null);
   const [showStudentApproveModal, setShowStudentApproveModal] = useState(false);
@@ -22,7 +22,7 @@ const RegistrationManager = () => {
   const [selectedSheikhRequest, setSelectedSheikhRequest] = useState(null);
   const [showSheikhApproveModal, setShowSheikhApproveModal] = useState(false);
   const [sheikhApprovalData, setSheikhApprovalData] = useState({
-    className: ''
+    assignedClasses: []
   });
 
   useEffect(() => {
@@ -100,7 +100,7 @@ const RegistrationManager = () => {
     if (!window.confirm('هل أنت متأكد من رفض وحذف هذا الطلب؟')) return;
     const token = localStorage.getItem('token');
     const endpoint = type === 'student' ? `/admin/reject-student/${id}` : `/admin/reject-sheikh/${id}`;
-    
+
     try {
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
@@ -109,7 +109,7 @@ const RegistrationManager = () => {
       if (res.ok) {
         fetchData();
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   if (loading) return <div className="module-placeholder">جاري تحميل الطلبات...</div>;
@@ -199,7 +199,7 @@ const RegistrationManager = () => {
             {sheikhRequests.map(req => (
               <div key={req._id} className="request-card">
                 <div className="request-card-header">
-                  <div className="user-avatar" style={{background: '#fef5e7', color: '#d35400'}}>
+                  <div className="user-avatar" style={{ background: '#fef5e7', color: '#d35400' }}>
                     <User size={30} />
                   </div>
                   <div className="user-main-info">
@@ -207,7 +207,7 @@ const RegistrationManager = () => {
                     <span className="request-date"><Calendar size={14} /> {req.requestDate}</span>
                   </div>
                   <div className="status-tag pending">انتظار</div>
-                  <div className="type-tag new-student" style={{background: '#fef5e7', color: '#d35400', borderColor: '#d35400'}}>محفظ جديد</div>
+                  <div className="type-tag new-student" style={{ background: '#fef5e7', color: '#d35400', borderColor: '#d35400' }}>محفظ جديد</div>
                 </div>
 
                 <div className="request-card-body">
@@ -224,8 +224,8 @@ const RegistrationManager = () => {
                     <span>الرقم القومي: <strong>{req.nationalId}</strong></span>
                   </div>
                   <div className="info-item full-width">
-                     <Building size={16} />
-                     <span>العنوان: <strong>{req.address}</strong></span>
+                    <Building size={16} />
+                    <span>العنوان: <strong>{req.address}</strong></span>
                   </div>
                 </div>
 
@@ -260,13 +260,13 @@ const RegistrationManager = () => {
             </div>
             <div className="approval-form-body">
               <p className="approval-tip">يرجى تحديد الفصل والمحفظ المسؤول عن الطالب قبل القبول النهائي:</p>
-              
+
               <div className="approval-input-group">
                 <label><Building size={18} /> تحديد الفصل</label>
-                <select 
-                  required 
-                  value={studentApprovalData.className} 
-                  onChange={e => setStudentApprovalData({...studentApprovalData, className: e.target.value})}
+                <select
+                  required
+                  value={studentApprovalData.className}
+                  onChange={e => setStudentApprovalData({ ...studentApprovalData, className: e.target.value })}
                 >
                   <option value="">-- اختر الفصل --</option>
                   {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
@@ -275,10 +275,10 @@ const RegistrationManager = () => {
 
               <div className="approval-input-group">
                 <label><Users size={18} /> تحديد المحفظ المسؤول</label>
-                <select 
-                  required 
-                  value={studentApprovalData.sheikh} 
-                  onChange={e => setStudentApprovalData({...studentApprovalData, sheikh: e.target.value})}
+                <select
+                  required
+                  value={studentApprovalData.sheikh}
+                  onChange={e => setStudentApprovalData({ ...studentApprovalData, sheikh: e.target.value })}
                 >
                   <option value="">-- اختر المحفظ --</option>
                   {sheikhs.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
@@ -301,26 +301,35 @@ const RegistrationManager = () => {
         <div className="modal-overlay no-print">
           <div className="modal-content fade-in">
             <div className="modal-header">
-              <h3 style={{color: '#d35400'}}>تعيين المحفظ: {selectedSheikhRequest.name}</h3>
+              <h3 style={{ color: '#d35400' }}>تعيين المحفظ: {selectedSheikhRequest.name}</h3>
               <button className="close-btn" onClick={() => setShowSheikhApproveModal(false)}><X size={24} /></button>
             </div>
             <div className="approval-form-body">
               <p className="approval-tip">يجب إسناد المحفظ لفصل واحد على الأقل ليتم تسجيله بنجاح ضمن هيئة التدريس:</p>
-              
+
               <div className="approval-input-group">
-                <label><Building size={18} /> إسناد إلى فصل</label>
-                <select 
-                  required 
-                  value={sheikhApprovalData.className} 
-                  onChange={e => setSheikhApprovalData({...sheikhApprovalData, className: e.target.value})}
-                >
-                  <option value="">-- اختر الفصل --</option>
-                  {classes.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
-                </select>
+                <label><Building size={18} /> إسناد إلى فصول (يمكن اختيار أكثر من فصل)</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+                  {classes.map(c => (
+                    <label key={c._id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={sheikhApprovalData.assignedClasses && sheikhApprovalData.assignedClasses.includes(c.name)}
+                        onChange={(e) => {
+                          const newClasses = e.target.checked 
+                            ? [...(sheikhApprovalData.assignedClasses || []), c.name]
+                            : (sheikhApprovalData.assignedClasses || []).filter(name => name !== c.name);
+                          setSheikhApprovalData({...sheikhApprovalData, assignedClasses: newClasses});
+                        }} 
+                      />
+                      {c.name}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="modal-actions">
-                <button className="confirm-approve-btn sheikh-approve-submit" onClick={handleSheikhApprove} disabled={!sheikhApprovalData.className}>
+                <button className="confirm-approve-btn sheikh-approve-submit" onClick={handleSheikhApprove} disabled={!sheikhApprovalData.assignedClasses || sheikhApprovalData.assignedClasses.length === 0}>
                   <Check size={20} />
                   تعيين وإسناد
                 </button>

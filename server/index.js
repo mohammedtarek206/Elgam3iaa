@@ -408,18 +408,18 @@ app.get('/api/admin/sheikh-requests', [auth, isAdmin], async (req, res) => {
 
 app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
   try {
-    const { className } = req.body;
+    const { className, assignedClasses } = req.body;
     const request = await SheikhRequest.findById(req.params.id);
     if (!request) return res.status(404).send({ message: 'الطلب غير موجود' });
 
     // Create Sheikh
     const sheikh = new Sheikh({
       name: request.name,
-      nationalId: request.nationalId,
+      nationalId: request.nationalId || undefined,
       qualification: request.qualification,
       phone: request.phone,
       address: request.address,
-      assignedClasses: [className], // Assigning to the list of classes
+      assignedClasses: assignedClasses || (className ? [className] : []), // Assigning to the list of classes
       hireDate: new Date().toISOString().split('T')[0],
       salary: 0, // default
       isNewRegistration: true
@@ -432,6 +432,9 @@ app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
 
     res.send({ message: 'تم قبول المحفظ وتعيينه للفصل بنجاح', sheikh });
   } catch (err) {
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.nationalId) {
+      return res.status(400).send({ message: 'هذا الرقم القومي مسجل لمحفظ آخر' });
+    }
     res.status(500).send({ message: err.message });
   }
 });
@@ -455,7 +458,7 @@ app.post('/api/public/job-application', async (req, res) => {
     if (phone && phone.length !== 11) {
       return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 11 رقم' });
     }
-    
+
     // Optional: check if they already applied
     const existing = await JobApplication.findOne({ nationalId, status: 'pending' });
     if (existing) {
@@ -502,7 +505,7 @@ app.post('/api/admin/approve-job-application/:id', [auth, isAdmin], async (req, 
     // Mark application as accepted
     application.status = 'accepted';
     await application.save();
-    
+
     res.send({ message: 'تم الموافقة على الطلب وتعيين الموظف بنجاح', employee });
   } catch (err) {
     console.error('Approval Error:', err);
@@ -515,7 +518,7 @@ app.post('/api/admin/reject-job-application/:id', [auth, isAdmin], async (req, r
     const application = await JobApplication.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
     // Or we could just delete it: await JobApplication.findByIdAndDelete(req.params.id);
     if (!application) return res.status(404).send({ message: 'الطلب غير موجود' });
-    
+
     res.send({ message: 'تم رفض الطلب' });
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -582,19 +585,31 @@ app.get('/api/sheikhs', auth, async (req, res) => {
 
 app.post('/api/sheikhs', auth, async (req, res) => {
   try {
-    const sheikh = new Sheikh(req.body);
+    const data = { ...req.body };
+    if (!data.nationalId) data.nationalId = undefined; // prevent duplicate key error for empty strings
+    
+    const sheikh = new Sheikh(data);
     await sheikh.save();
     res.send(sheikh);
   } catch (err) {
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.nationalId) {
+      return res.status(400).send({ message: 'هذا الرقم القومي مسجل لمحفظ آخر' });
+    }
     res.status(400).send({ message: err.message });
   }
 });
 
 app.put('/api/sheikhs/:id', auth, async (req, res) => {
   try {
-    const sheikh = await Sheikh.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const data = { ...req.body };
+    if (!data.nationalId) data.nationalId = undefined;
+    
+    const sheikh = await Sheikh.findByIdAndUpdate(req.params.id, data, { new: true });
     res.send(sheikh);
   } catch (err) {
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.nationalId) {
+      return res.status(400).send({ message: 'هذا الرقم القومي مسجل لمحفظ آخر' });
+    }
     res.status(400).send({ message: err.message });
   }
 });
@@ -728,7 +743,7 @@ app.delete('/api/transactions/:id', [auth, isAdmin], async (req, res) => {
             const current = donor.inKindStock.get(tx.itemName) || 0;
             donor.inKindStock.set(tx.itemName, Math.max(0, current - tx.quantity));
           }
-        } 
+        }
         // If it was expense (grant reversal), add back to balance/stock
         else {
           if (tx.amount > 0) {
@@ -796,7 +811,7 @@ app.post('/api/grants', auth, async (req, res) => {
     // 2. If it's an In-Kind grant, decrement the donor's specific item stock
     if (grant.type === 'دعم عيني' && grant.itemName && grant.quantityPerStudent > 0) {
       const totalQuantity = grant.quantityPerStudent * (grant.studentIds?.length || 1);
-      
+
       const transaction = new Transaction({
         type: 'مصروف',
         category: 'منح وعطاءات',
@@ -852,10 +867,10 @@ app.delete('/api/grants/:id', [auth, isAdmin], async (req, res) => {
 
     // 2. Delete linked transactions
     await Transaction.deleteMany({ refId: grant._id });
-    
+
     // 3. Delete the grant
     await Grant.findByIdAndDelete(req.params.id);
-    
+
     res.send({ message: 'تم حذف المنحة وتعديل الرصيد بنجاح' });
   } catch (err) {
     console.error('Error deleting grant:', err);
@@ -870,11 +885,11 @@ app.get('/api/donors', auth, async (req, res) => {
     // Fetch in-kind history and formatted stock for each donor using explicitly linked donorId
     const donorsProcessed = await Promise.all(donors.map(async (d) => {
       const allTxs = await Transaction.find({ donorId: d._id }).sort({ date: -1 });
-      
+
       const donorObj = d.toObject();
       const stockObj = {};
-      const totalsObj = {}; 
-      
+      const totalsObj = {};
+
       if (d.inKindStock) {
         for (let [key, value] of d.inKindStock) {
           stockObj[key] = value;
@@ -884,7 +899,7 @@ app.get('/api/donors', auth, async (req, res) => {
 
       let dynamicBalance = 0;
       let dynamicTotalDonated = 0;
-      
+
       allTxs.forEach(tx => {
         if (tx.amount > 0) {
           if (tx.type === 'دخل') {
@@ -894,7 +909,7 @@ app.get('/api/donors', auth, async (req, res) => {
             dynamicBalance -= tx.amount;
           }
         }
-        
+
         if (tx.itemName) {
           if (!totalsObj[tx.itemName]) totalsObj[tx.itemName] = { received: 0, distributed: 0 };
           if (tx.type === 'دخل') totalsObj[tx.itemName].received += (tx.quantity || 0);
@@ -908,14 +923,14 @@ app.get('/api/donors', auth, async (req, res) => {
         totalDonated: dynamicTotalDonated,
         inKindStock: stockObj,
         inKindTotals: totalsObj,
-        fullHistory: allTxs.map(h => ({ 
-          itemName: h.itemName, 
+        fullHistory: allTxs.map(h => ({
+          itemName: h.itemName,
           amount: h.amount,
-          quantity: h.quantity, 
-          date: h.date, 
+          quantity: h.quantity,
+          date: h.date,
           type: h.type,
           category: h.category,
-          notes: h.notes 
+          notes: h.notes
         }))
       };
     }));
@@ -929,7 +944,7 @@ app.post('/api/donors', auth, async (req, res) => {
   const { name, type, phone, notes, initialAmount, initialUnit } = req.body;
   try {
     const donor = new Donor({ name, type, phone, notes });
-    
+
     if (Number(initialAmount) > 0 || initialUnit) {
       donor.totalDonated = Number(initialAmount) || 0;
       donor.balance = Number(initialAmount) || 0;
@@ -969,7 +984,7 @@ app.put('/api/donors/:id', [auth, isAdmin], async (req, res) => {
 app.delete('/api/donors/:id', [auth, isAdmin], async (req, res) => {
   try {
     const donorId = req.params.id;
-    
+
     // 1. Delete all associated grants
     await Grant.deleteMany({ donorId });
 
@@ -1092,13 +1107,13 @@ app.get('/api/stats', auth, async (req, res) => {
     const grantFundBalance = totalDonations - totalGrantsPaid;
 
     // 3. In-kind Stats
-    const inKindCount = await Transaction.countDocuments({ 
-      category: 'تبرعات', 
-      unit: { $exists: true, $ne: '' } 
+    const inKindCount = await Transaction.countDocuments({
+      category: 'تبرعات',
+      unit: { $exists: true, $ne: '' }
     });
-    const recentInKind = await Transaction.find({ 
-      category: 'تبرعات', 
-      unit: { $exists: true, $ne: '' } 
+    const recentInKind = await Transaction.find({
+      category: 'تبرعات',
+      unit: { $exists: true, $ne: '' }
     }).sort({ date: -1 }).limit(10);
 
     // 4. Attendance Rate
@@ -1150,7 +1165,7 @@ app.get('/api/stats', auth, async (req, res) => {
     // 8. In-Kind Inventory (Actual current stock from across all donors)
     const allDonorsWithStock = await Donor.find({ inKindStock: { $exists: true } });
     const liveInventoryObj = {};
-    
+
     allDonorsWithStock.forEach(d => {
       if (d.inKindStock) {
         for (let [item, qty] of d.inKindStock) {

@@ -158,7 +158,7 @@ const SheikhManager = () => {
 
   const exportToExcel = () => {
     const dataToExport = filteredSheikhs.map(s => {
-      const count = (students || []).filter(student => student && student.sheikh === s.name).length;
+      const count = (students || []).filter(std => std && (std.sheikh === s.name || (s.assignedClasses && (s.assignedClasses.includes(std.className) || s.assignedClasses.includes(std.class))))).length;
       return {
         'الاسم': s.name,
         'الرقم القومي': s.nationalId || '---',
@@ -185,7 +185,7 @@ const SheikhManager = () => {
   });
 
   const renderProfile = (sheikh) => {
-    const sheikhStudents = (students || []).filter(s => s && s.sheikh === sheikh.name);
+    const sheikhStudents = (students || []).filter(s => s && (s.sheikh === sheikh.name || (sheikh.assignedClasses && (sheikh.assignedClasses.includes(s.className) || sheikh.assignedClasses.includes(s.class)))));
     
     return (
       <div className="modal-overlay">
@@ -245,7 +245,7 @@ const SheikhManager = () => {
                       <tr key={s._id}>
                         <td>{s.name}</td>
                         <td>{s.level}</td>
-                        <td>{s.className}</td>
+                        <td>{s.className || s.class || '---'}</td>
                       </tr>
                     ))}
                     {sheikhStudents.length === 0 && (
@@ -348,7 +348,7 @@ const SheikhManager = () => {
                   </div>
                 </td>
                 <td>{sheikh.hireDate}</td>
-                <td>{(students || []).filter(s => s && s.sheikh === sheikh.name).length}</td>
+                <td>{(students || []).filter(s => s && (s.sheikh === sheikh.name || (sheikh.assignedClasses && (sheikh.assignedClasses.includes(s.className) || sheikh.assignedClasses.includes(s.class))))).length}</td>
                 <td className="actions no-print">
                   <button className="edit-btn" onClick={() => handleOpenForm(sheikh)}><Edit2 size={18} /></button>
                   {user.role === 'admin' && (
