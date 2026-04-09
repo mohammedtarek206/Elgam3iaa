@@ -8,7 +8,15 @@ const studentRequestSchema = new mongoose.Schema({
   socialStatus: String,
   nationalId: { type: String, minlength: 14, maxlength: 14 },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  requestDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
+  requestDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
+  // Filled by admin on approval
+  approvedClassName: { type: String, default: '' },
+  approvedSheikh: { type: String, default: '' },
+  adminNotes: { type: String, default: '' },
+  rejectionReason: { type: String, default: '' }
 }, { timestamps: true });
+
+studentRequestSchema.index({ nationalId: 1 });
+studentRequestSchema.index({ status: 1 });
 
 module.exports = mongoose.models.StudentRequest || mongoose.model('StudentRequest', studentRequestSchema);

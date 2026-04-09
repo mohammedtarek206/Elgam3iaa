@@ -13,6 +13,19 @@ const Sheikh = require('./models/Sheikh');
 const Class = require('./models/Class');
 const Attendance = require('./models/Attendance');
 const Transaction = require('./models/Transaction');
+
+// Utility to normalize Arabic/Hindi digits to ASCII digits and strip non-digits
+function normalizeDigits(str) {
+  if (!str) return '';
+  let s = String(str);
+  // Convert Arabic digits
+  s = s.replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632);
+  // Convert Hindi/Persian digits
+  s = s.replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776);
+  // Strip non-digits
+  return s.replace(/\D/g, '');
+}
+
 const Grant = require('./models/Grant');
 const Exam = require('./models/Exam');
 const StudentRequest = require('./models/StudentRequest');
@@ -248,23 +261,32 @@ app.post('/api/admin/bulk-import-students', [auth, isAdmin], async (req, res) =>
 app.post('/api/public/register', async (req, res) => {
   try {
     const { nationalId, phone } = req.body;
-    if (nationalId) {
-      if (nationalId.length !== 14) {
+    
+    // Normalize and Validate National ID
+    const cleanId = normalizeDigits(nationalId);
+    if (cleanId) {
+      if (cleanId.length !== 14) {
         return res.status(400).send({ message: 'الرقم القومي يجب أن يكون 14 رقم' });
       }
-      const existing = await Student.findOne({ nationalId });
-      const existingReq = await StudentRequest.findOne({ nationalId });
+      const existing = await Student.findOne({ nationalId: cleanId });
+      const existingReq = await StudentRequest.findOne({ nationalId: cleanId });
       if (existing || existingReq) {
         return res.status(400).send({ message: 'هذا الرقم القومي مسجل من قبل' });
       }
     }
-    if (phone && phone.length !== 11) {
+    
+    const cleanPhone = normalizeDigits(phone);
+    if (cleanPhone && cleanPhone.length !== 11) {
       return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 11 رقم' });
     }
-    const request = new StudentRequest(req.body);
+
+    const requestData = { ...req.body, nationalId: cleanId, phone: cleanPhone };
+    const request = new StudentRequest(requestData);
     await request.save();
+    console.log(`✅ Student registered: ${request.name}, ID: ${request.nationalId}`);
     res.status(201).send({ message: 'تم استلام طلبك بنجاح، سيتم مراجعته من قبل الإدارة' });
   } catch (err) {
+    console.error('❌ Registration Error:', err);
     res.status(400).send({ message: err.message });
   }
 });
@@ -272,7 +294,7 @@ app.post('/api/public/register', async (req, res) => {
 // --- Public Guardian Follow-up Route ---
 app.get('/api/public/student-followup/:nationalId', async (req, res) => {
   try {
-    const { nationalId } = req.params;
+    const nationalId = normalizeDigits(req.params.nationalId);
 
     // 1. Find the student
     const student = await Student.findOne({ nationalId });
@@ -339,7 +361,9 @@ app.get('/api/public/student-followup/:nationalId', async (req, res) => {
 
 app.get('/api/admin/student-requests', [auth, isAdmin], async (req, res) => {
   try {
-    const requests = await StudentRequest.find({ status: 'pending' }).sort({ createdAt: -1 });
+    const { status } = req.query;
+    const filter = status && status !== 'all' ? { status } : {};
+    const requests = await StudentRequest.find(filter).sort({ createdAt: -1 });
     res.send(requests);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -348,7 +372,7 @@ app.get('/api/admin/student-requests', [auth, isAdmin], async (req, res) => {
 
 app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => {
   try {
-    const { className, sheikh } = req.body;
+    const { className, sheikh, adminNotes } = req.body;
     const request = await StudentRequest.findById(req.params.id);
     if (!request) return res.status(404).send({ message: 'الطلب غير موجود' });
 
@@ -368,8 +392,12 @@ app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => 
 
     await student.save();
 
-    // Delete Request after approval
-    await StudentRequest.findByIdAndDelete(req.params.id);
+    // Update request status to approved (keep it so student can see result)
+    request.status = 'approved';
+    request.approvedClassName = className || '';
+    request.approvedSheikh = sheikh || '';
+    request.adminNotes = adminNotes || '';
+    await request.save();
 
     res.send({ message: 'تم قبول الطالب وتوجيهه لقسم الطلاب', student });
   } catch (err) {
@@ -379,8 +407,68 @@ app.post('/api/admin/approve-student/:id', [auth, isAdmin], async (req, res) => 
 
 app.post('/api/admin/reject-student/:id', [auth, isAdmin], async (req, res) => {
   try {
+    const { rejectionReason } = req.body;
+    const request = await StudentRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected', rejectionReason: rejectionReason || '' },
+      { new: true }
+    );
+    if (!request) return res.status(404).send({ message: 'الطلب غير موجود' });
+    res.send({ message: 'تم رفض الطلب' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// Public: Check student request status by nationalId
+app.get('/api/public/request-status/student/:nationalId', async (req, res) => {
+  try {
+    const cleanId = normalizeDigits(req.params.nationalId);
+    console.log(`🔍 Checking status for student ID: [${cleanId}]`);
+    
+    // 1. Try to find a Request
+    const request = await StudentRequest.findOne({ nationalId: cleanId }).sort({ createdAt: -1 });
+    if (request) {
+      console.log(`✅ Request found: ${request.name}, Status: ${request.status}`);
+      return res.send({
+        status: request.status,
+        name: request.name,
+        requestDate: request.requestDate,
+        approvedClassName: request.approvedClassName,
+        approvedSheikh: request.approvedSheikh,
+        adminNotes: request.adminNotes,
+        rejectionReason: request.rejectionReason
+      });
+    }
+
+    // 2. Fallback: Check if they are already an active Student
+    const student = await Student.findOne({ nationalId: cleanId });
+    if (student) {
+      console.log(`✅ Active student found via fallback: ${student.name}`);
+      return res.send({
+        status: 'approved', // Synthesized status
+        name: student.name,
+        requestDate: student.joinDate || 'مسبقاً',
+        approvedClassName: student.className,
+        approvedSheikh: student.sheikh,
+        adminNotes: student.notes || 'تم قبولك وخطوتك للدراسة مفعّلة بنجاح.',
+        rejectionReason: ''
+      });
+    }
+
+    console.log(`❌ No request or student found for ID: [${cleanId}]`);
+    return res.status(404).send({ message: 'لا يوجد طلب مسجل بهذا الرقم القومي' });
+  } catch (err) {
+    console.error('❌ Status Check Error:', err);
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// Admin: Delete a student request manually (cleanup)
+app.delete('/api/admin/student-requests/:id', [auth, isAdmin], async (req, res) => {
+  try {
     await StudentRequest.findByIdAndDelete(req.params.id);
-    res.send({ message: 'تم رفض الطلب وحذفه' });
+    res.send({ message: 'تم حذف الطلب' });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -389,7 +477,12 @@ app.post('/api/admin/reject-student/:id', [auth, isAdmin], async (req, res) => {
 // --- Sheikh Request Routes (New) ---
 app.post('/api/public/register-sheikh', async (req, res) => {
   try {
-    const request = new SheikhRequest(req.body);
+    const { nationalId, phone } = req.body;
+    const cleanId = normalizeDigits(nationalId);
+    const cleanPhone = normalizeDigits(phone);
+    
+    const requestData = { ...req.body, nationalId: cleanId, phone: cleanPhone };
+    const request = new SheikhRequest(requestData);
     await request.save();
     res.status(201).send({ message: 'تم استلام طلبك بنجاح، سيتم مراجعته من قبل الإدارة' });
   } catch (err) {
@@ -399,7 +492,9 @@ app.post('/api/public/register-sheikh', async (req, res) => {
 
 app.get('/api/admin/sheikh-requests', [auth, isAdmin], async (req, res) => {
   try {
-    const requests = await SheikhRequest.find({ status: 'pending' }).sort({ createdAt: -1 });
+    const { status } = req.query;
+    const filter = status && status !== 'all' ? { status } : {};
+    const requests = await SheikhRequest.find(filter).sort({ createdAt: -1 });
     res.send(requests);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -408,9 +503,11 @@ app.get('/api/admin/sheikh-requests', [auth, isAdmin], async (req, res) => {
 
 app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
   try {
-    const { className, assignedClasses } = req.body;
+    const { className, assignedClasses, adminNotes } = req.body;
     const request = await SheikhRequest.findById(req.params.id);
     if (!request) return res.status(404).send({ message: 'الطلب غير موجود' });
+
+    const finalClasses = assignedClasses || (className ? [className] : []);
 
     // Create Sheikh
     const sheikh = new Sheikh({
@@ -419,16 +516,19 @@ app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
       qualification: request.qualification,
       phone: request.phone,
       address: request.address,
-      assignedClasses: assignedClasses || (className ? [className] : []), // Assigning to the list of classes
+      assignedClasses: finalClasses,
       hireDate: new Date().toISOString().split('T')[0],
-      salary: 0, // default
+      salary: 0,
       isNewRegistration: true
     });
 
     await sheikh.save();
 
-    // Delete Request after approval
-    await SheikhRequest.findByIdAndDelete(req.params.id);
+    // Update request status to approved (keep it so sheikh can see result)
+    request.status = 'approved';
+    request.approvedClasses = finalClasses;
+    request.adminNotes = adminNotes || '';
+    await request.save();
 
     res.send({ message: 'تم قبول المحفظ وتعيينه للفصل بنجاح', sheikh });
   } catch (err) {
@@ -441,8 +541,61 @@ app.post('/api/admin/approve-sheikh/:id', [auth, isAdmin], async (req, res) => {
 
 app.post('/api/admin/reject-sheikh/:id', [auth, isAdmin], async (req, res) => {
   try {
+    const { rejectionReason } = req.body;
+    const request = await SheikhRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected', rejectionReason: rejectionReason || '' },
+      { new: true }
+    );
+    if (!request) return res.status(404).send({ message: 'الطلب غير موجود' });
+    res.send({ message: 'تم رفض الطلب' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// Public: Check sheikh request status by nationalId
+app.get('/api/public/request-status/sheikh/:nationalId', async (req, res) => {
+  try {
+    const cleanId = normalizeDigits(req.params.nationalId);
+    
+    // 1. Try to find a Request
+    const request = await SheikhRequest.findOne({ nationalId: cleanId }).sort({ createdAt: -1 });
+    if (request) {
+      return res.send({
+        status: request.status,
+        name: request.name,
+        requestDate: request.requestDate,
+        approvedClasses: request.approvedClasses,
+        adminNotes: request.adminNotes,
+        rejectionReason: request.rejectionReason
+      });
+    }
+
+    // 2. Fallback: Check if they are already an active Sheikh
+    const sheikh = await Sheikh.findOne({ nationalId: cleanId });
+    if (sheikh) {
+      return res.send({
+        status: 'approved',
+        name: sheikh.name,
+        requestDate: 'مسبقاً',
+        approvedClasses: sheikh.assignedClasses || [],
+        adminNotes: sheikh.notes || 'تم قبولك كعضو في هيئة المحفظين.',
+        rejectionReason: ''
+      });
+    }
+
+    return res.status(404).send({ message: 'لا يوجد طلب مسجل بهذا الرقم القومي' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// Admin: Delete a sheikh request manually (cleanup)
+app.delete('/api/admin/sheikh-requests/:id', [auth, isAdmin], async (req, res) => {
+  try {
     await SheikhRequest.findByIdAndDelete(req.params.id);
-    res.send({ message: 'تم رفض الطلب وحذفه' });
+    res.send({ message: 'تم حذف الطلب' });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -452,20 +605,23 @@ app.post('/api/admin/reject-sheikh/:id', [auth, isAdmin], async (req, res) => {
 app.post('/api/public/job-application', async (req, res) => {
   try {
     const { nationalId, phone } = req.body;
-    if (nationalId && nationalId.length !== 14) {
+    const cleanId = normalizeDigits(nationalId);
+    const cleanPhone = normalizeDigits(phone);
+
+    if (cleanId && cleanId.length !== 14) {
       return res.status(400).send({ message: 'الرقم القومي يجب أن يكون 14 رقم' });
     }
-    if (phone && phone.length !== 11) {
+    if (cleanPhone && cleanPhone.length !== 11) {
       return res.status(400).send({ message: 'رقم الهاتف يجب أن يكون 11 رقم' });
     }
 
     // Optional: check if they already applied
-    const existing = await JobApplication.findOne({ nationalId, status: 'pending' });
+    const existing = await JobApplication.findOne({ nationalId: cleanId, status: 'pending' });
     if (existing) {
       return res.status(400).send({ message: 'لديك طلب قيد المراجعة بالفعل' });
     }
 
-    const application = new JobApplication(req.body);
+    const application = new JobApplication({ ...req.body, nationalId: cleanId, phone: cleanPhone });
     await application.save();
     res.status(201).send({ message: 'تم استلام طلب الوظيفة بنجاح، سيتم مراجعته والتواصل معك قريباً' });
   } catch (err) {
@@ -475,7 +631,9 @@ app.post('/api/public/job-application', async (req, res) => {
 
 app.get('/api/admin/job-applications', [auth, isAdmin], async (req, res) => {
   try {
-    const applications = await JobApplication.find({ status: 'pending' }).sort({ createdAt: -1 });
+    const { status } = req.query;
+    const filter = status && status !== 'all' ? { status } : {};
+    const applications = await JobApplication.find(filter).sort({ createdAt: -1 });
     res.send(applications);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -484,7 +642,7 @@ app.get('/api/admin/job-applications', [auth, isAdmin], async (req, res) => {
 
 app.post('/api/admin/approve-job-application/:id', [auth, isAdmin], async (req, res) => {
   try {
-    const { salary, joinDate } = req.body;
+    const { salary, joinDate, adminNotes } = req.body;
     const application = await JobApplication.findById(req.params.id);
     if (!application) return res.status(404).send({ message: 'الطلب غير موجود' });
 
@@ -502,8 +660,11 @@ app.post('/api/admin/approve-job-application/:id', [auth, isAdmin], async (req, 
 
     await employee.save();
 
-    // Mark application as accepted
+    // Mark application as accepted and store approval details
     application.status = 'accepted';
+    application.salary = salary || 0;
+    application.joinDate = joinDate || new Date().toISOString().split('T')[0];
+    application.adminNotes = adminNotes || '';
     await application.save();
 
     res.send({ message: 'تم الموافقة على الطلب وتعيين الموظف بنجاح', employee });
@@ -515,11 +676,53 @@ app.post('/api/admin/approve-job-application/:id', [auth, isAdmin], async (req, 
 
 app.post('/api/admin/reject-job-application/:id', [auth, isAdmin], async (req, res) => {
   try {
-    const application = await JobApplication.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
-    // Or we could just delete it: await JobApplication.findByIdAndDelete(req.params.id);
+    const { rejectionReason } = req.body;
+    const application = await JobApplication.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected', rejectionReason: rejectionReason || '' },
+      { new: true }
+    );
     if (!application) return res.status(404).send({ message: 'الطلب غير موجود' });
-
     res.send({ message: 'تم رفض الطلب' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+// Public: Check job application status by nationalId
+app.get('/api/public/request-status/job/:nationalId', async (req, res) => {
+  try {
+    const cleanId = normalizeDigits(req.params.nationalId);
+    
+    // 1. Try to find an Application
+    const application = await JobApplication.findOne({ nationalId: cleanId }).sort({ createdAt: -1 });
+    if (application) {
+      return res.send({
+        status: application.status,
+        name: application.name,
+        jobType: application.jobType,
+        salary: application.salary,
+        joinDate: application.joinDate,
+        adminNotes: application.adminNotes,
+        rejectionReason: application.rejectionReason
+      });
+    }
+
+    // 2. Fallback: Check if they are already an Employee
+    const employee = await Employee.findOne({ nationalId: cleanId });
+    if (employee) {
+      return res.send({
+        status: 'accepted',
+        name: employee.name,
+        jobType: employee.jobType,
+        salary: employee.salary,
+        joinDate: employee.joinDate,
+        adminNotes: employee.notes || 'تم قبول طلبك وأنت مسجل حالياً كموظف.',
+        rejectionReason: ''
+      });
+    }
+
+    return res.status(404).send({ message: 'لا يوجد طلب وظيفة مسجل بهذا الرقم القومي' });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }

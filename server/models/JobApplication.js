@@ -26,6 +26,14 @@ const JobApplicationSchema = new mongoose.Schema({
     default: 'pending',
     enum: ['pending', 'accepted', 'rejected'],
   },
+  // Filled by admin on approval / rejection
+  salary: { type: Number, default: 0 },
+  joinDate: { type: String, default: '' },
+  adminNotes: { type: String, default: '' },
+  rejectionReason: { type: String, default: '' }
 }, { timestamps: true });
+
+JobApplicationSchema.index({ nationalId: 1 });
+JobApplicationSchema.index({ status: 1 });
 
 module.exports = mongoose.models.JobApplication || mongoose.model('JobApplication', JobApplicationSchema);

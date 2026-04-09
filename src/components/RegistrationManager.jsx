@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, UserX, User, Phone, BookOpen, Calendar, Check, X, Shield, Plus, Building, Users } from 'lucide-react';
+import { UserCheck, UserX, User, Phone, BookOpen, Calendar, Check, X, Shield, Plus, Building, Users, Trash2 } from 'lucide-react';
 
 const API_URL = '/api';
 
@@ -10,6 +10,7 @@ const RegistrationManager = () => {
   const [classes, setClasses] = useState([]);
   const [sheikhs, setSheikhs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('pending');
 
   // Modals
   const [selectedStudentRequest, setSelectedStudentRequest] = useState(null);
@@ -34,8 +35,8 @@ const RegistrationManager = () => {
     const token = localStorage.getItem('token');
     try {
       const [studentsRes, sheikhsRes, initRes] = await Promise.all([
-        fetch(`${API_URL}/admin/student-requests`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/admin/sheikh-requests`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/admin/student-requests?status=all`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/admin/sheikh-requests?status=all`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/init-data`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       const [studentsData, sheikhsData, initData] = await Promise.all([
@@ -43,8 +44,8 @@ const RegistrationManager = () => {
         sheikhsRes.json(),
         initRes.json()
       ]);
-      setStudentRequests(studentsData);
-      setSheikhRequests(sheikhsData);
+      setStudentRequests(Array.isArray(studentsData) ? studentsData : []);
+      setSheikhRequests(Array.isArray(sheikhsData) ? sheikhsData : []);
       setClasses(initData.classes || []);
       setSheikhs(initData.sheikhs || []);
     } catch (err) {
@@ -96,31 +97,71 @@ const RegistrationManager = () => {
     }
   };
 
-  const handleReject = async (id, type) => {
-    if (!window.confirm('هل أنت متأكد من رفض وحذف هذا الطلب؟')) return;
+  const handleReject = (id, type) => {
+    setRejectTarget({ id, type });
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectTarget) return;
+    const { id, type } = rejectTarget;
     const token = localStorage.getItem('token');
     const endpoint = type === 'student' ? `/admin/reject-student/${id}` : `/admin/reject-sheikh/${id}`;
-
     try {
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ rejectionReason: rejectReason })
       });
       if (res.ok) {
+        setShowRejectModal(false);
         fetchData();
       }
     } catch (err) { }
   };
 
+  const handleDelete = async (id, type) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا الطلب نهائياً؟')) return;
+    const token = localStorage.getItem('token');
+    const endpoint = type === 'student' ? `/admin/student-requests/${id}` : `/admin/sheikh-requests/${id}`;
+    try {
+      await fetch(`${API_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) { }
+  };
+
+  const getStatusBadge = (status) => {
+    if (status === 'approved') return <div className="status-tag approved">مقبول ✅</div>;
+    if (status === 'rejected') return <div className="status-tag rejected">مرفوض ❌</div>;
+    return <div className="status-tag pending">انتظار ⏳</div>;
+  };
+
   if (loading) return <div className="module-placeholder">جاري تحميل الطلبات...</div>;
+
+  const filteredStudents = (studentRequests || []).filter(r => statusFilter === 'all' || r.status === statusFilter);
+  const filteredSheikhs = (sheikhRequests || []).filter(r => statusFilter === 'all' || r.status === statusFilter);
+  const pendingStudents = (studentRequests || []).filter(r => r.status === 'pending').length;
+  const pendingSheikhs = (sheikhRequests || []).filter(r => r.status === 'pending').length;
 
   return (
     <div className="registration-manager fade-in" dir="rtl">
       <div className="module-header">
         <div className="header-left">
           <h2>طلبات الالتحاق الجديدة</h2>
-          <span className="count-badge">{(activeTab === 'students' ? (studentRequests || []) : (sheikhRequests || [])).length} طلب معلق</span>
+          <span className="count-badge">{(activeTab === 'students' ? pendingStudents : pendingSheikhs)} طلب معلق</span>
         </div>
+      </div>
+
+      {/* Status Filter */}
+      <div className="status-filter-bar">
+        <button className={statusFilter === 'pending' ? 'filter-btn active-pending' : 'filter-btn'} onClick={() => setStatusFilter('pending')}>⏳ قيد الانتظار</button>
+        <button className={statusFilter === 'approved' ? 'filter-btn active-approved' : 'filter-btn'} onClick={() => setStatusFilter('approved')}>✅ مقبولين</button>
+        <button className={statusFilter === 'rejected' ? 'filter-btn active-rejected' : 'filter-btn'} onClick={() => setStatusFilter('rejected')}>❌ مرفوضين</button>
+        <button className={statusFilter === 'all' ? 'filter-btn active-all' : 'filter-btn'} onClick={() => setStatusFilter('all')}>📋 الكل</button>
       </div>
 
       <div className="finance-tabs">
@@ -135,8 +176,8 @@ const RegistrationManager = () => {
       <div className="tab-container">
         {activeTab === 'students' && (
           <div className="requests-grid">
-            {studentRequests.map(req => (
-              <div key={req._id} className="request-card">
+            {filteredStudents.map(req => (
+              <div key={req._id} className={`request-card ${req.status !== 'pending' ? 'card-' + req.status : ''}`}>
                 <div className="request-card-header">
                   <div className="user-avatar">
                     <User size={30} />
@@ -145,59 +186,58 @@ const RegistrationManager = () => {
                     <h3>{req.name}</h3>
                     <span className="request-date"><Calendar size={14} /> {req.requestDate}</span>
                   </div>
-                  <div className="status-tag pending">انتظار</div>
+                  {getStatusBadge(req.status)}
                   <div className="type-tag new-student">طالب جديد</div>
                 </div>
 
                 <div className="request-card-body">
-                  <div className="info-item">
-                    <Phone size={16} />
-                    <span>هاتف الطالب: <strong>{req.phone || '---'}</strong></span>
-                  </div>
-                  <div className="info-item">
-                    <Phone size={16} />
-                    <span>هاتف ولي الأمر: <strong>{req.parentPhone}</strong></span>
-                  </div>
-                  <div className="info-item">
-                    <BookOpen size={16} />
-                    <span>المستوى: <strong>{req.level}</strong></span>
-                  </div>
-                  <div className="info-item">
-                    <Shield size={16} />
-                    <span>الرقم القومي: <strong>{req.nationalId}</strong></span>
-                  </div>
+                  <div className="info-item"><Phone size={16} /><span>هاتف الطالب: <strong>{req.phone || '---'}</strong></span></div>
+                  <div className="info-item"><Phone size={16} /><span>هاتف ولي الأمر: <strong>{req.parentPhone}</strong></span></div>
+                  <div className="info-item"><BookOpen size={16} /><span>المستوى: <strong>{req.level}</strong></span></div>
+                  <div className="info-item"><Shield size={16} /><span>الرقم القومي: <strong>{req.nationalId}</strong></span></div>
                   {req.socialStatus && (
-                    <div className="info-item">
-                      <span className="social-badge">{req.socialStatus}</span>
+                    <div className="info-item"><span className="social-badge">{req.socialStatus}</span></div>
+                  )}
+                  {req.status === 'approved' && (
+                    <div className="approval-info">
+                      <div className="approval-row">📚 الفصل: <strong>{req.approvedClassName}</strong></div>
+                      <div className="approval-row">🧑‍🏫 المحفظ: <strong>{req.approvedSheikh}</strong></div>
+                      {req.adminNotes && <div className="approval-row">📝 {req.adminNotes}</div>}
                     </div>
+                  )}
+                  {req.status === 'rejected' && req.rejectionReason && (
+                    <div className="rejection-info">❌ سبب الرفض: {req.rejectionReason}</div>
                   )}
                 </div>
 
                 <div className="request-card-actions">
-                  <button className="approve-btn" onClick={() => {
-                    setSelectedStudentRequest(req);
-                    setShowStudentApproveModal(true);
-                  }}>
-                    <UserCheck size={18} />
-                    قبول وتسكين
-                  </button>
-                  <button className="reject-btn" onClick={() => handleReject(req._id, 'student')}>
-                    <UserX size={18} />
-                    رفض وحذف
-                  </button>
+                  {req.status === 'pending' && (
+                    <>
+                      <button className="approve-btn" onClick={() => {
+                        setSelectedStudentRequest(req);
+                        setShowStudentApproveModal(true);
+                      }}><UserCheck size={18} /> قبول وتسكين</button>
+                      <button className="reject-btn" onClick={() => handleReject(req._id, 'student')}><UserX size={18} /> رفض</button>
+                    </>
+                  )}
+                  {req.status !== 'pending' && (
+                    <button className="delete-btn" onClick={() => handleDelete(req._id, 'student')}>
+                      <Trash2 size={16} /> حذف الطلب
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
-            {studentRequests.length === 0 && (
-              <div className="no-requests"> لا توجد طلبات طلاب جديدة حالياً </div>
+            {filteredStudents.length === 0 && (
+              <div className="no-requests">لا توجد طلبات في هذه الحالة حالياً</div>
             )}
           </div>
         )}
 
         {activeTab === 'sheikhs' && (
           <div className="requests-grid">
-            {sheikhRequests.map(req => (
-              <div key={req._id} className="request-card">
+            {filteredSheikhs.map(req => (
+              <div key={req._id} className={`request-card ${req.status !== 'pending' ? 'card-' + req.status : ''}`}>
                 <div className="request-card-header">
                   <div className="user-avatar" style={{ background: '#fef5e7', color: '#d35400' }}>
                     <User size={30} />
@@ -206,46 +246,46 @@ const RegistrationManager = () => {
                     <h3>{req.name}</h3>
                     <span className="request-date"><Calendar size={14} /> {req.requestDate}</span>
                   </div>
-                  <div className="status-tag pending">انتظار</div>
+                  {getStatusBadge(req.status)}
                   <div className="type-tag new-student" style={{ background: '#fef5e7', color: '#d35400', borderColor: '#d35400' }}>محفظ جديد</div>
                 </div>
 
                 <div className="request-card-body">
-                  <div className="info-item">
-                    <Phone size={16} />
-                    <span>هاتف المحفظ: <strong>{req.phone}</strong></span>
-                  </div>
-                  <div className="info-item">
-                    <BookOpen size={16} />
-                    <span>المؤهل: <strong>{req.qualification}</strong></span>
-                  </div>
-                  <div className="info-item">
-                    <Shield size={16} />
-                    <span>الرقم القومي: <strong>{req.nationalId}</strong></span>
-                  </div>
-                  <div className="info-item full-width">
-                    <Building size={16} />
-                    <span>العنوان: <strong>{req.address}</strong></span>
-                  </div>
+                  <div className="info-item"><Phone size={16} /><span>هاتف المحفظ: <strong>{req.phone}</strong></span></div>
+                  <div className="info-item"><BookOpen size={16} /><span>المؤهل: <strong>{req.qualification}</strong></span></div>
+                  <div className="info-item"><Shield size={16} /><span>الرقم القومي: <strong>{req.nationalId}</strong></span></div>
+                  <div className="info-item full-width"><Building size={16} /><span>العنوان: <strong>{req.address}</strong></span></div>
+                  {req.status === 'approved' && req.approvedClasses && req.approvedClasses.length > 0 && (
+                    <div className="approval-info">
+                      <div className="approval-row">📚 الفصول المسندة: <strong>{req.approvedClasses.join('، ')}</strong></div>
+                      {req.adminNotes && <div className="approval-row">📝 {req.adminNotes}</div>}
+                    </div>
+                  )}
+                  {req.status === 'rejected' && req.rejectionReason && (
+                    <div className="rejection-info">❌ سبب الرفض: {req.rejectionReason}</div>
+                  )}
                 </div>
 
                 <div className="request-card-actions">
-                  <button className="approve-btn sheikh-approve" onClick={() => {
-                    setSelectedSheikhRequest(req);
-                    setShowSheikhApproveModal(true);
-                  }}>
-                    <UserCheck size={18} />
-                    موافقة و تعيين
-                  </button>
-                  <button className="reject-btn" onClick={() => handleReject(req._id, 'sheikh')}>
-                    <UserX size={18} />
-                    رفض وحذف
-                  </button>
+                  {req.status === 'pending' && (
+                    <>
+                      <button className="approve-btn sheikh-approve" onClick={() => {
+                        setSelectedSheikhRequest(req);
+                        setShowSheikhApproveModal(true);
+                      }}><UserCheck size={18} /> موافقة و تعيين</button>
+                      <button className="reject-btn" onClick={() => handleReject(req._id, 'sheikh')}><UserX size={18} /> رفض</button>
+                    </>
+                  )}
+                  {req.status !== 'pending' && (
+                    <button className="delete-btn" onClick={() => handleDelete(req._id, 'sheikh')}>
+                      <Trash2 size={16} /> حذف الطلب
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
-            {sheikhRequests.length === 0 && (
-              <div className="no-requests"> لا توجد طلبات محفظين جديدة حالياً </div>
+            {filteredSheikhs.length === 0 && (
+              <div className="no-requests">لا توجد طلبات في هذه الحالة حالياً</div>
             )}
           </div>
         )}
@@ -283,6 +323,17 @@ const RegistrationManager = () => {
                   <option value="">-- اختر المحفظ --</option>
                   {sheikhs.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
                 </select>
+              </div>
+
+              <div className="approval-input-group">
+                <label>ملاحظات الإدارة (تظهر للطالب)</label>
+                <textarea
+                  placeholder="ملاحظات اختيارية..."
+                  value={studentApprovalData.adminNotes || ''}
+                  onChange={e => setStudentApprovalData({ ...studentApprovalData, adminNotes: e.target.value })}
+                  rows={2}
+                  style={{ padding: '10px', borderRadius: '10px', border: '2px solid #ecf0f1', fontFamily: 'inherit' }}
+                />
               </div>
 
               <div className="modal-actions">
@@ -334,6 +385,41 @@ const RegistrationManager = () => {
                   تعيين وإسناد
                 </button>
                 <button className="close-modal-btn" onClick={() => setShowSheikhApproveModal(false)}>إلغاء</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {showRejectModal && rejectTarget && (
+        <div className="modal-overlay no-print">
+          <div className="modal-content fade-in">
+            <div className="modal-header">
+              <h3 style={{ color: '#e74c3c' }}>رفض الطلب</h3>
+              <button className="close-btn" onClick={() => setShowRejectModal(false)}><X size={24} /></button>
+            </div>
+            <div className="approval-form-body">
+              <p className="approval-tip">يمكن كتابة سبب الرفض (اختياري) ليظهر للمتقدم:</p>
+              <div className="approval-input-group">
+                <label>سبب الرفض</label>
+                <textarea
+                  rows={3}
+                  placeholder="اختياري: اكتب سبب الرفض هنا..."
+                  value={rejectReason}
+                  onChange={e => setRejectReason(e.target.value)}
+                  style={{ padding: '10px', borderRadius: '10px', border: '2px solid #ecf0f1', fontFamily: 'inherit', resize: 'vertical', fontSize: '0.95rem' }}
+                />
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="confirm-approve-btn"
+                  style={{ background: '#e74c3c' }}
+                  onClick={confirmReject}
+                >
+                  <X size={18} /> تأكيد الرفض
+                </button>
+                <button className="close-modal-btn" onClick={() => setShowRejectModal(false)}>إلغاء</button>
               </div>
             </div>
           </div>
@@ -619,6 +705,96 @@ const RegistrationManager = () => {
           border: none;
           cursor: pointer;
         }
+
+        /* Status Tracking Refinements */
+        .status-filter-bar {
+          display: flex;
+          gap: 12px;
+          margin: 20px 0;
+          overflow-x: auto;
+          padding-bottom: 5px;
+        }
+
+        .filter-btn {
+          padding: 8px 18px;
+          border-radius: 12px;
+          font-weight: 700;
+          border: 2px solid #ecf0f1;
+          background: white;
+          color: #7f8c8d;
+          cursor: pointer;
+          transition: all 0.3s;
+          white-space: nowrap;
+        }
+
+        .active-pending { border-color: #f39c12; color: #f39c12; background: #fef9e7; }
+        .active-approved { border-color: #27ae60; color: #27ae60; background: #e8f5e9; }
+        .active-rejected { border-color: #e74c3c; color: #e74c3c; background: #fdedec; }
+        .active-all { border-color: #34495e; color: #34495e; background: #f4f6f7; }
+
+        .status-tag {
+          position: absolute;
+          left: 0;
+          top: 0;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 800;
+        }
+
+        .status-tag.approved { background: #e8f5e9; color: #27ae60; }
+        .status-tag.rejected { background: #fdedec; color: #e74c3c; }
+        .status-tag.pending { background: #fef9e7; color: #f39c12; }
+
+        .card-approved { border-top-color: #27ae60 !important; }
+        .card-rejected { border-top-color: #e74c3c !important; }
+
+        .approval-info {
+          background: #f0fdf4;
+          padding: 10px 15px;
+          border-radius: 10px;
+          border-right: 4px solid #27ae60;
+          margin-top: 5px;
+          font-size: 0.88rem;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .rejection-info {
+          background: #fef2f2;
+          padding: 10px 15px;
+          border-radius: 10px;
+          border-right: 4px solid #e74c3c;
+          margin-top: 5px;
+          font-size: 0.88rem;
+          color: #c0392b;
+        }
+
+        .delete-btn {
+          grid-column: 1 / -1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px;
+          background: #f8f9fa;
+          color: #7f8c8d;
+          border: 1px solid #eee;
+          border-radius: 10px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+          background: #e74c3c;
+          color: white;
+          border-color: #e74c3c;
+        }
+
+        .approval-row strong { color: #2c3e50; }
+
       `}</style>
     </div>
   );

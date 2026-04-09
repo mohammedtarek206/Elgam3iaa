@@ -7,7 +7,14 @@ const sheikhRequestSchema = new mongoose.Schema({
   phone: String,
   address: String,
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  requestDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
+  requestDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
+  // Filled by admin on approval
+  approvedClasses: { type: [String], default: [] },
+  adminNotes: { type: String, default: '' },
+  rejectionReason: { type: String, default: '' }
 }, { timestamps: true });
+
+sheikhRequestSchema.index({ nationalId: 1 });
+sheikhRequestSchema.index({ status: 1 });
 
 module.exports = mongoose.models.SheikhRequest || mongoose.model('SheikhRequest', sheikhRequestSchema);
