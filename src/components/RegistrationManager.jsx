@@ -26,6 +26,11 @@ const RegistrationManager = () => {
     assignedClasses: []
   });
 
+  // Rejection states
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState(null); // {id, type}
+  const [rejectReason, setRejectReason] = useState('');
+
   useEffect(() => {
     fetchData();
   }, []);
