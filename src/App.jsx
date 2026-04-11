@@ -13,7 +13,9 @@ import {
   Plus,
   Printer,
   UserPlus,
-  Briefcase
+  Briefcase,
+  Ticket,
+  MessageSquare
 } from 'lucide-react';
 
 const menuItems = [
@@ -28,6 +30,7 @@ const menuItems = [
   { id: 'employees', label: 'إدارة الموظفين', icon: UserRound, color: '#16a085' },
   { id: 'registration', label: 'طلبات الالتحاق', icon: UserPlus, color: '#f39c12' },
   { id: 'job-applications', label: 'طلبات التوظيف', icon: Briefcase, color: '#34495e' },
+  { id: 'tickets', label: 'الشكاوي والمقترحات', icon: MessageSquare, color: '#e67e22' },
   { id: 'reports', label: 'التقارير', icon: FileText, color: '#7f8c8d' },
 ];
 
@@ -47,6 +50,9 @@ import SheikhRegistration from './components/SheikhRegistration';
 import JobApplicationForm from './components/JobApplicationForm';
 import JobApplicationsManager from './components/JobApplicationsManager';
 import EmployeeManager from './components/EmployeeManager';
+import TicketSubmission from './components/TicketSubmission';
+import TicketTracking from './components/TicketTracking';
+import TicketManager from './components/TicketManager';
 
 import Login from './components/Login';
 import { LogOut, AlertTriangle, RefreshCcw } from 'lucide-react';
@@ -85,6 +91,8 @@ function App() {
   const [isParentFollowup, setIsParentFollowup] = useState(false);
   const [isSheikhRegistering, setIsSheikhRegistering] = useState(false);
   const [isJobApplying, setIsJobApplying] = useState(false);
+  const [isTicketSubmitting, setIsTicketSubmitting] = useState(false);
+  const [isTicketTracking, setIsTicketTracking] = useState(false);
   
   // Listen for registration event from Login
   React.useEffect(() => {
@@ -92,15 +100,23 @@ function App() {
     const handleOpenParent = () => setIsParentFollowup(true);
     const handleOpenSheikh = () => setIsSheikhRegistering(true);
     const handleOpenJob = () => setIsJobApplying(true);
+    const handleOpenTicketSub = () => setIsTicketSubmitting(true);
+    const handleOpenTicketTrack = () => setIsTicketTracking(true);
+
     window.addEventListener('open-registration', handleOpenReg);
     window.addEventListener('open-parent-followup', handleOpenParent);
     window.addEventListener('open-sheikh-registration', handleOpenSheikh);
     window.addEventListener('open-job-application', handleOpenJob);
+    window.addEventListener('open-ticket-submission', handleOpenTicketSub);
+    window.addEventListener('open-ticket-tracking', handleOpenTicketTrack);
+
     return () => {
       window.removeEventListener('open-registration', handleOpenReg);
       window.removeEventListener('open-parent-followup', handleOpenParent);
       window.removeEventListener('open-sheikh-registration', handleOpenSheikh);
       window.removeEventListener('open-job-application', handleOpenJob);
+      window.removeEventListener('open-ticket-submission', handleOpenTicketSub);
+      window.removeEventListener('open-ticket-tracking', handleOpenTicketTrack);
     };
   }, []);
   const [user, setUser] = useState(() => {
@@ -130,6 +146,12 @@ function App() {
     if (isJobApplying) {
       return <JobApplicationForm onBack={() => setIsJobApplying(false)} />;
     }
+    if (isTicketSubmitting) {
+      return <TicketSubmission onBack={() => setIsTicketSubmitting(false)} />;
+    }
+    if (isTicketTracking) {
+      return <TicketTracking onBack={() => setIsTicketTracking(false)} />;
+    }
     return (
       <div className="login-page-wrapper" dir="rtl">
         <main className="content">
@@ -152,7 +174,7 @@ function App() {
     if (user.role === 'admin') {
       rows.push(filteredItems.slice(0, 4));
       rows.push(filteredItems.slice(4, 8));
-      rows.push(filteredItems.slice(8, 12)); 
+      rows.push(filteredItems.slice(8, 13)); 
     } else {
       // For manager, simpler 3-2 layout
       rows.push(filteredItems.slice(0, 3));
@@ -227,6 +249,7 @@ function App() {
           {currentPage === 'registration' && <RegistrationManager />}
           {currentPage === 'job-applications' && <JobApplicationsManager />}
           {currentPage === 'employees' && <EmployeeManager />}
+          {currentPage === 'tickets' && <TicketManager />}
         </ErrorBoundary>
       </main>
 

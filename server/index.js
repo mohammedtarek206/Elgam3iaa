@@ -33,6 +33,7 @@ const SheikhRequest = require('./models/SheikhRequest');
 const Donor = require('./models/Donor');
 const JobApplication = require('./models/JobApplication');
 const Employee = require('./models/Employee');
+const Ticket = require('./models/Ticket');
 
 const app = express();
 app.use(cors());
@@ -734,6 +735,83 @@ app.delete('/api/admin/job-applications/:id', [auth, isAdmin], async (req, res) 
     res.send({ message: 'تم حذف الطلب' });
   } catch (err) {
     res.status(500).send({ message: err.message });
+  }
+});
+
+// --- Ticket System Routes (New) ---
+app.post('/api/public/tickets', async (req, res) => {
+  try {
+    const { email, type, title, description } = req.body;
+    if (!email || !type || !title || !description) {
+      return res.status(400).send({ message: 'يرجى ملء جميع الحقول الإجبارية' });
+    }
+
+    // Generate unique Ticket ID
+    let ticketId;
+    let isUnique = false;
+    while (!isUnique) {
+      ticketId = `T-${Math.floor(100000 + Math.random() * 900000)}`;
+      const existing = await Ticket.findOne({ ticketId });
+      if (!existing) isUnique = true;
+    }
+
+    const ticket = new Ticket({ ...req.body, ticketId });
+    await ticket.save();
+    res.status(201).send({ 
+      message: 'تم استلام طلبك بنجاح وجاري مراجعته',
+      ticketId,
+      status: 'Pending'
+    });
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.get('/api/public/tickets/:ticketId', async (req, res) => {
+  try {
+    const ticket = await Ticket.findOne({ ticketId: req.params.ticketId });
+    if (!ticket) {
+      return res.status(404).send({ message: 'عذراً، لا يوجد تذكرة بهذا الرقم.' });
+    }
+    res.send(ticket);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.get('/api/admin/tickets', [auth, isAdmin], async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = status && status !== 'All' ? { status } : {};
+    const tickets = await Ticket.find(filter).sort({ createdAt: -1 });
+    res.send(tickets);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.get('/api/admin/tickets/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).send({ message: 'التذكرة غير موجودة' });
+    res.send(ticket);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
+
+app.put('/api/admin/tickets/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const { reply, status } = req.body;
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      { reply, status },
+      { new: true }
+    );
+    if (!ticket) return res.status(404).send({ message: 'التذكرة غير موجودة' });
+    res.send({ message: 'تم تحديث التذكرة بنجاح', ticket });
+  } catch (err) {
+    res.status(400).send({ message: err.message });
   }
 });
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, User, LogIn, AlertCircle, UserPlus, Users, GraduationCap, Briefcase } from 'lucide-react';
+import { Lock, User, LogIn, AlertCircle, UserPlus, Users, GraduationCap, Briefcase, Ticket, Search } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -131,6 +131,26 @@ const Login = ({ onLogin }) => {
                 <div className="ql-text">
                   <span className="ql-title">طلب وظيفة</span>
                   <span className="ql-desc">فرصة عمل</span>
+                </div>
+              </button>
+
+              <button type="button" className="quick-link-card ticket-link" onClick={() => window.dispatchEvent(new CustomEvent('open-ticket-submission'))}>
+                <div className="ql-icon-wrapper">
+                  <Ticket className="ql-icon" size={24} />
+                </div>
+                <div className="ql-text">
+                  <span className="ql-title">قدم شكوى</span>
+                  <span className="ql-desc">أو مقترح</span>
+                </div>
+              </button>
+
+              <button type="button" className="quick-link-card track-link" onClick={() => window.dispatchEvent(new CustomEvent('open-ticket-tracking'))}>
+                <div className="ql-icon-wrapper">
+                  <Search className="ql-icon" size={24} />
+                </div>
+                <div className="ql-text">
+                  <span className="ql-title">متابعة شكوى</span>
+                  <span className="ql-desc">برقم التذكرة</span>
                 </div>
               </button>
             </div>
@@ -325,7 +345,7 @@ const Login = ({ onLogin }) => {
 
         .quick-links-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(3, 1fr);
           gap: 12px;
         }
 
@@ -408,13 +428,27 @@ const Login = ({ onLogin }) => {
           border-color: #fed7aa;
         }
 
-        .job-link .ql-icon-wrapper {
-          background: #f0f9ff;
-          color: #0284c7; /* or maybe a bluish/grayish tone: #3b82f6 */
-        }
         .job-link:hover {
           background: #eff6ff;
           border-color: #bfdbfe;
+        }
+
+        .ticket-link .ql-icon-wrapper {
+          background: #fff1f2;
+          color: #e11d48;
+        }
+        .ticket-link:hover {
+          background: #fff5f5;
+          border-color: #fecdd3;
+        }
+
+        .track-link .ql-icon-wrapper {
+          background: #f0f9ff;
+          color: #0369a1;
+        }
+        .track-link:hover {
+          background: #f0f9ff;
+          border-color: #bae6fd;
         }
 
         @media (max-width: 600px) {
