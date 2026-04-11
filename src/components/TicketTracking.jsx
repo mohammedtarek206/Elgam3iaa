@@ -23,7 +23,7 @@ const TicketTracking = ({ onBack }) => {
       if (res.ok) {
         setTicket(data);
       } else {
-        setError(data.message || 'لم يتم العثور على تذكرة بهذا الرقم');
+        setError(data.message || 'لم يتم العثور على طلب بهذا الرقم');
       }
     } catch (err) {
       setError('تعذر الاتصال بالسيرفر، يرجى المحاولة لاحقاً');
@@ -49,15 +49,15 @@ const TicketTracking = ({ onBack }) => {
           <div className="header-icon search-icon">
             <Search size={40} />
           </div>
-          <h1>متابعة تذكرة</h1>
-          <p>أدخل رقم التذكرة الخاص بك (مثال: T-123456) لمتابعة حالة الطلب والردود.</p>
+          <h1>متابعة الشكوى والاقتراح</h1>
+          <p>أدخل الكود الخاص بك (رقم الطلب) لمتابعة حالة طلبك</p>
 
           <form onSubmit={handleSearch} className="search-form">
             <div className="input-group">
               <input 
                 required
                 type="text" 
-                placeholder="أدخل رقم التذكرة"
+                placeholder="مثال: T-123456"
                 value={ticketId}
                 onChange={e => setTicketId(e.target.value)}
               />
@@ -79,7 +79,7 @@ const TicketTracking = ({ onBack }) => {
           <div className="detail-header">
             <div className="detail-title-box">
               <Ticket size={24} color="#3498db" />
-              <h3>بيانات التذكرة #{ticket.ticketId}</h3>
+              <h3>بيانات الطلب #{ticket.ticketId}</h3>
             </div>
             {getStatusBadge(ticket.status)}
           </div>

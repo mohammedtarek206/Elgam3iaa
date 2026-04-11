@@ -139,8 +139,8 @@ const Login = ({ onLogin }) => {
                   <Ticket className="ql-icon" size={24} />
                 </div>
                 <div className="ql-text">
-                  <span className="ql-title">قدم شكوى</span>
-                  <span className="ql-desc">أو مقترح</span>
+                  <span className="ql-title">الشكاوي والمقترحات</span>
+                  <span className="ql-desc">يسعدنا تواصلكم</span>
                 </div>
               </button>
 
@@ -150,7 +150,7 @@ const Login = ({ onLogin }) => {
                 </div>
                 <div className="ql-text">
                   <span className="ql-title">متابعة شكوى</span>
-                  <span className="ql-desc">برقم التذكرة</span>
+                  <span className="ql-desc">برقم الطلب</span>
                 </div>
               </button>
             </div>

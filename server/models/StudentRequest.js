@@ -13,7 +13,8 @@ const studentRequestSchema = new mongoose.Schema({
   approvedClassName: { type: String, default: '' },
   approvedSheikh: { type: String, default: '' },
   adminNotes: { type: String, default: '' },
-  rejectionReason: { type: String, default: '' }
+  rejectionReason: { type: String, default: '' },
+  agreedToTerms: { type: Boolean, required: true }
 }, { timestamps: true });
 
 studentRequestSchema.index({ nationalId: 1 });

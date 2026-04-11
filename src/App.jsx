@@ -30,7 +30,8 @@ const menuItems = [
   { id: 'employees', label: 'إدارة الموظفين', icon: UserRound, color: '#16a085' },
   { id: 'registration', label: 'طلبات الالتحاق', icon: UserPlus, color: '#f39c12' },
   { id: 'job-applications', label: 'طلبات التوظيف', icon: Briefcase, color: '#34495e' },
-  { id: 'tickets', label: 'الشكاوي والمقترحات', icon: MessageSquare, color: '#e67e22' },
+  { id: 'ticket-submission', label: 'الشكاوي والمقترحات', icon: Ticket, color: '#e67e22' },
+  { id: 'ticket-tracking', label: 'متابعة الشكوى والاقتراح', icon: Search, color: '#e67e22' },
   { id: 'reports', label: 'التقارير', icon: FileText, color: '#7f8c8d' },
 ];
 
@@ -169,36 +170,77 @@ function App() {
     
     const filteredItems = menuItems.filter(item => allowedIds.includes(item.id));
 
-    // Calculate rows dynamically based on filtered list
-    const rows = [];
-    if (user.role === 'admin') {
-      rows.push(filteredItems.slice(0, 4));
-      rows.push(filteredItems.slice(4, 8));
-      rows.push(filteredItems.slice(8, 13)); 
-    } else {
-      // For manager, simpler 3-2 layout
-      rows.push(filteredItems.slice(0, 3));
-      rows.push(filteredItems.slice(3, 5));
-    }
-
-    return (
-      <div className="pyramid-container">
-        {rows.map((row, idx) => (
-          <div key={idx} className={`menu-row row-${idx + 1}`}>
-            {row.map((item) => (
-              <button 
-                key={item.id} 
-                className="menu-card fade-in" 
-                onClick={() => setCurrentPage(item.id)}
-              >
-                <div className="icon-wrapper" style={{ color: item.color }}>
-                  <item.icon size={56} />
-                </div>
+    if (user.role !== 'admin') {
+      // Simple grid for managers
+      return (
+        <div className="pyramid-container">
+          <div className="menu-row">
+            {filteredItems.map(item => (
+              <button key={item.id} className="menu-card" onClick={() => setCurrentPage(item.id)}>
+                <div className="icon-wrapper" style={{ color: item.color }}><item.icon size={48} /></div>
                 <span className="menu-label">{item.label}</span>
               </button>
             ))}
           </div>
-        ))}
+        </div>
+      );
+    }
+
+    // Role == admin: 6 left, 6 right, others bottom
+    const leftItems = filteredItems.slice(0, 6);
+    const rightItems = filteredItems.slice(6, 12);
+    const bottomItems = filteredItems.slice(12);
+
+    return (
+      <div className="orbit-wrapper fade-in">
+        <div className="orbit-main-grid">
+          {/* Left Column */}
+          <div className="orbit-side-grid left-side">
+            {leftItems.map(item => (
+              <button key={item.id} className="orbit-card" onClick={() => setCurrentPage(item.id)}>
+                <div className="orbit-icon-box" style={{ color: item.color }}>
+                  <item.icon size={36} />
+                </div>
+                <span className="orbit-label">{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Center Column: Logo */}
+          <div className="orbit-center">
+            <div className="logo-glow-wrapper">
+              <img src="/shariaa_logo.png" alt="Logo" className="orbit-hero-logo" />
+              <div className="logo-text-overlay">
+                <h3>الجمعية الشرعية</h3>
+                <p>مكتب تحفيظ كفر طلا</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="orbit-side-grid right-side">
+            {rightItems.map(item => (
+              <button key={item.id} className="orbit-card" onClick={() => setCurrentPage(item.id)}>
+                <div className="orbit-icon-box" style={{ color: item.color }}>
+                  <item.icon size={36} />
+                </div>
+                <span className="orbit-label">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="orbit-bottom-row">
+          {bottomItems.map(item => (
+            <button key={item.id} className="orbit-card secondary" onClick={() => setCurrentPage(item.id)}>
+              <div className="orbit-icon-box" style={{ color: item.color }}>
+                <item.icon size={36} />
+              </div>
+              <span className="orbit-label">{item.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     );
   };
@@ -226,11 +268,7 @@ function App() {
       <main className="content">
         <ErrorBoundary>
           {currentPage === 'home' ? (
-            <div className="welcome-section">
-              <img src="/shariaa_logo.png" alt="الجمعية الشرعية" className="home-hero-logo" />
-              <h2>الجمعية الشرعية كفر طلا</h2>
-              <p>مكتب تحفيظ القران الكريم</p>
-            </div>
+            null
           ) : (
             <button className="back-btn" onClick={() => setCurrentPage('home')}>← العودة للرئيسية</button>
           )}
@@ -348,69 +386,160 @@ function App() {
           filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
         }
 
-        .pyramid-container {
-          display: flex;
-          flex-direction: column;
-          gap: 32px;
-          align-items: center;
-          padding: 20px 0;
-        }
-
-        .menu-row {
-          display: flex;
-          gap: 24px;
-          justify-content: center;
+        .orbit-wrapper {
           width: 100%;
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 40px;
         }
 
-        .menu-card {
-          width: 220px;
-          padding: 32px 16px;
-          border-radius: var(--radius);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        .orbit-main-grid {
+          display: grid;
+          grid-template-columns: 1fr 1.2fr 1fr;
+          gap: 30px;
+          align-items: center;
+        }
+
+        .orbit-side-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px;
+        }
+
+        .orbit-center {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 16px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          border: 1px solid rgba(255, 255, 255, 0.4);
-          backdrop-filter: blur(12px);
-          background: rgba(255, 255, 255, 0.6);
+          justify-content: center;
+          position: relative;
         }
 
-        .home-hero-logo {
-          width: 180px;
-          height: 180px;
+        .logo-glow-wrapper {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+
+        .logo-glow-wrapper::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(39, 174, 96, 0.15) 0%, transparent 70%);
+          z-index: -1;
+          animation: logoPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes logoPulse {
+          0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+          50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+        }
+
+        .orbit-hero-logo {
+          width: 250px;
+          height: 250px;
           object-fit: contain;
+          filter: drop-shadow(0 15px 30px rgba(0,0,0,0.15));
           margin-bottom: 20px;
-          filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
-          animation: logoFloat 3s ease-in-out infinite;
         }
 
-        @keyframes logoFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
+        .logo-text-overlay h3 {
+          font-size: 1.8rem;
+          color: var(--primary);
+          margin: 0;
+          font-weight: 800;
         }
 
-        .icon-wrapper {
-          width: 90px;
-          height: 90px;
+        .logo-text-overlay p {
+          color: var(--secondary);
+          font-weight: 600;
+          margin: 5px 0 0;
+        }
+
+        .orbit-card {
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          padding: 24px 15px;
           border-radius: 20px;
           display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          cursor: pointer;
+        }
+
+        .orbit-card:hover {
+          transform: translateY(-8px) scale(1.02);
+          background: white;
+          box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+          border-color: var(--accent);
+        }
+
+        .orbit-icon-box {
+          width: 64px;
+          height: 64px;
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: 16px;
+          display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: inset 0 2px 4px rgba(255,255,255,0.8);
           transition: transform 0.3s ease;
         }
 
-        .menu-card:hover .icon-wrapper {
-          transform: scale(1.1);
+        .orbit-card:hover .orbit-icon-box {
+          transform: rotate(5deg) scale(1.1);
         }
 
-        .menu-label {
-          font-size: 1.25rem;
+        .orbit-label {
+          font-size: 1rem;
           font-weight: 700;
-          color: var(--primary);
+          color: #2c3e50;
           text-align: center;
+          line-height: 1.3;
+        }
+
+        .orbit-bottom-row {
+          display: flex;
+          justify-content: center;
+          gap: 24px;
+          margin-top: 10px;
+        }
+
+        .orbit-card.secondary {
+          width: 200px;
+          padding: 20px;
+        }
+
+        @media (max-width: 1100px) {
+          .orbit-main-grid {
+            grid-template-columns: 1fr;
+            gap: 40px;
+          }
+          .orbit-side-grid {
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            order: 2;
+          }
+          .orbit-center {
+            order: 1;
+            margin-bottom: 20px;
+          }
+          .orbit-bottom-row {
+            flex-wrap: wrap;
+            order: 3;
+          }
+          .orbit-hero-logo { width: 180px; height: 180px; }
         }
 
         .icon-btn {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Phone, BookOpen, Fingerprint, Send, ArrowRight, Heart, Clock, CheckCircle, XCircle, Search, RefreshCw } from 'lucide-react';
+import TermsModal from './TermsModal';
 
 const API_URL = '/api';
 
@@ -230,6 +231,8 @@ const StudentRegistration = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [submittedNationalId, setSubmittedNationalId] = useState('');
   const [showStatusCheck, setShowStatusCheck] = useState(false);
+  const [showTerms, setShowTerms] = useState(true);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -238,7 +241,7 @@ const StudentRegistration = ({ onBack }) => {
       const res = await fetch(`${API_URL}/public/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, agreedToTerms })
       });
       if (res.ok) {
         setSubmittedNationalId(formData.nationalId);
@@ -265,6 +268,14 @@ const StudentRegistration = ({ onBack }) => {
 
   return (
     <div className="registration-container fade-in" dir="rtl">
+      <TermsModal 
+        isOpen={showTerms} 
+        onAccept={() => {
+          setShowTerms(false);
+          setAgreedToTerms(true);
+        }}
+        onCancel={onBack}
+      />
       <div className="registration-card">
         <div className="reg-header">
           <img src="/shariaa_logo.png" alt="الجمعية الشرعية" className="reg-logo" />

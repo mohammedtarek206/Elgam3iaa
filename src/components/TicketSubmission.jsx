@@ -57,7 +57,7 @@ const TicketSubmission = ({ onBack }) => {
           
           <div className="ticket-result-details">
             <div className="result-row">
-              <span className="res-label">رقم التذكرة:</span>
+              <span className="res-label">رقم الطلب:</span>
               <span className="res-value ticket-id-highlight">{result.ticketId}</span>
             </div>
             <div className="result-row">
@@ -68,7 +68,7 @@ const TicketSubmission = ({ onBack }) => {
 
           <div className="instruction-box">
             <AlertCircle size={20} />
-            <p>يرجى الاحتفاظ برقم التذكرة لمتابعة حالة طلبك في أي وقت.</p>
+            <p>يرجى الاحتفاظ برقم الطلب لمتابعة حالة طلبك في أي وقت.</p>
           </div>
 
           <button className="back-home-btn" onClick={onBack}>
@@ -87,8 +87,8 @@ const TicketSubmission = ({ onBack }) => {
           <div className="header-icon">
             <Ticket size={40} />
           </div>
-          <h1>نظام الشكاوى والمقترحات</h1>
-          <p>يسعدنا سماع صوتك.. سواء كان لديك اقتراح لتحسين خدماتنا أو شكوى ترغب في حلها.</p>
+          <h1>الشكاوي والمقترحات</h1>
+          <p>يسعدنا تواصلكم.. سواء كان لديك اقتراح لتحسين خدماتنا أو شكوى ترغب في حلها.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="ticket-form">

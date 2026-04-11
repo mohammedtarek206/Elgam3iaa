@@ -11,7 +11,8 @@ const sheikhRequestSchema = new mongoose.Schema({
   // Filled by admin on approval
   approvedClasses: { type: [String], default: [] },
   adminNotes: { type: String, default: '' },
-  rejectionReason: { type: String, default: '' }
+  rejectionReason: { type: String, default: '' },
+  agreedToTerms: { type: Boolean, default: false }
 }, { timestamps: true });
 
 sheikhRequestSchema.index({ nationalId: 1 });

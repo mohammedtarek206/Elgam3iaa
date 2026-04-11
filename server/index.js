@@ -261,7 +261,11 @@ app.post('/api/admin/bulk-import-students', [auth, isAdmin], async (req, res) =>
 // --- Student Request Routes (New) ---
 app.post('/api/public/register', async (req, res) => {
   try {
-    const { nationalId, phone } = req.body;
+    const { nationalId, phone, agreedToTerms } = req.body;
+
+    if (!agreedToTerms) {
+      return res.status(400).send({ message: 'يجب الموافقة على اللائحة الداخلية للمتابعة' });
+    }
     
     // Normalize and Validate National ID
     const cleanId = normalizeDigits(nationalId);
@@ -479,6 +483,7 @@ app.delete('/api/admin/student-requests/:id', [auth, isAdmin], async (req, res) 
 app.post('/api/public/register-sheikh', async (req, res) => {
   try {
     const { nationalId, phone } = req.body;
+
     const cleanId = normalizeDigits(nationalId);
     const cleanPhone = normalizeDigits(phone);
     
@@ -606,6 +611,7 @@ app.delete('/api/admin/sheikh-requests/:id', [auth, isAdmin], async (req, res) =
 app.post('/api/public/job-application', async (req, res) => {
   try {
     const { nationalId, phone } = req.body;
+
     const cleanId = normalizeDigits(nationalId);
     const cleanPhone = normalizeDigits(phone);
 

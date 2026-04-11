@@ -30,7 +30,8 @@ const JobApplicationSchema = new mongoose.Schema({
   salary: { type: Number, default: 0 },
   joinDate: { type: String, default: '' },
   adminNotes: { type: String, default: '' },
-  rejectionReason: { type: String, default: '' }
+  rejectionReason: { type: String, default: '' },
+  agreedToTerms: { type: Boolean, default: false }
 }, { timestamps: true });
 
 JobApplicationSchema.index({ nationalId: 1 });
