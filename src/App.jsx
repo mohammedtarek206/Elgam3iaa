@@ -30,6 +30,7 @@ const menuItems = [
   { id: 'employees', label: 'إدارة الموظفين', icon: UserRound, color: '#16a085' },
   { id: 'registration', label: 'طلبات الالتحاق', icon: UserPlus, color: '#f39c12' },
   { id: 'job-applications', label: 'طلبات التوظيف', icon: Briefcase, color: '#34495e' },
+  { id: 'tickets', label: 'إدارة الشكاوي والمقترحات', icon: MessageSquare, color: '#e67e22' },
   { id: 'ticket-submission', label: 'الشكاوي والمقترحات', icon: Ticket, color: '#e67e22' },
   { id: 'ticket-tracking', label: 'متابعة الشكوى والاقتراح', icon: Search, color: '#e67e22' },
   { id: 'reports', label: 'التقارير', icon: FileText, color: '#7f8c8d' },
@@ -165,7 +166,7 @@ function App() {
   const renderHome = () => {
     // Filter items based on role
     const allowedIds = user.role === 'admin' 
-      ? menuItems.map(i => i.id) 
+      ? menuItems.map(i => i.id).filter(id => id !== 'ticket-submission' && id !== 'ticket-tracking') 
       : ['students', 'sheikhs', 'attendance', 'finance', 'classes'];
     
     const filteredItems = menuItems.filter(item => allowedIds.includes(item.id));
@@ -288,6 +289,8 @@ function App() {
           {currentPage === 'job-applications' && <JobApplicationsManager />}
           {currentPage === 'employees' && <EmployeeManager />}
           {currentPage === 'tickets' && <TicketManager />}
+          {currentPage === 'ticket-submission' && <TicketSubmission onBack={() => setCurrentPage('home')} />}
+          {currentPage === 'ticket-tracking' && <TicketTracking onBack={() => setCurrentPage('home')} />}
         </ErrorBoundary>
       </main>
 
