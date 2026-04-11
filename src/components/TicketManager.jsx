@@ -12,9 +12,11 @@ import {
   X,
   Calendar,
   Mail,
+  Phone,
   User,
   Layout,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 
 const API_URL = '/api';
@@ -81,6 +83,29 @@ const TicketManager = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('هل أنت متأكد من رغبتك في حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/admin/tickets/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        alert('تم حذف الطلب بنجاح');
+        fetchTickets();
+        if (selectedTicket && selectedTicket._id === id) setSelectedTicket(null);
+      } else {
+        const data = await res.json();
+        alert(data.message || 'حدث خطأ أثناء الحذف');
+      }
+    } catch (err) {
+      alert('تعذر الاتصال بالسيرفر');
+    }
+  };
+
   const openTicket = (ticket) => {
     setSelectedTicket(ticket);
     setReply(ticket.reply || '');
@@ -141,9 +166,10 @@ const TicketManager = () => {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>رقم التذكرة</th>
+                <th>رقم الطلب</th>
                 <th>النوع</th>
                 <th>العنوان</th>
+                <th>رقم الهاتف</th>
                 <th>الحالة</th>
                 <th>التاريخ</th>
                 <th>الإجراءات</th>
@@ -159,11 +185,15 @@ const TicketManager = () => {
                     </span>
                   </td>
                   <td className="ticket-title-cell">{ticket.title}</td>
+                  <td>{ticket.phone}</td>
                   <td>{getStatusBadge(ticket.status)}</td>
                   <td>{new Date(ticket.createdAt).toLocaleDateString('ar-EG')}</td>
                   <td>
                     <button className="view-ticket-btn" onClick={() => openTicket(ticket)}>
                       <Eye size={18} /> عرض وتحديث
+                    </button>
+                    <button className="delete-ticket-btn" onClick={() => handleDelete(ticket._id)}>
+                      <Trash2 size={18} /> حذف
                     </button>
                   </td>
                 </tr>
@@ -177,12 +207,17 @@ const TicketManager = () => {
       {selectedTicket && (
         <div className="modal-overlay">
           <div className="ticket-modal">
-            <div className="modal-header">
+             <div className="modal-header">
               <div className="modal-title">
                 <Ticket size={24} />
                 <h3>تفاصيل التذكرة #{selectedTicket.ticketId}</h3>
               </div>
-              <button className="close-modal" onClick={() => setSelectedTicket(null)}><X size={24} /></button>
+              <div className="modal-header-actions">
+                <button className="delete-ticket-btn text" onClick={() => handleDelete(selectedTicket._id)}>
+                  <Trash2 size={20} /> حذف الطلب
+                </button>
+                <button className="close-modal" onClick={() => setSelectedTicket(null)}><X size={24} /></button>
+              </div>
             </div>
 
             <div className="modal-body">
@@ -193,8 +228,8 @@ const TicketManager = () => {
                     <span>{selectedTicket.name || 'غير مذكور'}</span>
                   </div>
                   <div className="info-item">
-                    <label><Mail size={16} /> البريد الإلكتروني</label>
-                    <span className="email-span">{selectedTicket.email}</span>
+                    <label><Phone size={16} /> رقم الهاتف</label>
+                    <span className="phone-span">{selectedTicket.phone}</span>
                   </div>
                   <div className="info-item">
                     <label><Layout size={16} /> النوع</label>
@@ -225,7 +260,7 @@ const TicketManager = () => {
                       <button 
                         key={s}
                         type="button" 
-                        className={`status-opt-btn ${s} ${statusUpdate === s ? 'active' : ''}`}
+                        className={`status-opt-btn ${s.replace(/\s+/g, '-')} ${statusUpdate === s ? 'active' : ''}`}
                         onClick={() => setStatusUpdate(s)}
                       >
                         {s === 'Pending' ? 'قيد الانتظار' : s === 'In Progress' ? 'جاري العمل' : 'تم الحل'}
@@ -508,7 +543,7 @@ const AdminTicketStyles = () => (
       color: #334155;
     }
 
-    .email-span {
+    .phone-span {
       color: #2563eb !important;
       text-decoration: underline;
     }
@@ -554,8 +589,45 @@ const AdminTicketStyles = () => (
     }
 
     .status-opt-btn.Pending.active { border-color: #d97706; background: #fffbeb; color: #d97706; }
-    .status-opt-btn.In\ Progress.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+    .status-opt-btn.In-Progress.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
     .status-opt-btn.Resolved.active { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }
+
+    .delete-ticket-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #fee2e2;
+      color: #dc2626;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 5px;
+    }
+
+    .delete-ticket-btn:hover {
+      background: #dc2626;
+      color: white;
+    }
+
+    .delete-ticket-btn.text {
+      background: none;
+      margin: 0;
+      padding: 8px;
+    }
+
+    .delete-ticket-btn.text:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
 
     .admin-action-form textarea {
       width: 100%;

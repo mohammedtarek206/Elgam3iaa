@@ -747,8 +747,8 @@ app.delete('/api/admin/job-applications/:id', [auth, isAdmin], async (req, res) 
 // --- Ticket System Routes (New) ---
 app.post('/api/public/tickets', async (req, res) => {
   try {
-    const { email, type, title, description } = req.body;
-    if (!email || !type || !title || !description) {
+    const { phone, type, title, description } = req.body;
+    if (!phone || !type || !title || !description) {
       return res.status(400).send({ message: 'يرجى ملء جميع الحقول الإجبارية' });
     }
 
@@ -818,6 +818,16 @@ app.put('/api/admin/tickets/:id', [auth, isAdmin], async (req, res) => {
     res.send({ message: 'تم تحديث التذكرة بنجاح', ticket });
   } catch (err) {
     res.status(400).send({ message: err.message });
+  }
+});
+
+app.delete('/api/admin/tickets/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const ticket = await Ticket.findByIdAndDelete(req.params.id);
+    if (!ticket) return res.status(404).send({ message: 'التذكرة غير موجودة' });
+    res.send({ message: 'تم حذف التذكرة بنجاح' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
 });
 

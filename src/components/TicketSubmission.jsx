@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Ticket, Send, ArrowRight, CheckCircle, Mail, MessageSquare, AlertCircle, User, FileText, Layout } from 'lucide-react';
+import { Ticket, Send, ArrowRight, CheckCircle, Mail, MessageSquare, AlertCircle, User, FileText, Layout, Phone } from 'lucide-react';
 
 const API_URL = '/api';
 
 const TicketSubmission = ({ onBack }) => {
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    phone: '',
     type: '',
     title: '',
     description: ''
@@ -18,8 +18,8 @@ const TicketSubmission = ({ onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.type) {
-      setError('الرجاء اختيار نوع الطلب');
+    if (!formData.phone) {
+      setError('الرجاء إدخال رقم الهاتف');
       return;
     }
 
@@ -68,7 +68,7 @@ const TicketSubmission = ({ onBack }) => {
 
           <div className="instruction-box">
             <AlertCircle size={20} />
-            <p>يرجى الاحتفاظ برقم الطلب لمتابعة حالة طلبك في أي وقت.</p>
+            <p>يرجى نسخ وحفظ رقم الطلب للمتابعة به لاحقاً (هام جداً).</p>
           </div>
 
           <button className="back-home-btn" onClick={onBack}>
@@ -111,13 +111,13 @@ const TicketSubmission = ({ onBack }) => {
             </div>
 
             <div className="form-group">
-              <label><Mail size={18} /> البريد الإلكتروني (إجباري)</label>
+              <label><Phone size={18} /> رقم الهاتف (إجباري)</label>
               <input 
                 required 
-                type="email" 
-                placeholder="example@mail.com"
-                value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
+                type="tel" 
+                placeholder="01xxxxxxxxx"
+                value={formData.phone}
+                onChange={e => setFormData({...formData, phone: e.target.value})}
               />
             </div>
           </div>
