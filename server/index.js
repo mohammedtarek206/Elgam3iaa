@@ -63,8 +63,29 @@ const connectDB = async () => {
       maxPoolSize: 10,
     };
 
-    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(process.env.MONGODB_URI, opts).then(async (mongoose) => {
       console.log('✅ Connected to MongoDB Atlas');
+      
+      // One-time migration for Level Names
+      try {
+        const Student = mongoose.model('Student');
+        const StudentRequest = mongoose.model('StudentRequest');
+        
+        await Promise.all([
+          Student.updateMany(
+            { level: { $in: ['تمهيدي', 'نور البيان', 'تمهيدي (نور بيان)'] } },
+            { $set: { level: 'براعم نور البيان' } }
+          ),
+          StudentRequest.updateMany(
+            { level: { $in: ['تمهيدي', 'نور البيان', 'تمهيدي (نور بيان)'] } },
+            { $set: { level: 'براعم نور البيان' } }
+          )
+        ]);
+        console.log('✨ Level migration completed');
+      } catch (err) {
+        console.error('Migration error:', err);
+      }
+
       return mongoose;
     });
   }
@@ -942,9 +963,27 @@ app.post('/api/classes', auth, async (req, res) => {
 
 app.put('/api/classes/:id', auth, async (req, res) => {
   try {
+    const oldClass = await Class.findById(req.params.id);
+    if (!oldClass) return res.status(404).send({ message: 'الفصل غير موجود' });
+
+    const oldName = oldClass.name;
+    const newName = req.body.name;
+
     const cls = await Class.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    if (newName && newName !== oldName) {
+      console.log(`🔄 propagates class name change: ${oldName} -> ${newName}`);
+      await Promise.all([
+        Student.updateMany({ className: oldName }, { $set: { className: newName } }),
+        Student.updateMany({ class: oldName }, { $set: { className: newName, class: newName } }), // handle old 'class' field
+        Sheikh.updateMany({ assignedClasses: oldName }, { $set: { "assignedClasses.$": newName } }),
+        StudentRequest.updateMany({ approvedClassName: oldName }, { $set: { approvedClassName: newName } })
+      ]);
+    }
+
     res.send(cls);
   } catch (err) {
+    console.error('Error updating class:', err);
     res.status(400).send({ message: err.message });
   }
 });

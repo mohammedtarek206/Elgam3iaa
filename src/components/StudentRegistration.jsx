@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Phone, BookOpen, Fingerprint, Send, ArrowRight, Heart, Clock, CheckCircle, XCircle, Search, RefreshCw } from 'lucide-react';
 import TermsModal from './TermsModal';
+import { MEMORIZATION_LEVELS, calculateAgeFromNationalId, getSurahsForLevel } from '../utils/quranConstants';
+
+
 
 const API_URL = '/api';
 
@@ -224,6 +227,7 @@ const StudentRegistration = ({ onBack }) => {
     phone: '',
     parentPhone: '',
     level: '',
+    currentSurah: '',
     socialStatus: '',
     nationalId: ''
   });
@@ -301,18 +305,25 @@ const StudentRegistration = ({ onBack }) => {
               <select
                 required
                 value={formData.level}
-                onChange={e => setFormData({...formData, level: e.target.value})}
+                onChange={e => setFormData({...formData, level: e.target.value, currentSurah: ''})}
               >
                 <option value="">اختر المستوى</option>
-                <option value="تمهيدي">تمهيدي (نور بيان)</option>
-                <option value="جزء عم">جزء عم</option>
-                <option value="جزء تبارك">جزء تبارك</option>
-                <option value="5 أجزاء">5 أجزاء</option>
-                <option value="10 أجزاء">10 أجزاء</option>
-                <option value="نصف القرآن">نصف القرآن</option>
-                <option value="القرآن كاملاً">القرآن كاملاً</option>
+                {MEMORIZATION_LEVELS.map(level => {
+                  if (level === "براعم نور البيان") {
+                    const age = calculateAgeFromNationalId(formData.nationalId);
+                    if (age !== null && age >= 5) return null;
+                    return <option key={level} value={level}>{level}</option>;
+                  }
+                  return <option key={level} value={level}>{level}</option>;
+                })}
               </select>
+              {formData.level === "براعم نور البيان" && (
+                <div style={{ fontSize: '0.8rem', color: '#e67e22', marginTop: '5px', fontWeight: 'bold' }}>
+                  ✨ مخصص للعمر أقل من 5 أعوام
+                </div>
+              )}
             </div>
+
             <div className="input-group">
               <label><Heart size={18} /> الحالة (الاجتماعية)</label>
               <select
@@ -326,6 +337,25 @@ const StudentRegistration = ({ onBack }) => {
                 <option value="غير قادر">غير قادر</option>
               </select>
             </div>
+          </div>
+
+          <div className="input-group">
+            <label><BookOpen size={18} /> السورة الحالية</label>
+            {formData.level === "براعم نور البيان" ? (
+               <div style={{ padding: '12px', background: '#f8f9fa', borderRadius: '10px', color: '#7f8c8d', border: '1px dashed #ddd' }}>
+                 المستوى التمهيدي: لا يتطلب سورة حالية
+               </div>
+            ) : (
+              <select
+                value={formData.currentSurah}
+                onChange={e => setFormData({...formData, currentSurah: e.target.value})}
+              >
+                <option value="">اختر السورة (اختياري)</option>
+                {getSurahsForLevel(formData.level).map((s, idx) => (
+                  <option key={idx} value={s.name}>{s.index}. {s.name}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="input-group">
