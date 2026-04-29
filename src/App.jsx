@@ -172,14 +172,26 @@ function App() {
     const filteredItems = menuItems.filter(item => allowedIds.includes(item.id));
 
     if (user.role !== 'admin') {
-      // Simple grid for managers
+      // Modern grid for regular users
       return (
-        <div className="pyramid-container">
-          <div className="menu-row">
+        <div className="user-dashboard-wrapper fade-in">
+          <div className="user-welcome-banner">
+            <div className="banner-content">
+              <h2>مرحباً بك في لوحة الإدارة</h2>
+              <p>نظام متكامل لإدارة أنشطة الجمعية الشرعية بكفاءة وسهولة</p>
+            </div>
+            <div className="banner-decoration"></div>
+          </div>
+          <div className="user-dashboard-grid">
             {filteredItems.map(item => (
-              <button key={item.id} className="menu-card" onClick={() => setCurrentPage(item.id)}>
-                <div className="icon-wrapper" style={{ color: item.color }}><item.icon size={48} /></div>
-                <span className="menu-label">{item.label}</span>
+              <button key={item.id} className="user-dashboard-card" onClick={() => setCurrentPage(item.id)}>
+                <div className="card-content">
+                  <div className="card-icon-bg" style={{ backgroundColor: `${item.color}15`, color: item.color, boxShadow: `0 8px 20px ${item.color}25` }}>
+                    <item.icon size={42} strokeWidth={1.5} />
+                  </div>
+                  <span className="card-title">{item.label}</span>
+                </div>
+                <div className="card-hover-effect" style={{ backgroundColor: item.color }}></div>
               </button>
             ))}
           </div>
@@ -591,23 +603,153 @@ function App() {
           box-shadow: var(--shadow);
         }
 
+        /* --- User Dashboard Styles --- */
+        .user-dashboard-wrapper {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 40px;
+        }
+
+        .user-welcome-banner {
+          background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%);
+          backdrop-filter: blur(10px);
+          border-radius: 24px;
+          padding: 40px 50px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border: 1px solid rgba(255,255,255,0.5);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .user-welcome-banner::after {
+          content: '';
+          position: absolute;
+          top: -50%;
+          right: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(39, 174, 96, 0.05) 0%, transparent 60%);
+          z-index: 0;
+        }
+
+        .banner-content {
+          position: relative;
+          z-index: 1;
+        }
+
+        .banner-content h2 {
+          font-size: 2.2rem;
+          color: var(--primary);
+          margin-bottom: 10px;
+          font-weight: 800;
+        }
+
+        .banner-content p {
+          font-size: 1.1rem;
+          color: var(--secondary);
+          opacity: 0.8;
+          max-width: 600px;
+        }
+
+        .user-dashboard-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          gap: 25px;
+          padding: 10px;
+        }
+
+        .user-dashboard-card {
+          position: relative;
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255,255,255,0.6);
+          border-radius: 20px;
+          padding: 35px 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          overflow: hidden;
+          cursor: pointer;
+          min-height: 220px;
+        }
+
+        .user-dashboard-card:hover {
+          transform: translateY(-10px);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          background: white;
+        }
+
+        .card-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          position: relative;
+          z-index: 2;
+          width: 100%;
+        }
+
+        .card-icon-bg {
+          width: 80px;
+          height: 80px;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.4s ease;
+        }
+
+        .user-dashboard-card:hover .card-icon-bg {
+          transform: scale(1.1) rotate(5deg);
+        }
+
+        .card-title {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--primary);
+          text-align: center;
+          transition: color 0.3s;
+        }
+
+        .card-hover-effect {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          transform: scaleX(0);
+          transform-origin: right;
+          transition: transform 0.4s ease;
+          z-index: 3;
+        }
+
+        .user-dashboard-card:hover .card-hover-effect {
+          transform: scaleX(1);
+          transform-origin: left;
+        }
+
         @media (max-width: 640px) {
-          .dashboard-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+          .user-dashboard-grid {
+            grid-template-columns: repeat(1, 1fr);
+            gap: 20px;
           }
           
-          .menu-card {
-            padding: 24px 12px;
+          .user-welcome-banner {
+            padding: 30px 20px;
+            text-align: center;
           }
 
-          .icon-wrapper {
-            width: 70px;
-            height: 70px;
-          }
-
-          .menu-label {
-            font-size: 1rem;
+          .banner-content h2 {
+            font-size: 1.6rem;
           }
 
           .main-header h1 {
