@@ -172,7 +172,11 @@ function App() {
     const filteredItems = menuItems.filter(item => allowedIds.includes(item.id));
 
     if (user.role !== 'admin') {
-      // Modern grid for regular users
+      // Pyramid layout for regular users
+      const topRow = filteredItems.slice(0, 1);
+      const middleRow = filteredItems.slice(1, 3);
+      const bottomRow = filteredItems.slice(3, 5);
+
       return (
         <div className="user-dashboard-wrapper fade-in">
           <div className="user-welcome-banner">
@@ -182,18 +186,46 @@ function App() {
             </div>
             <div className="banner-decoration"></div>
           </div>
-          <div className="user-dashboard-grid">
-            {filteredItems.map(item => (
-              <button key={item.id} className="user-dashboard-card" onClick={() => setCurrentPage(item.id)}>
-                <div className="card-content">
-                  <div className="card-icon-bg" style={{ backgroundColor: `${item.color}15`, color: item.color, boxShadow: `0 8px 20px ${item.color}25` }}>
-                    <item.icon size={42} strokeWidth={1.5} />
+          <div className="pyramid-layout">
+            <div className="pyramid-row top-row">
+              {topRow.map(item => (
+                <button key={item.id} className="user-dashboard-card" onClick={() => setCurrentPage(item.id)}>
+                  <div className="card-content">
+                    <div className="card-icon-bg" style={{ backgroundColor: `${item.color}15`, color: item.color, boxShadow: `0 8px 20px ${item.color}25` }}>
+                      <item.icon size={42} strokeWidth={1.5} />
+                    </div>
+                    <span className="card-title">{item.label}</span>
                   </div>
-                  <span className="card-title">{item.label}</span>
-                </div>
-                <div className="card-hover-effect" style={{ backgroundColor: item.color }}></div>
-              </button>
-            ))}
+                  <div className="card-hover-effect" style={{ backgroundColor: item.color }}></div>
+                </button>
+              ))}
+            </div>
+            <div className="pyramid-row middle-row">
+              {middleRow.map(item => (
+                <button key={item.id} className="user-dashboard-card" onClick={() => setCurrentPage(item.id)}>
+                  <div className="card-content">
+                    <div className="card-icon-bg" style={{ backgroundColor: `${item.color}15`, color: item.color, boxShadow: `0 8px 20px ${item.color}25` }}>
+                      <item.icon size={42} strokeWidth={1.5} />
+                    </div>
+                    <span className="card-title">{item.label}</span>
+                  </div>
+                  <div className="card-hover-effect" style={{ backgroundColor: item.color }}></div>
+                </button>
+              ))}
+            </div>
+            <div className="pyramid-row bottom-row">
+              {bottomRow.map(item => (
+                <button key={item.id} className="user-dashboard-card" onClick={() => setCurrentPage(item.id)}>
+                  <div className="card-content">
+                    <div className="card-icon-bg" style={{ backgroundColor: `${item.color}15`, color: item.color, boxShadow: `0 8px 20px ${item.color}25` }}>
+                      <item.icon size={42} strokeWidth={1.5} />
+                    </div>
+                    <span className="card-title">{item.label}</span>
+                  </div>
+                  <div className="card-hover-effect" style={{ backgroundColor: item.color }}></div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       );
@@ -657,11 +689,20 @@ function App() {
           max-width: 600px;
         }
 
-        .user-dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        .pyramid-layout {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           gap: 25px;
           padding: 10px;
+          margin-top: 10px;
+        }
+
+        .pyramid-row {
+          display: flex;
+          justify-content: center;
+          gap: 25px;
+          width: 100%;
         }
 
         .user-dashboard-card {
@@ -680,6 +721,7 @@ function App() {
           overflow: hidden;
           cursor: pointer;
           min-height: 220px;
+          width: 260px; /* Fixed width for consistent pyramid blocks */
         }
 
         .user-dashboard-card:hover {
@@ -738,11 +780,17 @@ function App() {
         }
 
         @media (max-width: 640px) {
-          .user-dashboard-grid {
-            grid-template-columns: repeat(1, 1fr);
+          .pyramid-row {
+            flex-direction: column;
+            align-items: center;
             gap: 20px;
           }
           
+          .user-dashboard-card {
+            width: 100%;
+            max-width: 320px;
+          }
+
           .user-welcome-banner {
             padding: 30px 20px;
             text-align: center;
